@@ -1,9 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <VersionPrefix>1.0.0</VersionPrefix>
-    <VersionSuffix>beta2</VersionSuffix>
+    <Version>1.0.0-beta3</Version>
     <TargetFrameworks>netstandard1.4;netstandard1.6;netstandard2.0;net45</TargetFrameworks>
-    <PackageLicenseUrl>https://raw.githubusercontent.com/launchdarkly/.net-client/master/LICENSE</PackageLicenseUrl>
+    <PackageLicenseUrl>https://raw.githubusercontent.com/launchdarkly/dotnet-client-common/master/LICENSE</PackageLicenseUrl>
     <DebugType>portable</DebugType>
     <AssemblyName>LaunchDarkly.Common</AssemblyName>
     <OutputType>Library</OutputType>
@@ -26,7 +25,6 @@
     <AssemblyOriginatorKeyFile>../../LaunchDarkly.Common.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>
     <PublicSign Condition="'$(OS)' != 'Windows_NT'">true</PublicSign>
-    <Version>1.0.0-beta2</Version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard1.4|AnyCPU'">

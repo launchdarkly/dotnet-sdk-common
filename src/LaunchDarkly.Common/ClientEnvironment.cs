@@ -11,7 +11,7 @@ namespace LaunchDarkly.Common
         /// <summary>
         /// The assembly version string.
         /// </summary>
-        public string Version
+        public string VersionString
         {
             get
             {
@@ -21,6 +21,18 @@ namespace LaunchDarkly.Common
                 var infoAttr = (AssemblyInformationalVersionAttribute)thisType.GetTypeInfo().Assembly
                     .GetCustomAttribute(typeof(AssemblyInformationalVersionAttribute));
                 return infoAttr.InformationalVersion;
+            }
+        }
+
+        /// <summary>
+        /// The assembly version as a Version object.
+        /// </summary>
+        public Version Version
+        {
+            get
+            {
+                Type thisType = this.GetType();
+                return thisType.GetTypeInfo().Assembly.GetName().Version;
             }
         }
 
