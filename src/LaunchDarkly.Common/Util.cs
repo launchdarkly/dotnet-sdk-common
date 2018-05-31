@@ -13,7 +13,7 @@ namespace LaunchDarkly.Common
         {
             return new Dictionary<string, string> {
                 { "Authorization", config.SdkKey },
-                { "User-Agent", env.UserAgentType + "/" + env.Version }
+                { "User-Agent", env.UserAgentType + "/" + env.VersionString }
             };
         }
 
