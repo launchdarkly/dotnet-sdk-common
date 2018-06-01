@@ -6,7 +6,7 @@ namespace LaunchDarkly.Common
 {
     // Interface for platform-specific implementations of the streaming connection,
     // called from StreamManager.
-    internal interface IStreamProcessor : IDisposable
+    internal interface IStreamProcessor
     {
         /// <summary>
         /// Handle a message from the stream. Implementations of this method should be async.
