@@ -21,7 +21,7 @@ Public Key:
 6ab178015e78b54aef9cbdc824db2afcf7250292ae3d8d9c4522bcc3a4fc4831
 d4b4320e820f32e024ad50a786f86d37ea45e0c25ec431a7a0f3e93575a0d2ad
 
-Public Key Token: 
+Public Key Token: 45ef1738a929a7df
 ```
 
 About LaunchDarkly
