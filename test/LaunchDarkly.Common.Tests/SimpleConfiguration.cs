@@ -10,7 +10,10 @@ namespace LaunchDarkly.Common.Tests
         public string SdkKey { get; set; } = "SDK_KEY";
         public Uri BaseUri { get; set; }
         public Uri EventsUri { get; set; }
+        public Uri StreamUri { get; set; }
         public bool Offline { get; set; }
+        public TimeSpan ReadTimeout { get; set; }
+        public TimeSpan ReconnectTime { get; set;  }
         public int EventQueueCapacity { get; set; } = 1000;
         public TimeSpan EventQueueFrequency { get; set; }
         public int EventSamplingInterval { get; set; }
