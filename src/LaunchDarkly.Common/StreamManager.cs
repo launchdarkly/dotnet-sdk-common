@@ -132,15 +132,16 @@ namespace LaunchDarkly.Common
 
         private IEventSource DefaultEventSourceCreator(StreamProperties streamProperties, IDictionary<string, string> headers)
         {
-            EventSource.Configuration config = new EventSource.Configuration(
-                uri: streamProperties.StreamUri,
-                messageHandler: _config.HttpClientHandler,
-                connectionTimeOut: _config.HttpClientTimeout,
-                delayRetryDuration: _config.ReconnectTime,
-                readTimeout: _config.ReadTimeout,
-                requestHeaders: headers,
-                logger: LogManager.GetLogger(typeof(EventSource.EventSource))
-            );
+            EventSource.Configuration config = EventSource.Configuration.Builder(streamProperties.StreamUri)
+                .Method(streamProperties.Method)
+                .RequestBodyFactory(() => streamProperties.RequestBody)
+                .MessageHandler(_config.HttpClientHandler)
+                .ConnectionTimeout(_config.HttpClientTimeout)
+                .DelayRetryDuration(_config.ReconnectTime)
+                .ReadTimeout(_config.ReadTimeout)
+                .RequestHeaders(headers)
+                .Logger(LogManager.GetLogger(typeof(EventSource.EventSource)))
+                .Build();
             return new EventSource.EventSource(config);
         }
 
