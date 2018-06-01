@@ -2,7 +2,7 @@ LaunchDarkly SDK .NET Common Code
 =================================
 [![CircleCI](https://circleci.com/gh/launchdarkly/dotnet-client-common/tree/master.svg?style=svg)](https://circleci.com/gh/launchdarkly/dotnet-client-common/tree/master)
 
-This project contains .NET classes and interfaces that are shared between the LaunchDarkly .NET and Xamarin SDKs. Code that is specific to one or the other is in [.net-client-private](https://github.com/launchdarkly/.net-client) or [xamarin-client-private](https://github.com/launchdarkly/xamarin-client).
+This project contains .NET classes and interfaces that are shared between the LaunchDarkly .NET and Xamarin SDKs. Code that is specific to one or the other is in [.net-client](https://github.com/launchdarkly/.net-client) or [xamarin-client](https://github.com/launchdarkly/xamarin-client).
 
 Contributing
 ------------
