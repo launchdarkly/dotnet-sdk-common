@@ -211,7 +211,10 @@ namespace LaunchDarkly.Common
             if (disposing)
             {
                 Log.Info("Stopping LaunchDarkly StreamProcessor");
-                _es.Close();
+                if (_es != null)
+                {
+                    _es.Close();
+                }
             }
         }
     }
