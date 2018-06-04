@@ -25,10 +25,27 @@ namespace LaunchDarkly.Common
         Uri EventsUri { get; }
 
         /// <summary>
+        /// The base URL of the LaunchDarkly streaming server.
+        /// </summary>
+        Uri StreamUri { get; }
+
+        /// <summary>
         /// Whether or not this client is offline. If true, no calls to Launchdarkly will be made.
         /// </summary>
         bool Offline { get; }
 
+        /// <summary>
+        /// The timeout when reading data from the EventSource API. The default value is 5 minutes.
+        /// </summary>
+        TimeSpan ReadTimeout { get; }
+
+        /// <summary>
+        /// The reconnect base time for the streaming connection.The streaming connection
+        /// uses an exponential backoff algorithm (with jitter) for reconnects, but will start the
+        /// backoff with a value near the value specified here.
+        /// </summary>
+        TimeSpan ReconnectTime { get; }
+        
         /// <summary>
         /// The capacity of the events buffer. The client buffers up to this many events in
         /// memory before flushing. If the capacity is exceeded before the buffer is flushed,
@@ -84,7 +101,7 @@ namespace LaunchDarkly.Common
         bool InlineUsersInEvents { get; }
 
         /// <summary>
-        /// The connection timeout. The default value is 10 seconds.
+        /// The connection timeout.
         /// </summary>
         TimeSpan HttpClientTimeout { get; }
 
