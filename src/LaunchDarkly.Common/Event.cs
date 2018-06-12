@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using System;
+using Newtonsoft.Json.Linq;
 
 namespace LaunchDarkly.Client
 {
@@ -100,15 +101,24 @@ namespace LaunchDarkly.Client
     /// </summary>
     public class CustomEvent : Event
     {
+        [Obsolete("Use JsonData.")]
+        public string Data
+        {
+            get
+            {
+                return JsonData == null ? null : JsonData.ToString();
+            }
+        }
+
         /// <summary>
         /// Custom data provided for the event.
         /// </summary>
-        public string Data { get; private set; }
-        
-        internal CustomEvent(long creationDate, string key, User user, string data) :
+        public JToken JsonData { get; private set; }
+
+        internal CustomEvent(long creationDate, string key, User user, JToken data) :
             base(creationDate, key, user)
         {
-            Data = data;
+            JsonData = data;
         }
     }
 
