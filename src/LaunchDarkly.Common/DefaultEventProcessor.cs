@@ -25,10 +25,10 @@ namespace LaunchDarkly.Common
         private AtomicBoolean _inputCapacityExceeded;
 
         internal DefaultEventProcessor(IBaseConfiguration config,
-            IUserDeduplicator userDeduplicator, HttpClient httpClient)
+            IUserDeduplicator userDeduplicator, HttpClient httpClient, string eventsUriPath)
         {
             _messageQueue = new BlockingCollection<IEventMessage>(config.EventQueueCapacity);
-            _dispatcher = new EventDispatcher(config, _messageQueue, userDeduplicator, httpClient);
+            _dispatcher = new EventDispatcher(config, _messageQueue, userDeduplicator, httpClient, eventsUriPath);
             _flushTimer = new Timer(DoBackgroundFlush, null, config.EventQueueFrequency,
                 config.EventQueueFrequency);
             if (userDeduplicator != null && userDeduplicator.FlushInterval.HasValue)
@@ -199,13 +199,14 @@ namespace LaunchDarkly.Common
         internal EventDispatcher(IBaseConfiguration config,
             BlockingCollection<IEventMessage> messageQueue,
             IUserDeduplicator userDeduplicator,
-            HttpClient httpClient)
+            HttpClient httpClient,
+            string eventsUriPath)
         {
             _config = config;
             _userDeduplicator = userDeduplicator;
             _flushWorkersCounter = new CountdownEvent(1);
             _httpClient = httpClient;
-            _uri = new Uri(_config.EventsUri.AbsoluteUri + "bulk");
+            _uri = new Uri(_config.EventsUri, eventsUriPath);
             _random = new Random();
 
             _httpClient.DefaultRequestHeaders.Add("X-LaunchDarkly-Event-Schema",
