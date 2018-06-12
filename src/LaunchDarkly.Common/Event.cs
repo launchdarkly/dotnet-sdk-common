@@ -118,7 +118,7 @@ namespace LaunchDarkly.Client
     public class IdentifyEvent : Event
     {
         internal IdentifyEvent(long creationDate, User user) :
-            base(creationDate, user.Key, user)
+            base(creationDate, user == null ? null : user.Key, user)
         {
         }
     }

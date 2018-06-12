@@ -69,6 +69,18 @@ namespace LaunchDarkly.Common.Tests
         }
 
         [Fact]
+        public void IdentifyEventCanHaveNullUser()
+        {
+            _ep = MakeProcessor(_config);
+            IdentifyEvent e = EventFactory.Default.NewIdentifyEvent(null);
+            _ep.SendEvent(e);
+
+            JArray output = FlushAndGetEvents(OkResponse());
+            Assert.Collection(output,
+                item => CheckIdentifyEvent(item, e, null));
+        }
+
+        [Fact]
         public void IndividualFeatureEventIsQueuedWithIndexEvent()
         {
             _ep = MakeProcessor(_config);

@@ -235,30 +235,38 @@ namespace LaunchDarkly.Common
             bool running = true;
             while (running)
             {
-                IEventMessage message = messageQueue.Take();
-                switch(message)
+                try
                 {
-                    case EventMessage em:
-                        ProcessEvent(em.Event, buffer);
-                        break;
-                    case FlushMessage fm:
-                        StartFlush(buffer);
-                        break;
-                    case FlushUsersMessage fm:
-                        if (_userDeduplicator != null)
-                        {
-                            _userDeduplicator.Flush();
-                        }
-                        break;
-                    case TestSyncMessage tm:
-                        WaitForFlushes();
-                        tm.Completed();
-                        break;
-                    case ShutdownMessage sm:
-                        WaitForFlushes();
-                        running = false;
-                        sm.Completed();
-                        break;
+                    IEventMessage message = messageQueue.Take();
+                    switch (message)
+                    {
+                        case EventMessage em:
+                            ProcessEvent(em.Event, buffer);
+                            break;
+                        case FlushMessage fm:
+                            StartFlush(buffer);
+                            break;
+                        case FlushUsersMessage fm:
+                            if (_userDeduplicator != null)
+                            {
+                                _userDeduplicator.Flush();
+                            }
+                            break;
+                        case TestSyncMessage tm:
+                            WaitForFlushes();
+                            tm.Completed();
+                            break;
+                        case ShutdownMessage sm:
+                            WaitForFlushes();
+                            running = false;
+                            sm.Completed();
+                            break;
+                    }
+                }
+                catch (Exception e)
+                {
+                    DefaultEventProcessor.Log.ErrorFormat("Unexpected error in event dispatcher thread: {0}",
+                        e, Util.ExceptionMessage(e));
                 }
             }
         }
@@ -405,9 +413,20 @@ namespace LaunchDarkly.Common
         private async Task FlushEventsAsync(FlushPayload payload)
         {
             EventOutputFormatter formatter = new EventOutputFormatter(_config);
-            List<EventOutput> eventsOut = formatter.MakeOutputEvents(payload.Events, payload.Summary);
             var cts = new CancellationTokenSource(_config.HttpClientTimeout);
-            var jsonEvents = JsonConvert.SerializeObject(eventsOut, Formatting.None);
+            List<EventOutput> eventsOut;
+            string jsonEvents;
+            try
+            {
+                eventsOut = formatter.MakeOutputEvents(payload.Events, payload.Summary);
+                jsonEvents = JsonConvert.SerializeObject(eventsOut, Formatting.None);
+            }
+            catch (Exception e)
+            {
+                DefaultEventProcessor.Log.ErrorFormat("Error preparing events, will not send: {0}",
+                    e, Util.ExceptionMessage(e));
+                return;
+            }
             try
             {
                 await SendEventsAsync(jsonEvents, eventsOut.Count, cts);
