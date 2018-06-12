@@ -44,7 +44,7 @@ namespace LaunchDarkly.Common
                 from.Version, from.PrereqOf, from.TrackEvents, from.DebugEventsUntilDate, true);
         }
 
-        internal CustomEvent NewCustomEvent(string key, User user, string data)
+        internal CustomEvent NewCustomEvent(string key, User user, JToken data)
         {
             return new CustomEvent(GetTimestamp(), key, user, data);
         }

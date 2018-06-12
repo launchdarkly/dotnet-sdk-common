@@ -289,7 +289,7 @@ namespace LaunchDarkly.Common.Tests
         public void CustomEventIsQueuedWithUser()
         {
             _ep = MakeProcessor(_config);
-            CustomEvent e = EventFactory.Default.NewCustomEvent("eventkey", _user, "data");
+            CustomEvent e = EventFactory.Default.NewCustomEvent("eventkey", _user, new JValue(3));
             _ep.SendEvent(e);
 
             JArray output = FlushAndGetEvents(OkResponse());
@@ -303,7 +303,7 @@ namespace LaunchDarkly.Common.Tests
         {
             _config.InlineUsersInEvents = true;
             _ep = MakeProcessor(_config);
-            CustomEvent e = EventFactory.Default.NewCustomEvent("eventkey", _user, "data");
+            CustomEvent e = EventFactory.Default.NewCustomEvent("eventkey", _user, new JValue(3));
             _ep.SendEvent(e);
 
             JArray output = FlushAndGetEvents(OkResponse());
@@ -317,7 +317,7 @@ namespace LaunchDarkly.Common.Tests
             _config.AllAttributesPrivate = true;
             _config.InlineUsersInEvents = true;
             _ep = MakeProcessor(_config);
-            CustomEvent e = EventFactory.Default.NewCustomEvent("eventkey", _user, "data");
+            CustomEvent e = EventFactory.Default.NewCustomEvent("eventkey", _user, new JValue(3));
             _ep.SendEvent(e);
 
             JArray output = FlushAndGetEvents(OkResponse());
@@ -438,7 +438,7 @@ namespace LaunchDarkly.Common.Tests
             JObject o = t as JObject;
             Assert.Equal("custom", (string)o["kind"]);
             Assert.Equal(e.Key, (string)o["key"]);
-            Assert.Equal(e.Data, (string)o["data"]);
+            Assert.Equal(e.JsonData, o["data"]);
             CheckEventUserOrKey(o, e, userJson);
         }
 
