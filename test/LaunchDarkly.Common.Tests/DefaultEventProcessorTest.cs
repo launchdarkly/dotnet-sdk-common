@@ -13,7 +13,8 @@ namespace LaunchDarkly.Common.Tests
 {
     public class DefaultEventProcessorTest : IDisposable
     {
-        private static readonly String HttpDateFormat = "ddd, dd MMM yyyy HH:mm:ss 'GMT'";
+        private const String HttpDateFormat = "ddd, dd MMM yyyy HH:mm:ss 'GMT'";
+        private const string EventsUriPath = "/post-events-here";
 
         private SimpleConfiguration _config = new SimpleConfiguration();
         private IEventProcessor _ep;
@@ -40,7 +41,7 @@ namespace LaunchDarkly.Common.Tests
         private IEventProcessor MakeProcessor(IBaseConfiguration config)
         {
             return new DefaultEventProcessor(config, new TestUserDeduplicator(),
-                Util.MakeHttpClient(config, SimpleClientEnvironment.Instance));
+                Util.MakeHttpClient(config, SimpleClientEnvironment.Instance), EventsUriPath);
         }
     
         [Fact]
@@ -495,7 +496,7 @@ namespace LaunchDarkly.Common.Tests
 
         private void PrepareResponse(IResponseBuilder resp)
         {
-            _server.Given(Request.Create().WithPath("/bulk").UsingPost())
+            _server.Given(Request.Create().WithPath(EventsUriPath).UsingPost())
                 .RespondWith(resp);
             _server.ResetLogEntries();
         }
