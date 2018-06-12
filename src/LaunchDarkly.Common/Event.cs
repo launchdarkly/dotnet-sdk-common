@@ -101,6 +101,9 @@ namespace LaunchDarkly.Client
     /// </summary>
     public class CustomEvent : Event
     {
+        /// <summary>
+        /// Custom data provided for the event.
+        /// </summary>
         [Obsolete("Use JsonData.")]
         public string Data
         {
