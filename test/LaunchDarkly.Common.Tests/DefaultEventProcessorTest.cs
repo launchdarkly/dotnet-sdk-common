@@ -147,6 +147,21 @@ namespace LaunchDarkly.Common.Tests
         }
 
         [Fact]
+        public void FeatureEventCanHaveNullUser()
+        {
+             _ep = MakeProcessor(_config);
+            IFlagEventProperties flag = new FlagEventPropertiesBuilder("flagkey").Version(11).TrackEvents(true).Build();
+            FeatureRequestEvent fe = EventFactory.Default.NewFeatureRequestEvent(flag, null,
+                1, new JValue("value"), null);
+            _ep.SendEvent(fe);
+
+            JArray output = FlushAndGetEvents(OkResponse());
+            Assert.Collection(output,
+                item => CheckFeatureEvent(item, fe, flag, false, null),
+                item => CheckSummaryEvent(item));
+        }
+
+        [Fact]
         public void IndexEventIsStillGeneratedIfInlineUsersIsTrueButFeatureEventIsNotTracked()
         {
             _config.InlineUsersInEvents = true;
@@ -337,6 +352,18 @@ namespace LaunchDarkly.Common.Tests
         }
 
         [Fact]
+        public void CustomEventCanHaveNullUser()
+        {
+            _ep = MakeProcessor(_config);
+            CustomEvent e = EventFactory.Default.NewCustomEvent("eventkey", null, "data");
+            _ep.SendEvent(e);
+
+            JArray output = FlushAndGetEvents(OkResponse());
+            Assert.Collection(output,
+                item => CheckCustomEvent(item, e, null));
+        }
+
+        [Fact]
         public void FinalFlushIsDoneOnDispose()
         {
             _ep = MakeProcessor(_config);
@@ -463,7 +490,14 @@ namespace LaunchDarkly.Common.Tests
             else
             {
                 Assert.Null(o["user"]);
-                Assert.Equal(e.User.Key, (string)o["userKey"]);
+                if (e.User == null)
+                {
+                    Assert.Null(o["userKey"]);
+                }
+                else
+                {
+                    Assert.Equal(e.User.Key, (string)o["userKey"]);
+                }
             }
         }
         private void CheckSummaryEvent(JToken t)
