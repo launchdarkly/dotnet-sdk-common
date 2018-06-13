@@ -2,11 +2,8 @@
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
-using LaunchDarkly.Client;
-using LaunchDarkly.Common;
 using LaunchDarkly.EventSource;
 using Moq;
-using Newtonsoft.Json;
 using Xunit;
 
 namespace LaunchDarkly.Common.Tests
@@ -169,6 +166,20 @@ namespace LaunchDarkly.Common.Tests
                 _mockEventSource.Raise(es => es.Error += null, e);
 
                 _mockEventSource.Verify(es => es.Close());
+            }
+        }
+
+        [Fact]
+        public void Http401ErrorCausesTaskToBeCompleted()
+        {
+            using (StreamManager sm = CreateManager())
+            {
+                Task<bool> initTask = sm.Start();
+                ExceptionEventArgs e = new ExceptionEventArgs(new EventSourceServiceUnsuccessfulResponseException("", 401));
+                _mockEventSource.Raise(es => es.Error += null, e);
+
+                Assert.True(initTask.IsCompleted);
+                Assert.False(sm.Initialized);
             }
         }
     }

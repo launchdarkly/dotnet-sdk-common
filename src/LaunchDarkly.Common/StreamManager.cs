@@ -195,6 +195,15 @@ namespace LaunchDarkly.Common
                 if (((EventSource.EventSourceServiceUnsuccessfulResponseException)e.Exception).StatusCode == 401)
                 {
                     Log.Error("Received 401 error, no further streaming connection will be made since SDK key is invalid");
+                    try
+                    {
+                        // if client is initializing, make it stop waiting
+                        _initTask.SetResult(true);
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        // the task was already set - nothing more to do
+                    }
                     ((IDisposable)this).Dispose();
                 }
             }
