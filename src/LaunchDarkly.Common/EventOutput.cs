@@ -140,6 +140,24 @@ namespace LaunchDarkly.Common
             return eventsOut;
         }
 
+        private EventUser MaybeInlineUser(User user, bool inline)
+        {
+            if (inline)
+            {
+                return user == null ? null : EventUser.FromUser(user, _config);
+            }
+            return null;
+        }
+
+        private string MaybeUserKey(User user, bool inline)
+        {
+            if (inline)
+            {
+                return null;
+            }
+            return user == null ? null : user.Key;
+        }
+
         private EventOutput MakeOutputEvent(Event e)
         {
             switch (e)
@@ -151,8 +169,8 @@ namespace LaunchDarkly.Common
                         Kind = fe.Debug ? "debug" : "feature",
                         CreationDate = fe.CreationDate,
                         Key = fe.Key,
-                        User = inlineUser ? EventUser.FromUser(fe.User, _config) : null,
-                        UserKey = inlineUser ? null : fe.User.Key,
+                        User = MaybeInlineUser(fe.User, inlineUser),
+                        UserKey = MaybeUserKey(fe.User, inlineUser),
                         Version = fe.Version,
                         Variation = fe.Variation,
                         Value = fe.Value,
@@ -164,8 +182,8 @@ namespace LaunchDarkly.Common
                     {
                         Kind = "identify",
                         CreationDate = e.CreationDate,
-                        Key = e.User.Key,
-                        User = EventUser.FromUser(e.User, _config)
+                        Key = e.User == null ? null : e.User.Key,
+                        User = e.User == null ? null : EventUser.FromUser(e.User, _config)
                     };
                 case CustomEvent ce:
                     return new CustomEventOutput
@@ -173,8 +191,8 @@ namespace LaunchDarkly.Common
                         Kind = "custom",
                         CreationDate = ce.CreationDate,
                         Key = ce.Key,
-                        User = _config.InlineUsersInEvents ? EventUser.FromUser(ce.User, _config) : null,
-                        UserKey = _config.InlineUsersInEvents ? null : ce.User.Key,
+                        User = MaybeInlineUser(ce.User, _config.InlineUsersInEvents),
+                        UserKey = MaybeUserKey(ce.User, _config.InlineUsersInEvents),
                         Data = ce.JsonData
                     };
                 case IndexEvent ie:
