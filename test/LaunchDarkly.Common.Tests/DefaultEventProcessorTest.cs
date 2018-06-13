@@ -13,7 +13,8 @@ namespace LaunchDarkly.Common.Tests
 {
     public class DefaultEventProcessorTest : IDisposable
     {
-        private static readonly String HttpDateFormat = "ddd, dd MMM yyyy HH:mm:ss 'GMT'";
+        private const String HttpDateFormat = "ddd, dd MMM yyyy HH:mm:ss 'GMT'";
+        private const string EventsUriPath = "/post-events-here";
 
         private SimpleConfiguration _config = new SimpleConfiguration();
         private IEventProcessor _ep;
@@ -40,7 +41,7 @@ namespace LaunchDarkly.Common.Tests
         private IEventProcessor MakeProcessor(IBaseConfiguration config)
         {
             return new DefaultEventProcessor(config, new TestUserDeduplicator(),
-                Util.MakeHttpClient(config, SimpleClientEnvironment.Instance));
+                Util.MakeHttpClient(config, SimpleClientEnvironment.Instance), EventsUriPath);
         }
     
         [Fact]
@@ -315,7 +316,7 @@ namespace LaunchDarkly.Common.Tests
         public void CustomEventIsQueuedWithUser()
         {
             _ep = MakeProcessor(_config);
-            CustomEvent e = EventFactory.Default.NewCustomEvent("eventkey", _user, "data");
+            CustomEvent e = EventFactory.Default.NewCustomEvent("eventkey", _user, new JValue(3));
             _ep.SendEvent(e);
 
             JArray output = FlushAndGetEvents(OkResponse());
@@ -329,7 +330,7 @@ namespace LaunchDarkly.Common.Tests
         {
             _config.InlineUsersInEvents = true;
             _ep = MakeProcessor(_config);
-            CustomEvent e = EventFactory.Default.NewCustomEvent("eventkey", _user, "data");
+            CustomEvent e = EventFactory.Default.NewCustomEvent("eventkey", _user, new JValue(3));
             _ep.SendEvent(e);
 
             JArray output = FlushAndGetEvents(OkResponse());
@@ -343,7 +344,7 @@ namespace LaunchDarkly.Common.Tests
             _config.AllAttributesPrivate = true;
             _config.InlineUsersInEvents = true;
             _ep = MakeProcessor(_config);
-            CustomEvent e = EventFactory.Default.NewCustomEvent("eventkey", _user, "data");
+            CustomEvent e = EventFactory.Default.NewCustomEvent("eventkey", _user, new JValue(3));
             _ep.SendEvent(e);
 
             JArray output = FlushAndGetEvents(OkResponse());
@@ -476,7 +477,7 @@ namespace LaunchDarkly.Common.Tests
             JObject o = t as JObject;
             Assert.Equal("custom", (string)o["kind"]);
             Assert.Equal(e.Key, (string)o["key"]);
-            Assert.Equal(e.Data, (string)o["data"]);
+            Assert.Equal(e.JsonData, o["data"]);
             CheckEventUserOrKey(o, e, userJson);
         }
 
@@ -541,7 +542,7 @@ namespace LaunchDarkly.Common.Tests
 
         private void PrepareResponse(IResponseBuilder resp)
         {
-            _server.Given(Request.Create().WithPath("/bulk").UsingPost())
+            _server.Given(Request.Create().WithPath(EventsUriPath).UsingPost())
                 .RespondWith(resp);
             _server.ResetLogEntries();
         }

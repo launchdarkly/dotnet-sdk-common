@@ -193,7 +193,7 @@ namespace LaunchDarkly.Common
                         Key = ce.Key,
                         User = MaybeInlineUser(ce.User, _config.InlineUsersInEvents),
                         UserKey = MaybeUserKey(ce.User, _config.InlineUsersInEvents),
-                        Data = ce.Data
+                        Data = ce.JsonData
                     };
                 case IndexEvent ie:
                     return new IndexEventOutput
