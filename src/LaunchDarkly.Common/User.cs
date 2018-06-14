@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using LaunchDarkly.Common;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -19,7 +21,7 @@ namespace LaunchDarkly.Client
     /// custom attribute such as "customer_ranking" can be used to launch a feature to the top 10% of users
     /// on a site.
     /// </summary>
-    public class User
+    public class User : IEquatable<User>
     {
         /// <summary>
         /// The unique key for the user.
@@ -132,10 +134,31 @@ namespace LaunchDarkly.Client
         /// Creates a user with the given key.
         /// </summary>
         /// <param name="key">a <c>string</c> that uniquely identifies a user</param>
+        [JsonConstructor]
         public User(string key)
         {
             Key = key;
             Custom = new Dictionary<string, JToken>();
+        }
+
+        /// <summary>
+        /// Creates a user by copying all properties from another user.
+        /// </summary>
+        /// <param name="from">the user to copy</param>
+        public User(User from)
+        {
+            Key = from.Key;
+            SecondaryKey = from.SecondaryKey;
+            IpAddress = from.IpAddress;
+            Country = from.Country;
+            FirstName = from.FirstName;
+            LastName = from.LastName;
+            Name = from.Name;
+            Avatar = from.Avatar;
+            Email = from.Email;
+            Anonymous = from.Anonymous;
+            Custom = new Dictionary<string, JToken>(from.Custom);
+            PrivateAttributeNames = new HashSet<string>(from.PrivateAttributeNames);
         }
 
         /// <summary>
@@ -170,6 +193,69 @@ namespace LaunchDarkly.Client
             }
             PrivateAttributeNames.Add(name);
             return this;
+        }
+
+        /// <summary>
+        /// Tests for equality with another object by comparing all fields of the User.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns>true if the object is a User and all fields are equal</returns>
+        public override bool Equals(object obj)
+        {
+            if (obj is User u)
+            {
+                return ((IEquatable<User>)this).Equals(u);
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Tests for equality with another User by comparing all fields of the User.
+        /// </summary>
+        /// <param name="u"></param>
+        /// <returns>true if all fields are equal</returns>
+        public bool Equals(User u)
+        {
+            if (u == null)
+            {
+                return false;
+            }
+            return Object.Equals(Key, u.Key) &&
+                Object.Equals(SecondaryKey, u.SecondaryKey) &&
+                Object.Equals(IpAddress, u.IpAddress) &&
+                Object.Equals(Country, u.Country) &&
+                Object.Equals(FirstName, u.FirstName) &&
+                Object.Equals(LastName, u.LastName) &&
+                Object.Equals(Name, u.Name) &&
+                Object.Equals(Avatar, u.Avatar) &&
+                Object.Equals(Email, u.Email) &&
+                Object.Equals(Anonymous, u.Anonymous) &&
+                Custom.Count == u.Custom.Count &&
+                Custom.Keys.All(k => u.Custom.ContainsKey(k) && Object.Equals(Custom[k], u.Custom[k])) &&
+                (PrivateAttributeNames ?? new HashSet<string>()).SetEquals(
+                    u.PrivateAttributeNames ?? new HashSet<string>());
+        }
+
+        /// <summary>
+        /// Computes a hash code for a User. Note that for performance reasons, the Custom and
+        /// PrivateAttributeNames properties are not used in this computation, even though they
+        /// are used in Equals.
+        /// </summary>
+        /// <returns>a hash code</returns>
+        public override int GetHashCode()
+        {
+            return Util.Hash()
+                .With(Key)
+                .With(SecondaryKey)
+                .With(IpAddress)
+                .With(Country)
+                .With(FirstName)
+                .With(LastName)
+                .With(Name)
+                .With(Avatar)
+                .With(Email)
+                .With(Anonymous)
+                .Value;
         }
     }
 
@@ -226,7 +312,7 @@ namespace LaunchDarkly.Client
         /// <returns>the same user</returns>
         public static User AndCountry(this User user, string country)
         {
-            if (country.Length != 2)
+            if (country != null && country.Length != 2)
                 throw new ArgumentException("Country should be a 2 character ISO 3166-1 alpha-2 code. e.g. 'US'");
 
             user.Country = country;
