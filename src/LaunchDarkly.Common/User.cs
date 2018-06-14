@@ -178,8 +178,8 @@ namespace LaunchDarkly.Client
             Avatar = avatar;
             Email = email;
             Anonymous = anonymous;
-            Custom = new Dictionary<string, JToken>(custom);
-            PrivateAttributeNames = new HashSet<string>(privateAttributeNames);
+            Custom = custom == null ? new Dictionary<string, JToken>() : new Dictionary<string, JToken>(custom);
+            PrivateAttributeNames = privateAttributeNames == null ? null : new HashSet<string>(privateAttributeNames);
         }
 
         /// <summary>
