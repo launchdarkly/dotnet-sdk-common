@@ -41,5 +41,22 @@ namespace LaunchDarkly.Common
             }
             return msg;
         }
+
+        internal static HashCodeBuilder Hash()
+        {
+            return new HashCodeBuilder();
+        }
+    }
+
+    internal class HashCodeBuilder
+    {
+        private int value = 0;
+        public int Value => value;
+
+        public HashCodeBuilder With(object o)
+        {
+            value = value * 17 + (o == null ? 0 : o.GetHashCode());
+            return this;
+        }
     }
 }
