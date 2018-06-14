@@ -134,7 +134,6 @@ namespace LaunchDarkly.Client
         /// Creates a user with the given key.
         /// </summary>
         /// <param name="key">a <c>string</c> that uniquely identifies a user</param>
-        [JsonConstructor]
         public User(string key)
         {
             Key = key;
@@ -157,8 +156,30 @@ namespace LaunchDarkly.Client
             Avatar = from.Avatar;
             Email = from.Email;
             Anonymous = from.Anonymous;
-            Custom = new Dictionary<string, JToken>(from.Custom);
-            PrivateAttributeNames = new HashSet<string>(from.PrivateAttributeNames);
+            Custom = from.Custom == null ? new Dictionary<string, JToken>() : new Dictionary<string, JToken>(from.Custom);
+            PrivateAttributeNames = from.PrivateAttributeNames == null ? null : new HashSet<string>(from.PrivateAttributeNames);
+        }
+
+        /// <summary>
+        /// Creates a user by specifying all properties.
+        /// </summary>
+        [JsonConstructor]
+        public User(string key, string secondaryKey, string ip, string country, string firstName,
+                    string lastName, string name, string avatar, string email, bool? anonymous,
+                    IDictionary<string, JToken> custom, ISet<string> privateAttributeNames)
+        {
+            Key = key;
+            SecondaryKey = secondaryKey;
+            IpAddress = ip;
+            Country = country;
+            FirstName = firstName;
+            LastName = lastName;
+            Name = name;
+            Avatar = avatar;
+            Email = email;
+            Anonymous = anonymous;
+            Custom = new Dictionary<string, JToken>(custom);
+            PrivateAttributeNames = new HashSet<string>(privateAttributeNames);
         }
 
         /// <summary>
