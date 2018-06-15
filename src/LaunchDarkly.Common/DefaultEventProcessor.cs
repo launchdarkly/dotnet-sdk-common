@@ -492,11 +492,10 @@ namespace LaunchDarkly.Common
                 }
                 else
                 {
-                    DefaultEventProcessor.Log.WarnFormat("Unexpected response status when posting events: {0}",
-                        response.StatusCode);
-                    if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                    DefaultEventProcessor.Log.Error(Util.HttpErrorMessage((int)response.StatusCode,
+                        "event delivery", "some events were dropped"));
+                    if (!Util.IsHttpErrorRecoverable((int)response.StatusCode))
                     {
-                        DefaultEventProcessor.Log.Error("Received 401 error, no further events will be posted since SDK key is invalid");
                         _disabled = true;
                     }
                 }
