@@ -142,44 +142,62 @@ namespace LaunchDarkly.Common.Tests
                 _mockEventSource.Verify(es => es.Close(), Times.Never());
             }
         }
-
+        
         [Fact]
-        public void Http500ErrorDoesNotStopStream()
+        public void Http401ErrorShutsDownStream()
         {
-            using (StreamManager sm = CreateManager())
-            {
-                sm.Start();
-                ExceptionEventArgs e = new ExceptionEventArgs(new EventSourceServiceUnsuccessfulResponseException("", 500));
-                _mockEventSource.Raise(es => es.Error += null, e);
-
-                _mockEventSource.Verify(es => es.Close(), Times.Never());
-            }
+            VerifyUnrecoverableHttpError(401);
         }
 
         [Fact]
-        public void Http401ErrorStopsStream()
+        public void Http403ErrorShutsDownStream()
         {
-            using (StreamManager sm = CreateManager())
-            {
-                sm.Start();
-                ExceptionEventArgs e = new ExceptionEventArgs(new EventSourceServiceUnsuccessfulResponseException("", 401));
-                _mockEventSource.Raise(es => es.Error += null, e);
-
-                _mockEventSource.Verify(es => es.Close());
-            }
+            VerifyUnrecoverableHttpError(403);
         }
 
         [Fact]
-        public void Http401ErrorCausesTaskToBeCompleted()
+        public void Http408ErrorDoesNotShutDownStream()
+        {
+            VerifyRecoverableHttpError(408);
+        }
+
+        [Fact]
+        public void Http429ErrorDoesNotShutDownStream()
+        {
+            VerifyRecoverableHttpError(429);
+        }
+
+        [Fact]
+        public void Http500ErrorDoesNotShutDownStream()
+        {
+            VerifyRecoverableHttpError(500);
+        }
+
+        private void VerifyUnrecoverableHttpError(int status)
         {
             using (StreamManager sm = CreateManager())
             {
                 Task<bool> initTask = sm.Start();
-                ExceptionEventArgs e = new ExceptionEventArgs(new EventSourceServiceUnsuccessfulResponseException("", 401));
+                ExceptionEventArgs e = new ExceptionEventArgs(
+                    new EventSourceServiceUnsuccessfulResponseException("", status));
                 _mockEventSource.Raise(es => es.Error += null, e);
 
+                _mockEventSource.Verify(es => es.Close());
                 Assert.True(initTask.IsCompleted);
                 Assert.False(sm.Initialized);
+            }
+        }
+
+        private void VerifyRecoverableHttpError(int status)
+        {
+            using (StreamManager sm = CreateManager())
+            {
+                Task<bool> initTask = sm.Start();
+                ExceptionEventArgs e = new ExceptionEventArgs(new EventSourceServiceUnsuccessfulResponseException("", 500));
+                _mockEventSource.Raise(es => es.Error += null, e);
+
+                _mockEventSource.Verify(es => es.Close(), Times.Never());
+                Assert.False(initTask.IsCompleted);
             }
         }
     }

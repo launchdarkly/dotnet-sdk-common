@@ -416,20 +416,68 @@ namespace LaunchDarkly.Common.Tests
         }
 
         [Fact]
+        public void EventsAreStillPostedAfterReceiving400Error()
+        {
+            VerifyRecoverableHttpError(400);
+        }
+
+        [Fact]
         public void NoMoreEventsArePostedAfterReceiving401Error()
+        {
+            VerifyUnrecoverableHttpError(401);
+        }
+
+        [Fact]
+        public void NoMoreEventsArePostedAfterReceiving403Error()
+        {
+            VerifyUnrecoverableHttpError(403);
+        }
+
+        [Fact]
+        public void EventsAreStillPostedAfterReceiving408Error()
+        {
+            VerifyRecoverableHttpError(408);
+        }
+
+        [Fact]
+        public void EventsAreStillPostedAfterReceiving429Error()
+        {
+            VerifyRecoverableHttpError(429);
+        }
+
+        [Fact]
+        public void EventsAreStillPostedAfterReceiving500Error()
+        {
+            VerifyRecoverableHttpError(500);
+        }
+
+        private void VerifyUnrecoverableHttpError(int status)
         {
             _ep = MakeProcessor(_config);
             Event e = EventFactory.Default.NewIdentifyEvent(_user);
             _ep.SendEvent(e);
-            FlushAndGetEvents(Response.Create().WithStatusCode(401));
+            FlushAndGetEvents(Response.Create().WithStatusCode(status));
             _server.ResetLogEntries();
 
             _ep.SendEvent(e);
             _ep.Flush();
+            ((DefaultEventProcessor)_ep).WaitUntilInactive();
             foreach (LogEntry le in _server.LogEntries)
             {
                 Assert.True(false, "Should not have sent an HTTP request");
             }
+        }
+
+        private void VerifyRecoverableHttpError(int status)
+        {
+            _ep = MakeProcessor(_config);
+            Event e = EventFactory.Default.NewIdentifyEvent(_user);
+            _ep.SendEvent(e);
+            FlushAndGetEvents(Response.Create().WithStatusCode(status));
+            _server.ResetLogEntries();
+
+            _ep.SendEvent(e);
+            Assert.NotNull(FlushAndGetRequest(OkResponse()));
         }
 
         private JObject MakeUserJson(User user)

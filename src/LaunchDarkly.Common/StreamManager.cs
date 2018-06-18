@@ -192,9 +192,10 @@ namespace LaunchDarkly.Common
                 Util.ExceptionMessage(e.Exception));
             if (e.Exception is EventSource.EventSourceServiceUnsuccessfulResponseException)
             {
-                if (((EventSource.EventSourceServiceUnsuccessfulResponseException)e.Exception).StatusCode == 401)
+                int status = ((EventSource.EventSourceServiceUnsuccessfulResponseException)e.Exception).StatusCode;
+                Log.Error(Util.HttpErrorMessage(status, "streaming connection", "will retry"));
+                if (!Util.IsHttpErrorRecoverable(status))
                 {
-                    Log.Error("Received 401 error, no further streaming connection will be made since SDK key is invalid");
                     try
                     {
                         // if client is initializing, make it stop waiting

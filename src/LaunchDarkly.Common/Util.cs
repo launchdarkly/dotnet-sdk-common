@@ -42,6 +42,28 @@ namespace LaunchDarkly.Common
             return msg;
         }
 
+        // Returns true if this type of error could be expected to eventually resolve itself,
+        // or false if it indicates a configuration problem or client logic error such that the
+        // client should give up on making any further requests.
+        internal static bool IsHttpErrorRecoverable(int status)
+        {
+            if (status >= 400 && status <= 499)
+            {
+                return (status == 400) || (status == 408) || (status == 429);
+            }
+            return true;
+        }
+
+        internal static string HttpErrorMessage(int status, string context, string recoverableMessage)
+        {
+            return string.Format("HTTP error {0}{1} for {2} - {3}",
+                status,
+                (status == 401 || status == 403) ? " (invalid SDK key)" : "",
+                context,
+                IsHttpErrorRecoverable(status) ? recoverableMessage : "giving up permanently"
+                );
+        }
+
         internal static HashCodeBuilder Hash()
         {
             return new HashCodeBuilder();
