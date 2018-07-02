@@ -21,12 +21,6 @@ namespace LaunchDarkly.Common
         void Flush();
 
         /// <summary>
-        /// Registers the user.
-        /// </summary>
-        /// <param name="user">the user to register</param>
-        void Identify(User user);
-
-        /// <summary>
         /// Returns the current version number of the LaunchDarkly client.
         /// </summary>
         Version Version { get; }
