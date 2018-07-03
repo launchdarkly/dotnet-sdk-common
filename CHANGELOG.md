@@ -5,10 +5,10 @@ For full release notes for the projects that depend on this project, see their r
 ## [1.0.1] - 2018-07-02
 
 ### Changed
-- The dependency on `Newtonsoft.JSON` now has a minimum version of 6.0.1 rather than 9.0.1. This should not affect any applications that specify a higher version for this assembly.
+- When targeting .NET 4.5, the dependency on `Newtonsoft.Json` now has a minimum version of 6.0.1 rather than 9.0.1. This should not affect any applications that specify a higher version for this assembly.
 
 ### Removed
-- The `Identify` method is no longer part of `ILdCdCommonClient`, since it does not have the same signature in the Xamarin client as in the server-side .NET SDK.
+- The `Identify` method is no longer part of `ILdCommonClient`, since it does not have the same signature in the Xamarin client as in the server-side .NET SDK.
 
 ## [1.0.0] - 2018-06-26
 
