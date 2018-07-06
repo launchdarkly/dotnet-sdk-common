@@ -1,6 +1,7 @@
 LaunchDarkly SDK .NET Common Code
 =================================
 [![CircleCI](https://circleci.com/gh/launchdarkly/dotnet-client-common/tree/master.svg?style=svg)](https://circleci.com/gh/launchdarkly/dotnet-client-common/tree/master)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Flaunchdarkly%2Fdotnet-client-common.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Flaunchdarkly%2Fdotnet-client-common?ref=badge_shield)
 
 This project contains .NET classes and interfaces that are shared between the LaunchDarkly .NET and Xamarin SDKs. Code that is specific to one or the other is in [.net-client](https://github.com/launchdarkly/.net-client) or [xamarin-client](https://github.com/launchdarkly/xamarin-client).
 
@@ -50,3 +51,7 @@ About LaunchDarkly
     * [apidocs.launchdarkly.com](http://apidocs.launchdarkly.com/  "LaunchDarkly API Documentation") for our API documentation
     * [blog.launchdarkly.com](http://blog.launchdarkly.com/  "LaunchDarkly Blog Documentation") for the latest product updates
     * [Feature Flagging Guide](https://github.com/launchdarkly/featureflags/  "Feature Flagging Guide") for best practices and strategies
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Flaunchdarkly%2Fdotnet-client-common.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Flaunchdarkly%2Fdotnet-client-common?ref=badge_large)
