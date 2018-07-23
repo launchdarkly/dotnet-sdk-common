@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Version>1.0.2-beta2</Version>
+    <TargetFrameworks>netstandard1.4;netstandard1.6;netstandard2.0;net45</TargetFrameworks>
+    <PackageLicenseUrl>https://raw.githubusercontent.com/launchdarkly/dotnet-client-common/master/LICENSE</PackageLicenseUrl>
+    <DebugType>portable</DebugType>
+    <AssemblyName>LaunchDarkly.Common.StrongName</AssemblyName>
+    <OutputType>Library</OutputType>
+    <PackageId>LaunchDarkly.Common.StrongName</PackageId>
+    <Description>LaunchDarkly common code for .NET and Xamarin clients</Description>
+    <Copyright>Copyright 2018 LaunchDarkly</Copyright>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\LaunchDarkly.Common\*.cs" Exclude="..\LaunchDarkly.Common\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Common.Logging" Version="3.4.1" />
+    <PackageReference Include="LaunchDarkly.EventSource" Version="3.1.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="9.0.1" Condition="'$(TargetFramework)' != 'net45'" />
+    <PackageReference Include="Newtonsoft.Json" Version="6.0.1" Condition="'$(TargetFramework)' == 'net45'" />
+  </ItemGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
+    <Reference Include="System" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Runtime" />
+  </ItemGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>../../LaunchDarkly.Common.snk</AssemblyOriginatorKeyFile>
+    <SignAssembly>true</SignAssembly>
+    <PublicSign Condition="'$(OS)' != 'Windows_NT'">true</PublicSign>
+  </PropertyGroup>
+</Project>

@@ -3,9 +3,6 @@
   <PropertyGroup>
     <TargetFrameworks>netcoreapp1.1;netcoreapp2.0</TargetFrameworks>
     <AssemblyName>LaunchDarkly.Common.Tests</AssemblyName>
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>../../LaunchDarkly.Common.snk</AssemblyOriginatorKeyFile>
-    <PublicSign Condition="'$(OS)' != 'Windows_NT'">true</PublicSign>
   </PropertyGroup>
 
   <ItemGroup>
