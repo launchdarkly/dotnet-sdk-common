@@ -480,7 +480,7 @@ namespace LaunchDarkly.Common
             {
                 timer.Stop();
                 DefaultEventProcessor.Log.DebugFormat("Event delivery took {0} ms, response status {1}",
-                    response.StatusCode, timer.ElapsedMilliseconds);
+                    timer.ElapsedMilliseconds, response.StatusCode);
                 if (response.IsSuccessStatusCode)
                 {
                     DateTimeOffset? respDate = response.Headers.Date;
