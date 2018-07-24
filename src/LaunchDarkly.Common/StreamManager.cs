@@ -196,15 +196,7 @@ namespace LaunchDarkly.Common
                 Log.Error(Util.HttpErrorMessage(status, "streaming connection", "will retry"));
                 if (!Util.IsHttpErrorRecoverable(status))
                 {
-                    try
-                    {
-                        // if client is initializing, make it stop waiting
-                        _initTask.SetResult(true);
-                    }
-                    catch (InvalidOperationException)
-                    {
-                        // the task was already set - nothing more to do
-                    }
+                    _initTask.TrySetException(e.Exception); // sends this exception to the client if we haven't already started up
                     ((IDisposable)this).Dispose();
                 }
             }
