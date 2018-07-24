@@ -7,6 +7,7 @@ For full release notes for the projects that depend on this project, see their r
 ### Changed
 - The package `LaunchDarkly.Common` is no longer strong-named. Instead, we are now building two packages: `LaunchDarkly.Common` and `LaunchDarkly.Common.StrongName`. This is because the Xamarin project requires an unsigned version of the package, whereas the main .NET SDK uses the signed one.
 - The project now uses framework references (`Reference`) instead of package references (`PackageReference`) to refer to `System.Runtime` and `System.Net.Http`.
+- The stream processor now propagates an exception out of its initialization `Task` if it encounters an unrecoverable error.
 
 ## [1.0.1] - 2018-07-02
 
