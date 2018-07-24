@@ -127,6 +127,7 @@ namespace LaunchDarkly.Common.Tests
                 Task<bool> task = sm.Start();
                 sm.Initialized = true;
                 Assert.True(task.IsCompleted);
+                Assert.False(task.IsFaulted);
             }
         }
 
@@ -178,12 +179,14 @@ namespace LaunchDarkly.Common.Tests
             using (StreamManager sm = CreateManager())
             {
                 Task<bool> initTask = sm.Start();
-                ExceptionEventArgs e = new ExceptionEventArgs(
-                    new EventSourceServiceUnsuccessfulResponseException("", status));
-                _mockEventSource.Raise(es => es.Error += null, e);
+                Exception e = new EventSourceServiceUnsuccessfulResponseException("", status);
+                ExceptionEventArgs eea = new ExceptionEventArgs(e);
+                _mockEventSource.Raise(es => es.Error += null, eea);
 
                 _mockEventSource.Verify(es => es.Close());
                 Assert.True(initTask.IsCompleted);
+                Assert.True(initTask.IsFaulted);
+                Assert.Equal(e, initTask.Exception.InnerException);
                 Assert.False(sm.Initialized);
             }
         }
