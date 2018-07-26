@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Version>1.0.1</Version>
+    <Version>1.0.2</Version>
     <TargetFrameworks>netstandard1.4;netstandard1.6;netstandard2.0;net45</TargetFrameworks>
     <PackageLicenseUrl>https://raw.githubusercontent.com/launchdarkly/dotnet-client-common/master/LICENSE</PackageLicenseUrl>
     <DebugType>portable</DebugType>
@@ -19,16 +19,9 @@
   <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
     <Reference Include="System" />
     <Reference Include="Microsoft.CSharp" />
-    <PackageReference Include="System.Runtime" Version="4.3.0" />
-    <PackageReference Include="System.Net.Http" Version="4.3.2" />
+    <Reference Include="System.Runtime" />
+    <Reference Include="System.Net.Http" />
   </ItemGroup>
-
-  <PropertyGroup>
-    <AssemblyOriginatorKeyFile>../../LaunchDarkly.Common.snk</AssemblyOriginatorKeyFile>
-    <SignAssembly>true</SignAssembly>
-    <PublicSign Condition="'$(OS)' != 'Windows_NT'">true</PublicSign>
-  </PropertyGroup>
-
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard1.4|AnyCPU'">
     <DocumentationFile>bin\Debug\netstandard1.4\LaunchDarkly.Common.xml</DocumentationFile>
   </PropertyGroup>
