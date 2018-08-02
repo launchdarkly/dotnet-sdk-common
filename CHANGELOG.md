@@ -2,6 +2,11 @@
 
 For full release notes for the projects that depend on this project, see their respective changelogs. This file describes changes only to the common code. This project adheres to [Semantic Versioning](http://semver.org).
 
+## [1.0.4] - 2018-08-02
+
+### Changed
+- Updated the dependency on `LaunchDarkly.EventSource`, which no longer has package references to System assemblies.
+
 ## [1.0.3] - 2018-07-27
 
 ### Changed
