@@ -2,6 +2,11 @@
 
 For full release notes for the projects that depend on this project, see their respective changelogs. This file describes changes only to the common code. This project adheres to [Semantic Versioning](http://semver.org).
 
+## [1.0.5] - 2018-08-14
+
+### Fixed
+- The reconnection attempt counter is no longer shared among all StreamManager instances. Previously, if you connected to more than one stream, all but the first would behave as if they were reconnecting and would have a backoff delay.
+
 ## [1.0.4] - 2018-08-02
 
 ### Changed
