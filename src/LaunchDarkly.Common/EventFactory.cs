@@ -25,7 +25,7 @@ namespace LaunchDarkly.Common
         {
             return new FeatureRequestEvent(GetTimestamp(), flag.Key, user, null, defaultVal, defaultVal,
                 flag.Version, null, flag.TrackEvents, flag.DebugEventsUntilDate, false,
-                IncludeReasons ? EvaluationReason.Error(errorKind) : null);
+                IncludeReasons ? new EvaluationReason.Error(errorKind) : null);
         }
 
         internal FeatureRequestEvent NewUnknownFeatureRequestEvent(string key, User user,
@@ -33,7 +33,7 @@ namespace LaunchDarkly.Common
         {
             return new FeatureRequestEvent(GetTimestamp(), key, user, null, defaultVal, defaultVal,
                 null, null, false, null, false,
-                IncludeReasons ? EvaluationReason.Error(errorKind) : null);
+                IncludeReasons ? new EvaluationReason.Error(errorKind) : null);
         }
 
         internal FeatureRequestEvent NewPrerequisiteFeatureRequestEvent(IFlagEventProperties prereqFlag, User user,

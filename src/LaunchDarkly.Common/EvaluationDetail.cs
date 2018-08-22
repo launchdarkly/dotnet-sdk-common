@@ -1,7 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Linq;
 
 namespace LaunchDarkly.Client
 {
@@ -48,96 +50,228 @@ namespace LaunchDarkly.Client
     }
 
     /// <summary>
-    /// Describes the reason that a flag evaluation produced a particular value.
+    /// Describes the reason that a flag evaluation produced a particular value. Subclasses of
+    /// EvaluationReason describe specific reasons.
     /// </summary>
-    public class EvaluationReason
+    [JsonConverter(typeof(EvaluationReasonConverter))]
+    public abstract class EvaluationReason
     {
+        private readonly EvaluationReasonKind _kind;
+
         /// <summary>
         /// An enum indicating the general category of the reason.
         /// </summary>
         [JsonProperty(PropertyName = "kind")]
-        public EvaluationReasonKind Kind { get; internal set; }
+        public EvaluationReasonKind Kind => _kind;
 
-        /// <summary>
-        /// If <c>Kind</c> is <c>ERROR</c>, this is an enum indicating the nature of the error.
-        /// It is null otherwise.
-        /// </summary>
-        [JsonProperty(PropertyName = "errorKind", NullValueHandling = NullValueHandling.Ignore)]
-        public EvaluationErrorKind? ErrorKind { get; internal set; }
-
-        /// <summary>
-        /// If <c>Kind</c> is <c>RULE_MATCH</c>, this is the positional index of the matched rule
-        /// (0 for the first). It is null otherwise.
-        /// </summary>
-        [JsonProperty(PropertyName = "ruleIndex", NullValueHandling = NullValueHandling.Ignore)]
-        public int? RuleIndex { get; internal set; }
-
-        /// <summary>
-        /// If <c>Kind</c> is <c>RULE_MATCH</c>, this is the unique identifier of the matched rule.
-        /// It is null otherwise.
-        /// </summary>
-        [JsonProperty(PropertyName = "ruleId", NullValueHandling = NullValueHandling.Ignore)]
-        public string RuleId { get; internal set; }
-
-        /// <summary>
-        /// If <c>Kind</c> is <c>PREREQUISITES_FAILED</c>, this is a list of the keys of the failed
-        /// prerequisite flags. It is null otherwise.
-        /// </summary>
-        [JsonProperty(PropertyName = "prerequisiteKeys", NullValueHandling = NullValueHandling.Ignore)]
-        public IList<string> PrerequisiteKeys { get; internal set; }
-
-        /// <summary>
-        /// Convenience method for constructing an error reason.
-        /// </summary>
-        /// <param name="kind">the type of error</param>
-        /// <returns>an EvaluationReason</returns>
-        public static EvaluationReason Error(EvaluationErrorKind kind)
+        internal EvaluationReason(EvaluationReasonKind kind)
         {
-            return new EvaluationReason
-            {
-                Kind = EvaluationReasonKind.ERROR,
-                ErrorKind = kind
-            };
+            _kind = kind;
         }
 
         /// <see cref="object.ToString()"/>
         public override string ToString()
         {
-            switch (Kind)
+            return Kind.ToString();
+        }
+
+        /// <summary>
+        /// Indicates that the flag was off and therefore returned its configured off value.
+        /// </summary>
+        public class Off : EvaluationReason
+        {
+            private static readonly Off _instance = new Off();
+
+            /// <summary>
+            /// The singleton instance of Off.
+            /// </summary>
+            public static Off Instance => _instance;
+
+            private Off() : base(EvaluationReasonKind.OFF) { }
+        }
+
+        /// <summary>
+        /// Indicates that the flag was on but the user did not match any targets or rules.
+        /// </summary>
+        public class Fallthrough : EvaluationReason
+        {
+            private static readonly Fallthrough _instance = new Fallthrough();
+
+            /// <summary>
+            /// The singleton instance of Fallthrough.
+            /// </summary>
+            public static Fallthrough Instance => _instance;
+
+            private Fallthrough() : base(EvaluationReasonKind.FALLTHROUGH) { }
+        }
+
+        /// <summary>
+        /// Indicates that the user key was specifically targeted for this flag.
+        /// </summary>
+        public class TargetMatch : EvaluationReason
+        {
+            private static readonly TargetMatch _instance = new TargetMatch();
+
+            /// <summary>
+            /// The singleton instance of TargetMatch.
+            /// </summary>
+            public static TargetMatch Instance => _instance;
+
+            private TargetMatch() : base(EvaluationReasonKind.TARGET_MATCH) { }
+        }
+
+        /// <summary>
+        /// Indicates that the flag was considered off because it had at least one prerequisite flag
+        /// that either was off or did not return the desired variation.
+        /// </summary>
+        public class RuleMatch : EvaluationReason
+        {
+            private readonly int _ruleIndex;
+            private readonly string _ruleId;
+
+            /// <summary>
+            /// The index of the rule that was matched (0 for the first).
+            /// </summary>
+            [JsonProperty(PropertyName = "ruleIndex")]
+            public int RuleIndex => _ruleIndex;
+
+            /// <summary>
+            /// The unique identifier of the rule that was matched.
+            /// </summary>
+            [JsonProperty(PropertyName = "ruleId")]
+            public string RuleId => _ruleId;
+
+            /// <summary>
+            /// Constructs a new RuleMatch instance.
+            /// </summary>
+            /// <param name="index">the rule index</param>
+            /// <param name="id">the rule ID</param>
+            [JsonConstructor]
+            public RuleMatch(int index, string id) : base(EvaluationReasonKind.RULE_MATCH)
             {
-                case EvaluationReasonKind.RULE_MATCH:
-                    return Kind + "(" + RuleIndex + "," + RuleId + ")";
-                case EvaluationReasonKind.PREREQUISITES_FAILED:
-                    return Kind + "(" + ((PrerequisiteKeys == null) ? "" : string.Join(",", PrerequisiteKeys)) + ")";
-                case EvaluationReasonKind.ERROR:
-                    return Kind + "(" + ErrorKind + ")";
-                default:
-                    return Kind.ToString();
+                _ruleIndex = index;
+                _ruleId = id;
+            }
+
+            /// <see cref="object.Equals(object)"/>
+            public override bool Equals(object obj)
+            {
+                if (obj is RuleMatch o)
+                {
+                    return _ruleIndex == o._ruleIndex && _ruleId == o._ruleId;
+                }
+                return false;
+            }
+
+            /// <see cref="object.GetHashCode()"/>
+            public override int GetHashCode()
+            {
+                return RuleIndex * 17 + RuleId.GetHashCode();
+            }
+
+            /// <see cref="object.ToString()"/>
+            public override string ToString()
+            {
+                return Kind + "(" + RuleIndex + "," + RuleId + ")";
             }
         }
 
-        /// <see cref="object.Equals(object)"/>
-        public override bool Equals(object obj)
+        /// <summary>
+        /// Indicates that the flag was considered off because it had at least one prerequisite flag
+        /// that either was off or did not return the desired variation.
+        /// </summary>
+        public class PrerequisitesFailed : EvaluationReason
         {
-            if (obj is EvaluationReason o)
+            private readonly List<string> _prerequisiteKeys;
+
+            /// <summary>
+            /// The key(s) of the prerequisite flag(s) that failed.
+            /// </summary>
+            [JsonProperty(PropertyName = "prerequisiteKeys")]
+            public List<string> PrerequisiteKeys => _prerequisiteKeys;
+
+            /// <summary>
+            /// Constructs a new PrerequisitesFailed instance.
+            /// </summary>
+            /// <param name="keys">the keys of the failed prerequisites</param>
+            [JsonConstructor]
+            public PrerequisitesFailed(List<string> keys) : base(EvaluationReasonKind.PREREQUISITES_FAILED)
             {
-                return Kind == o.Kind &&
-                    ErrorKind == o.ErrorKind &&
-                    RuleIndex == o.RuleIndex &&
-                    RuleId == o.RuleId &&
-                    (PrerequisiteKeys == null) ? (o.PrerequisiteKeys == null) : PrerequisiteKeys.SequenceEqual(o.PrerequisiteKeys);
+                _prerequisiteKeys = keys;
             }
-            return false;
+
+            /// <see cref="object.Equals(object)"/>
+            public override bool Equals(object obj)
+            {
+                if (obj is PrerequisitesFailed o)
+                {
+                    return PrerequisiteKeys.SequenceEqual(o.PrerequisiteKeys);
+                }
+                return false;
+            }
+
+            /// <see cref="object.GetHashCode()"/>
+            public override int GetHashCode()
+            {
+                int hash = 0;
+                foreach (var key in PrerequisiteKeys)
+                {
+                    hash = hash * 17 + key.GetHashCode();
+                }
+                return hash;
+            }
+
+            /// <see cref="object.ToString()"/>
+            public override string ToString()
+            {
+                return Kind + "(" + string.Join(",", PrerequisiteKeys) + ")";
+            }
         }
 
-        /// <see cref="object.GetHashCode()"/>
-        public override int GetHashCode()
+        /// <summary>
+        /// Indicates that the flag could not be evaluated, e.g. because it does not exist or due to an unexpected
+        /// error. In this case the result value will be the default value that the caller passed to the client.
+        /// </summary>
+        public class Error : EvaluationReason
         {
-            return (((Kind.GetHashCode() * 17 +
-                ErrorKind.GetHashCode()) * 17 +
-                RuleIndex.GetHashCode()) * 17 +
-                (RuleId == null ? 0 : RuleId.GetHashCode())) * 17 +
-                (PrerequisiteKeys == null ? 0 : PrerequisiteKeys.GetHashCode());
+            private readonly EvaluationErrorKind _errorKind;
+
+            /// <summary>
+            /// Describes the type of error.
+            /// </summary>
+            [JsonProperty(PropertyName = "errorKind")]
+            public EvaluationErrorKind ErrorKind => _errorKind;
+
+            /// <summary>
+            /// Constructs a new Error instance.
+            /// </summary>
+            /// <param name="errorKind">the type of error</param>
+            public Error(EvaluationErrorKind errorKind) : base(EvaluationReasonKind.ERROR)
+            {
+                _errorKind = errorKind;
+            }
+
+            /// <see cref="object.Equals(object)"/>
+            public override bool Equals(object obj)
+            {
+                if (obj is Error o)
+                {
+                    return ErrorKind == o.ErrorKind;
+                }
+                return false;
+            }
+
+            /// <see cref="object.GetHashCode()"/>
+            public override int GetHashCode()
+            {
+                return ErrorKind.GetHashCode();
+            }
+
+            /// <see cref="object.ToString()"/>
+            public override string ToString()
+            {
+                return Kind + "(" + ErrorKind + ")";
+            }
         }
     }
 
@@ -156,6 +290,10 @@ namespace LaunchDarkly.Client
         /// </summary>
         OFF,
         /// <summary>
+        /// Indicates that the flag was on but the user did not match any targets or rules.
+        /// </summary>
+        FALLTHROUGH,
+        /// <summary>
         /// Indicates that the user key was specifically targeted for this flag.
         /// </summary>
         TARGET_MATCH,
@@ -169,10 +307,6 @@ namespace LaunchDarkly.Client
         /// </summary>
         PREREQUISITES_FAILED,
         /// <summary>
-        /// Indicates that the flag was on but the user did not match any targets or rules.
-        /// </summary>
-        FALLTHROUGH,
-        /// <summary>
         /// Indicates that the flag could not be evaluated, e.g. because it does not exist or due to an unexpected
         /// error. In this case the result value will be the default value that the caller passed to the client.
         /// </summary>
@@ -180,7 +314,7 @@ namespace LaunchDarkly.Client
     }
 
     /// <summary>
-    /// Enumerated type defining the possible values of <see cref="EvaluationReason.ErrorKind"/>.
+    /// Enumerated type defining the possible values of <see cref="EvaluationReason.Error.ErrorKind"/>.
     /// </summary>
     [JsonConverter(typeof(StringEnumConverter))]
     public enum EvaluationErrorKind
@@ -215,5 +349,51 @@ namespace LaunchDarkly.Client
         /// Indicates that an unexpected exception stopped flag evaluation; check the log for details.
         /// </summary>
         EXCEPTION
+    }
+
+    // Note that while the default serialization will work fine for the reason classes, we also need
+    // to be able to deserialize from JSON. This is because the Xamarin client may receive JSONified
+    // reason objects from LaunchDarkly.
+    internal class EvaluationReasonConverter : JsonConverter
+    {
+        public override bool CanWrite => false;
+
+        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        {
+            JObject o = serializer.Deserialize<JObject>(reader);
+            EvaluationReasonKind kind = o.GetValue("kind").ToObject<EvaluationReasonKind>();
+            switch (kind)
+            {
+                case EvaluationReasonKind.OFF:
+                    return EvaluationReason.Off.Instance;
+                case EvaluationReasonKind.FALLTHROUGH:
+                    return EvaluationReason.Fallthrough.Instance;
+                case EvaluationReasonKind.TARGET_MATCH:
+                    return EvaluationReason.TargetMatch.Instance;
+                case EvaluationReasonKind.RULE_MATCH:
+                    var index = (int)o.GetValue("ruleIndex");
+                    var id = (string)o.GetValue("ruleId");
+                    return new EvaluationReason.RuleMatch(index, id);
+                case EvaluationReasonKind.PREREQUISITES_FAILED:
+                    var keys = o.GetValue("prerequisiteKeys").ToObject<List<string>>();
+                    return new EvaluationReason.PrerequisitesFailed(keys);
+                case EvaluationReasonKind.ERROR:
+                    var errorKind = o.GetValue("errorKind").ToObject<EvaluationErrorKind>();
+                    return new EvaluationReason.Error(errorKind);
+            }
+            throw new ArgumentException();
+        }
+
+        public override bool CanConvert(Type objectType)
+        {
+            return true;
+            // It would be more correct to check typeof(EvaluationReason).IsAssignableFrom(objectType),
+            // but you can't do that in .NET Standard 1.6. We won't be called for other types anyway.
+        }
     }
 }

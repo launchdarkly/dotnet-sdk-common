@@ -13,23 +13,27 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void TestSerializeOffReason()
         {
-            EvaluationReason reason = new EvaluationReason
-            {
-                Kind = EvaluationReasonKind.OFF
-            };
+            EvaluationReason reason = EvaluationReason.Off.Instance;
             var json = @"{""kind"":""OFF""}";
             AssertJsonEqual(json, JsonConvert.SerializeObject(reason));
             Assert.Equal(reason, JsonConvert.DeserializeObject<EvaluationReason>(json));
             Assert.Equal("OFF", reason.ToString());
         }
-        
+
+        [Fact]
+        public void TestSerializeFallthroughReason()
+        {
+            EvaluationReason reason = EvaluationReason.Fallthrough.Instance;
+            var json = @"{""kind"":""FALLTHROUGH""}";
+            AssertJsonEqual(json, JsonConvert.SerializeObject(reason));
+            Assert.Equal(reason, JsonConvert.DeserializeObject<EvaluationReason>(json));
+            Assert.Equal("FALLTHROUGH", reason.ToString());
+        }
+
         [Fact]
         public void TestSerializeTargetMatchReason()
         {
-            EvaluationReason reason = new EvaluationReason
-            {
-                Kind = EvaluationReasonKind.TARGET_MATCH
-            };
+            EvaluationReason reason = EvaluationReason.TargetMatch.Instance;
             var json = @"{""kind"":""TARGET_MATCH""}";
             AssertJsonEqual(json, JsonConvert.SerializeObject(reason));
             Assert.Equal(reason, JsonConvert.DeserializeObject<EvaluationReason>(json));
@@ -39,12 +43,7 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void TestSerializeRuleMatchReason()
         {
-            EvaluationReason reason = new EvaluationReason
-            {
-                Kind = EvaluationReasonKind.RULE_MATCH,
-                RuleIndex = 1,
-                RuleId = "id"
-            };
+            EvaluationReason reason = new EvaluationReason.RuleMatch(1, "id");
             var json = @"{""kind"":""RULE_MATCH"",""ruleIndex"":1,""ruleId"":""id""}";
             AssertJsonEqual(json, JsonConvert.SerializeObject(reason));
             Assert.Equal(reason, JsonConvert.DeserializeObject<EvaluationReason>(json));
@@ -54,11 +53,8 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void TestSerializePrerequisitesFailedReason()
         {
-            EvaluationReason reason = new EvaluationReason
-            {
-                Kind = EvaluationReasonKind.PREREQUISITES_FAILED,
-                PrerequisiteKeys = new List<string> { "key1", "key2" }
-            };
+            var keys = new List<string> { "key1", "key2" };
+            EvaluationReason reason = new EvaluationReason.PrerequisitesFailed(keys);
             var json = @"{""kind"":""PREREQUISITES_FAILED"",""prerequisiteKeys"":[""key1"",""key2""]}";
             AssertJsonEqual(json, JsonConvert.SerializeObject(reason));
             Assert.Equal(reason, JsonConvert.DeserializeObject<EvaluationReason>(json));
@@ -66,26 +62,9 @@ namespace LaunchDarkly.Common.Tests
         }
 
         [Fact]
-        public void TestSerializeFallthroughReason()
-        {
-            EvaluationReason reason = new EvaluationReason
-            {
-                Kind = EvaluationReasonKind.FALLTHROUGH
-            };
-            var json = @"{""kind"":""FALLTHROUGH""}";
-            AssertJsonEqual(json, JsonConvert.SerializeObject(reason));
-            Assert.Equal(reason, JsonConvert.DeserializeObject<EvaluationReason>(json));
-            Assert.Equal("FALLTHROUGH", reason.ToString());
-        }
-
-        [Fact]
         public void TestSerializeErrorReason()
         {
-            EvaluationReason reason = new EvaluationReason
-            {
-                Kind = EvaluationReasonKind.ERROR,
-                ErrorKind = EvaluationErrorKind.EXCEPTION
-            };
+            EvaluationReason reason = new EvaluationReason.Error(EvaluationErrorKind.EXCEPTION);
             var json = @"{""kind"":""ERROR"",""errorKind"":""EXCEPTION""}";
             AssertJsonEqual(json, JsonConvert.SerializeObject(reason));
             Assert.Equal(reason, JsonConvert.DeserializeObject<EvaluationReason>(json));
