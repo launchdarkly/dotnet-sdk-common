@@ -47,6 +47,25 @@ namespace LaunchDarkly.Client
             _variationIndex = variationIndex;
             _reason = reason;
         }
+
+        /// <see cref="object.Equals(object)"/>
+        public override bool Equals(object obj)
+        {
+            if (obj is EvaluationDetail<T> o)
+            {
+                return (Value == null ? o.Value == null : Value.Equals(o.Value))
+                    && VariationIndex == o.VariationIndex && Reason.Equals(o.Reason);
+            }
+            return false;
+        }
+
+        /// <see cref="object.GetHashCode()"/>
+        public override int GetHashCode()
+        {
+            return ((Value == null ? 0 : Value.GetHashCode()) * 17 +
+                VariationIndex.GetHashCode()) * 17 +
+                (Reason == null ? 0 : Reason.GetHashCode());
+        }
     }
 
     /// <summary>
