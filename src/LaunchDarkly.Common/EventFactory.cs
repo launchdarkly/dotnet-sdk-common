@@ -7,41 +7,47 @@ namespace LaunchDarkly.Common
     internal abstract class EventFactory
     {
         internal static EventFactory Default { get; } = new DefaultEventFactory();
+        internal static EventFactory DefaultWithReasons { get; } = new DefaultEventFactoryWithReasons();
 
         internal abstract long GetTimestamp();
+        internal abstract bool IncludeReasons { get; }
 
         internal FeatureRequestEvent NewFeatureRequestEvent(IFlagEventProperties flag, User user,
-            int? variation, JToken value, JToken defaultVal)
+            EvaluationDetail<JToken> result, JToken defaultVal)
         {
-            return new FeatureRequestEvent(GetTimestamp(), flag.Key, user, variation, value, defaultVal,
-                flag.Version, null, flag.TrackEvents, flag.DebugEventsUntilDate, false);
+            return new FeatureRequestEvent(GetTimestamp(), flag.Key, user, result.VariationIndex, result.Value, defaultVal,
+                flag.Version, null, flag.TrackEvents, flag.DebugEventsUntilDate, false,
+                IncludeReasons ? result.Reason : null);
         }
 
         internal FeatureRequestEvent NewDefaultFeatureRequestEvent(IFlagEventProperties flag, User user,
-            JToken defaultVal)
+            JToken defaultVal, EvaluationErrorKind errorKind)
         {
             return new FeatureRequestEvent(GetTimestamp(), flag.Key, user, null, defaultVal, defaultVal,
-                flag.Version, null, flag.TrackEvents, flag.DebugEventsUntilDate, false);
+                flag.Version, null, flag.TrackEvents, flag.DebugEventsUntilDate, false,
+                IncludeReasons ? EvaluationReason.Error(errorKind) : null);
         }
 
         internal FeatureRequestEvent NewUnknownFeatureRequestEvent(string key, User user,
-            JToken defaultVal)
+            JToken defaultVal, EvaluationErrorKind errorKind)
         {
             return new FeatureRequestEvent(GetTimestamp(), key, user, null, defaultVal, defaultVal,
-                null, null, false, null, false);
+                null, null, false, null, false,
+                IncludeReasons ? EvaluationReason.Error(errorKind) : null);
         }
 
         internal FeatureRequestEvent NewPrerequisiteFeatureRequestEvent(IFlagEventProperties prereqFlag, User user,
-            int? variation, JToken value, IFlagEventProperties prereqOf)
+            EvaluationDetail<JToken> result, IFlagEventProperties prereqOf)
         {
-            return new FeatureRequestEvent(GetTimestamp(), prereqFlag.Key, user, variation, value, null,
-                prereqFlag.Version, prereqOf.Key, prereqFlag.TrackEvents, prereqFlag.DebugEventsUntilDate, false);
+            return new FeatureRequestEvent(GetTimestamp(), prereqFlag.Key, user, result.VariationIndex, result.Value, null,
+                prereqFlag.Version, prereqOf.Key, prereqFlag.TrackEvents, prereqFlag.DebugEventsUntilDate, false,
+                IncludeReasons ? result.Reason : null);
         }
 
         internal FeatureRequestEvent NewDebugEvent(FeatureRequestEvent from)
         {
             return new FeatureRequestEvent(from.CreationDate, from.Key, from.User, from.Variation, from.Value, from.Default,
-                from.Version, from.PrereqOf, from.TrackEvents, from.DebugEventsUntilDate, true);
+                from.Version, from.PrereqOf, from.TrackEvents, from.DebugEventsUntilDate, true, from.Reason);
         }
 
         internal CustomEvent NewCustomEvent(string key, User user, JToken data)
@@ -61,5 +67,12 @@ namespace LaunchDarkly.Common
         {
             return Util.GetUnixTimestampMillis(DateTime.UtcNow);
         }
+
+        override internal bool IncludeReasons => false;
+    }
+
+    internal class DefaultEventFactoryWithReasons : DefaultEventFactory
+    {
+        override internal bool IncludeReasons => true;
     }
 }
