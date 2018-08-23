@@ -51,14 +51,13 @@ namespace LaunchDarkly.Common.Tests
         }
 
         [Fact]
-        public void TestSerializePrerequisitesFailedReason()
+        public void TestSerializePrerequisiteFailedReason()
         {
-            var keys = new List<string> { "key1", "key2" };
-            EvaluationReason reason = new EvaluationReason.PrerequisitesFailed(keys);
-            var json = @"{""kind"":""PREREQUISITES_FAILED"",""prerequisiteKeys"":[""key1"",""key2""]}";
+            EvaluationReason reason = new EvaluationReason.PrerequisiteFailed("key");
+            var json = @"{""kind"":""PREREQUISITE_FAILED"",""prerequisiteKey"":""key""}";
             AssertJsonEqual(json, JsonConvert.SerializeObject(reason));
             Assert.Equal(reason, JsonConvert.DeserializeObject<EvaluationReason>(json));
-            Assert.Equal("PREREQUISITES_FAILED(key1,key2)", reason.ToString());
+            Assert.Equal("PREREQUISITE_FAILED(key)", reason.ToString());
         }
 
         [Fact]

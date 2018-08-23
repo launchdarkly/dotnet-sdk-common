@@ -199,32 +199,32 @@ namespace LaunchDarkly.Client
         /// Indicates that the flag was considered off because it had at least one prerequisite flag
         /// that either was off or did not return the desired variation.
         /// </summary>
-        public class PrerequisitesFailed : EvaluationReason
+        public class PrerequisiteFailed : EvaluationReason
         {
-            private readonly List<string> _prerequisiteKeys;
+            private readonly string _prerequisiteKey;
 
             /// <summary>
-            /// The key(s) of the prerequisite flag(s) that failed.
+            /// The key of the prerequisite flag that failed.
             /// </summary>
-            [JsonProperty(PropertyName = "prerequisiteKeys")]
-            public List<string> PrerequisiteKeys => _prerequisiteKeys;
+            [JsonProperty(PropertyName = "prerequisiteKey")]
+            public string PrerequisiteKey => _prerequisiteKey;
 
             /// <summary>
             /// Constructs a new PrerequisitesFailed instance.
             /// </summary>
-            /// <param name="keys">the keys of the failed prerequisites</param>
+            /// <param name="key">the key of the failed prerequisite</param>
             [JsonConstructor]
-            public PrerequisitesFailed(List<string> keys) : base(EvaluationReasonKind.PREREQUISITES_FAILED)
+            public PrerequisiteFailed(string key) : base(EvaluationReasonKind.PREREQUISITE_FAILED)
             {
-                _prerequisiteKeys = keys;
+                _prerequisiteKey = key;
             }
 
             /// <see cref="object.Equals(object)"/>
             public override bool Equals(object obj)
             {
-                if (obj is PrerequisitesFailed o)
+                if (obj is PrerequisiteFailed o)
                 {
-                    return PrerequisiteKeys.SequenceEqual(o.PrerequisiteKeys);
+                    return PrerequisiteKey == o.PrerequisiteKey;
                 }
                 return false;
             }
@@ -232,18 +232,13 @@ namespace LaunchDarkly.Client
             /// <see cref="object.GetHashCode()"/>
             public override int GetHashCode()
             {
-                int hash = 0;
-                foreach (var key in PrerequisiteKeys)
-                {
-                    hash = hash * 17 + key.GetHashCode();
-                }
-                return hash;
+                return PrerequisiteKey.GetHashCode();
             }
 
             /// <see cref="object.ToString()"/>
             public override string ToString()
             {
-                return Kind + "(" + string.Join(",", PrerequisiteKeys) + ")";
+                return Kind + "(" + PrerequisiteKey + ")";
             }
         }
 
@@ -324,7 +319,7 @@ namespace LaunchDarkly.Client
         /// Indicates that the flag was considered off because it had at least one prerequisite flag
         /// that either was off or did not return the desired variation.
         /// </summary>
-        PREREQUISITES_FAILED,
+        PREREQUISITE_FAILED,
         /// <summary>
         /// Indicates that the flag could not be evaluated, e.g. because it does not exist or due to an unexpected
         /// error. In this case the result value will be the default value that the caller passed to the client.
@@ -398,9 +393,9 @@ namespace LaunchDarkly.Client
                     var index = (int)o.GetValue("ruleIndex");
                     var id = (string)o.GetValue("ruleId");
                     return new EvaluationReason.RuleMatch(index, id);
-                case EvaluationReasonKind.PREREQUISITES_FAILED:
-                    var keys = o.GetValue("prerequisiteKeys").ToObject<List<string>>();
-                    return new EvaluationReason.PrerequisitesFailed(keys);
+                case EvaluationReasonKind.PREREQUISITE_FAILED:
+                    var key = (string)o.GetValue("prerequisiteKey");
+                    return new EvaluationReason.PrerequisiteFailed(key);
                 case EvaluationReasonKind.ERROR:
                     var errorKind = o.GetValue("errorKind").ToObject<EvaluationErrorKind>();
                     return new EvaluationReason.Error(errorKind);
