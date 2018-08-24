@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Xunit;
+﻿using Xunit;
 using LaunchDarkly.Client;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -10,6 +7,20 @@ namespace LaunchDarkly.Common.Tests
 {
     public class EvaluationDetailTest
     {
+        [Fact]
+        public void TestIsDefaultValueTrue()
+        {
+            var detail = new EvaluationDetail<string>("default", null, EvaluationReason.Off.Instance);
+            Assert.True(detail.IsDefaultValue);
+        }
+
+        [Fact]
+        public void TestIsDefaultValueFalse()
+        {
+            var detail = new EvaluationDetail<string>("default", 0, EvaluationReason.Off.Instance);
+            Assert.False(detail.IsDefaultValue);
+        }
+
         [Fact]
         public void TestSerializeOffReason()
         {
