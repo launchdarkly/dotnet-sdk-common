@@ -35,6 +35,8 @@ namespace LaunchDarkly.Common
         internal JToken Default { get; set; }
         [JsonProperty(PropertyName = "prereqOf", NullValueHandling = NullValueHandling.Ignore)]
         internal string PrereqOf { get; set; }
+        [JsonProperty(PropertyName = "reason", NullValueHandling = NullValueHandling.Ignore)]
+        internal EvaluationReason Reason { get; set; }
     }
 
     internal sealed class IdentifyEventOutput : EventOutput
@@ -175,7 +177,8 @@ namespace LaunchDarkly.Common
                         Variation = fe.Variation,
                         Value = fe.Value,
                         Default = fe.Default,
-                        PrereqOf = fe.PrereqOf
+                        PrereqOf = fe.PrereqOf,
+                        Reason = fe.Reason
                     };
                 case IdentifyEvent ie:
                     return new IdentifyEventOutput
