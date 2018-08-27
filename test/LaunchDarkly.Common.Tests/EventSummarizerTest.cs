@@ -40,11 +40,11 @@ namespace LaunchDarkly.Common.Tests
             EventSummarizer es = new EventSummarizer();
             IFlagEventProperties flag = new FlagEventPropertiesBuilder("key").Build();
             _eventFactory.Timestamp = 2000;
-            Event event1 = _eventFactory.NewFeatureRequestEvent(flag, _user, null, null, null);
+            Event event1 = _eventFactory.NewFeatureRequestEvent(flag, _user, new EvaluationDetail<JToken>(null, null, null), null);
             _eventFactory.Timestamp = 1000;
-            Event event2 = _eventFactory.NewFeatureRequestEvent(flag, _user, null, null, null);
+            Event event2 = _eventFactory.NewFeatureRequestEvent(flag, _user, new EvaluationDetail<JToken>(null, null, null), null);
             _eventFactory.Timestamp = 1500;
-            Event event3 = _eventFactory.NewFeatureRequestEvent(flag, _user, null, null, null);
+            Event event3 = _eventFactory.NewFeatureRequestEvent(flag, _user, new EvaluationDetail<JToken>(null, null, null), null);
             es.SummarizeEvent(event1);
             es.SummarizeEvent(event2);
             es.SummarizeEvent(event3);
@@ -65,14 +65,14 @@ namespace LaunchDarkly.Common.Tests
             JToken default2 = new JValue("default2");
             JToken default3 = new JValue("default3");
             Event event1 = _eventFactory.NewFeatureRequestEvent(flag1, _user,
-                1, new JValue("value1"), default1);
+                new EvaluationDetail<JToken>(new JValue("value1"), 1, null), default1);
             Event event2 = _eventFactory.NewFeatureRequestEvent(flag1, _user,
-                2, new JValue("value2"), default1);
+                new EvaluationDetail<JToken>(new JValue("value2"), 2, null), default1);
             Event event3 = _eventFactory.NewFeatureRequestEvent(flag2, _user,
-                1, new JValue("value99"), default2);
+                new EvaluationDetail<JToken>(new JValue("value99"), 1, null), default2);
             Event event4 = _eventFactory.NewFeatureRequestEvent(flag1, _user,
-                1, new JValue("value1"), default1);
-            Event event5 = _eventFactory.NewUnknownFeatureRequestEvent(unknownFlagKey, _user, default3);
+                new EvaluationDetail<JToken>(new JValue("value1"), 1, null), default1);
+            Event event5 = _eventFactory.NewUnknownFeatureRequestEvent(unknownFlagKey, _user, default3, EvaluationErrorKind.FLAG_NOT_FOUND);
             es.SummarizeEvent(event1);
             es.SummarizeEvent(event2);
             es.SummarizeEvent(event3);
@@ -100,5 +100,7 @@ namespace LaunchDarkly.Common.Tests
         {
             return Timestamp;
         }
+
+        internal override bool IncludeReasons => false;
     }
 }

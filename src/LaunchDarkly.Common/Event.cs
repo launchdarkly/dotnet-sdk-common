@@ -81,9 +81,14 @@ namespace LaunchDarkly.Client
         /// </summary>
         public bool Debug { get; private set; }
 
+        /// <summary>
+        /// An explanation of how the value was calculated, or null if the reason was not requested.
+        /// </summary>
+        public EvaluationReason Reason { get; private set; }
+
         internal FeatureRequestEvent(long creationDate, string key, User user, int? variation,
             JToken value, JToken defaultValue, int? version, string prereqOf, bool trackEvents, long? debugEventsUntilDate,
-            bool debug) : base(creationDate, key, user)
+            bool debug, EvaluationReason reason) : base(creationDate, key, user)
         {
             Variation = variation;
             Value = value;
@@ -93,6 +98,7 @@ namespace LaunchDarkly.Client
             TrackEvents = trackEvents;
             DebugEventsUntilDate = debugEventsUntilDate;
             Debug = debug;
+            Reason = reason;
         }
     }
 

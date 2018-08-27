@@ -87,7 +87,7 @@ namespace LaunchDarkly.Common.Tests
             _ep = MakeProcessor(_config);
             IFlagEventProperties flag = new FlagEventPropertiesBuilder("flagkey").Version(11).TrackEvents(true).Build();
             FeatureRequestEvent fe = EventFactory.Default.NewFeatureRequestEvent(flag, _user,
-                1, new JValue("value"), null);
+                new EvaluationDetail<JToken>(new JValue("value"), 1, null), null);
             _ep.SendEvent(fe);
 
             JArray output = FlushAndGetEvents(OkResponse());
@@ -104,7 +104,7 @@ namespace LaunchDarkly.Common.Tests
             _ep = MakeProcessor(_config);
             IFlagEventProperties flag = new FlagEventPropertiesBuilder("flagkey").Version(11).TrackEvents(true).Build();
             FeatureRequestEvent fe = EventFactory.Default.NewFeatureRequestEvent(flag, _user,
-                1, new JValue("value"), null);
+                new EvaluationDetail<JToken>(new JValue("value"), 1, null), null);
             _ep.SendEvent(fe);
 
             JArray output = FlushAndGetEvents(OkResponse());
@@ -121,7 +121,7 @@ namespace LaunchDarkly.Common.Tests
             _ep = MakeProcessor(_config);
             IFlagEventProperties flag = new FlagEventPropertiesBuilder("flagkey").Version(11).TrackEvents(true).Build();
             FeatureRequestEvent fe = EventFactory.Default.NewFeatureRequestEvent(flag, _user,
-                1, new JValue("value"), null);
+                new EvaluationDetail<JToken>(new JValue("value"), 1, null), null);
             _ep.SendEvent(fe);
 
             JArray output = FlushAndGetEvents(OkResponse());
@@ -138,7 +138,7 @@ namespace LaunchDarkly.Common.Tests
             _ep = MakeProcessor(_config);
             IFlagEventProperties flag = new FlagEventPropertiesBuilder("flagkey").Version(11).TrackEvents(true).Build();
             FeatureRequestEvent fe = EventFactory.Default.NewFeatureRequestEvent(flag, _user,
-                1, new JValue("value"), null);
+                new EvaluationDetail<JToken>(new JValue("value"), 1, null), null);
             _ep.SendEvent(fe);
 
             JArray output = FlushAndGetEvents(OkResponse());
@@ -153,7 +153,7 @@ namespace LaunchDarkly.Common.Tests
              _ep = MakeProcessor(_config);
             IFlagEventProperties flag = new FlagEventPropertiesBuilder("flagkey").Version(11).TrackEvents(true).Build();
             FeatureRequestEvent fe = EventFactory.Default.NewFeatureRequestEvent(flag, null,
-                1, new JValue("value"), null);
+                new EvaluationDetail<JToken>(new JValue("value"), 1, null), null);
             _ep.SendEvent(fe);
 
             JArray output = FlushAndGetEvents(OkResponse());
@@ -169,7 +169,7 @@ namespace LaunchDarkly.Common.Tests
             _ep = MakeProcessor(_config);
             IFlagEventProperties flag = new FlagEventPropertiesBuilder("flagkey").Version(11).TrackEvents(false).Build();
             FeatureRequestEvent fe = EventFactory.Default.NewFeatureRequestEvent(flag, _user,
-                1, new JValue("value"), null);
+                new EvaluationDetail<JToken>(new JValue("value"), 1, null), null);
             _ep.SendEvent(fe);
 
             JArray output = FlushAndGetEvents(OkResponse());
@@ -185,7 +185,7 @@ namespace LaunchDarkly.Common.Tests
             long futureTime = Util.GetUnixTimestampMillis(DateTime.Now) + 1000000;
             IFlagEventProperties flag = new FlagEventPropertiesBuilder("flagkey").Version(11).DebugEventsUntilDate(futureTime).Build();
             FeatureRequestEvent fe = EventFactory.Default.NewFeatureRequestEvent(flag, _user,
-                1, new JValue("value"), null);
+                new EvaluationDetail<JToken>(new JValue("value"), 1, null), null);
             _ep.SendEvent(fe);
 
             JArray output = FlushAndGetEvents(OkResponse());
@@ -203,7 +203,7 @@ namespace LaunchDarkly.Common.Tests
             IFlagEventProperties flag = new FlagEventPropertiesBuilder("flagkey").Version(11).TrackEvents(true)
                 .DebugEventsUntilDate(futureTime).Build();
             FeatureRequestEvent fe = EventFactory.Default.NewFeatureRequestEvent(flag, _user,
-                1, new JValue("value"), null);
+                new EvaluationDetail<JToken>(new JValue("value"), 1, null), null);
             _ep.SendEvent(fe);
 
             JArray output = FlushAndGetEvents(OkResponse());
@@ -231,7 +231,7 @@ namespace LaunchDarkly.Common.Tests
             long debugUntil = serverTime + 1000;
             IFlagEventProperties flag = new FlagEventPropertiesBuilder("flagkey").Version(11).DebugEventsUntilDate(debugUntil).Build();
             FeatureRequestEvent fe = EventFactory.Default.NewFeatureRequestEvent(flag, _user,
-                1, new JValue("value"), null);
+                new EvaluationDetail<JToken>(new JValue("value"), 1, null), null);
             _ep.SendEvent(fe);
 
             // Should get a summary event only, not a full feature event
@@ -258,7 +258,7 @@ namespace LaunchDarkly.Common.Tests
             long debugUntil = serverTime - 1000;
             IFlagEventProperties flag = new FlagEventPropertiesBuilder("flagkey").Version(11).DebugEventsUntilDate(debugUntil).Build();
             FeatureRequestEvent fe = EventFactory.Default.NewFeatureRequestEvent(flag, _user,
-                1, new JValue("value"), null);
+                new EvaluationDetail<JToken>(new JValue("value"), 1, null), null);
             _ep.SendEvent(fe);
 
             // Should get a summary event only, not a full feature event
@@ -276,9 +276,9 @@ namespace LaunchDarkly.Common.Tests
             IFlagEventProperties flag2 = new FlagEventPropertiesBuilder("flagkey2").Version(22).TrackEvents(true).Build();
             JValue value = new JValue("value");
             FeatureRequestEvent fe1 = EventFactory.Default.NewFeatureRequestEvent(flag1, _user,
-                1, value, null);
+                new EvaluationDetail<JToken>(value, 1, null), null);
             FeatureRequestEvent fe2 = EventFactory.Default.NewFeatureRequestEvent(flag2, _user,
-                1, value, null);
+                new EvaluationDetail<JToken>(value, 1, null), null);
             _ep.SendEvent(fe1);
             _ep.SendEvent(fe2);
 
@@ -300,9 +300,9 @@ namespace LaunchDarkly.Common.Tests
             JValue default1 = new JValue("default1");
             JValue default2 = new JValue("default2");
             FeatureRequestEvent fe1 = EventFactory.Default.NewFeatureRequestEvent(flag1, _user,
-                1, value, default1);
+                new EvaluationDetail<JToken>(value, 1, null), default1);
             FeatureRequestEvent fe2 = EventFactory.Default.NewFeatureRequestEvent(flag2, _user,
-                1, value, default2);
+                new EvaluationDetail<JToken>(value, 1, null), default2);
             _ep.SendEvent(fe1);
             _ep.SendEvent(fe2);
 
