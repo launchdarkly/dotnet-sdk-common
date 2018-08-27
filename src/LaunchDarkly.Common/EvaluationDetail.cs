@@ -36,6 +36,11 @@ namespace LaunchDarkly.Client
         public EvaluationReason Reason => _reason;
 
         /// <summary>
+        /// True if the flag evaluated to the default value, rather than one of its variations.
+        /// </summary>
+        public bool IsDefaultValue => _variationIndex == null;
+
+        /// <summary>
         /// Constructs a new EvaluationDetail insetance.
         /// </summary>
         /// <param name="value">the flag value</param>
