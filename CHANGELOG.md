@@ -2,6 +2,11 @@
 
 For full release notes for the projects that depend on this project, see their respective changelogs. This file describes changes only to the common code. This project adheres to [Semantic Versioning](http://semver.org).
 
+## [1.0.6] - 2018-08-30
+
+### Fixed
+- Updated LaunchDarkly.EventSource to fix a bug that prevented the client from reconnecting to the stream if it received an HTTP error status from the server (as opposed to simply losing the connection).
+
 ## [1.0.5] - 2018-08-14
 
 ### Fixed
