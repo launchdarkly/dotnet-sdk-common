@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26730.16
+VisualStudioVersion = 15.0.27130.2027
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LaunchDarkly.Common", "src\LaunchDarkly.Common\LaunchDarkly.Common.csproj", "{97897D61-FEDF-4ABD-AD53-F4A43D788225}"
 EndProject
@@ -9,7 +9,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LaunchDarkly.Common.Tests",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LaunchDarkly.Common.StrongName", "src\LaunchDarkly.Common.StrongName\LaunchDarkly.Common.StrongName.csproj", "{1A48902B-A26C-4F5E-BACF-67FF990F32B9}"
 EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "LaunchDarkly.Common.Shared", "src\LaunchDarkly.Common.Shared\LaunchDarkly.Common.Shared.shproj", "{E599139D-3FCC-469F-B2E3-7BB3F20A95AC}"
+EndProject
 Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		src\LaunchDarkly.Common.Shared\LaunchDarkly.Common.Shared.projitems*{e599139d-3fcc-469f-b2e3-7bb3f20a95ac}*SharedItemsImports = 13
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU

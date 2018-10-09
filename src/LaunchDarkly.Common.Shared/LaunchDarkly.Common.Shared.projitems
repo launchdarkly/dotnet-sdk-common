@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>e599139d-3fcc-469f-b2e3-7bb3f20a95ac</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>LaunchDarkly.Common.Shared</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)ClientEnvironment.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)DefaultEventProcessor.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EvaluationDetail.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Event.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventFactory.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventOutput.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventSummarizer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventUser.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)IBaseConfiguration.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)IEventProcessor.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)IFlagEventProperties.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ILdCommonClient.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)IStreamProcessor.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)IUserDeduplicator.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)StreamManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)StreamProperties.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)UnsuccessfulResponseException.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)User.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Util.cs" />
+  </ItemGroup>
+</Project>

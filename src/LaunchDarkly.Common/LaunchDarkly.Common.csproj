@@ -16,12 +16,10 @@
     <PackageReference Include="Newtonsoft.Json" Version="9.0.1" Condition="'$(TargetFramework)' != 'net45'" />
     <PackageReference Include="Newtonsoft.Json" Version="6.0.1" Condition="'$(TargetFramework)' == 'net45'" />
   </ItemGroup>
+  <Import Project="..\LaunchDarkly.Common.Shared\LaunchDarkly.Common.Shared.projitems" Label="Shared" />
   <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
     <Reference Include="System" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Net.Http" />
   </ItemGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard1.4|AnyCPU'">
-    <DocumentationFile>bin\Debug\netstandard1.4\LaunchDarkly.Common.xml</DocumentationFile>
-  </PropertyGroup>
 </Project>
