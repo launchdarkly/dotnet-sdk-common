@@ -2,6 +2,19 @@
 
 For full release notes for the projects that depend on this project, see their respective changelogs. This file describes changes only to the common code. This project adheres to [Semantic Versioning](http://semver.org).
 
+## [1.2.0] - 2018-10-24
+
+### Changed
+- The non-strong-named version of this library (`LaunchDarkly.Common`) can now be used with a non-strong-named version of `LaunchDarkly.Client`, which does not normally exist but could be built as part of a fork of the SDK.
+
+- Previously, the delay before stream reconnect attempts would increase exponentially only if the previous connection could not be made at all or returned an HTTP error; if it received an HTTP 200 status, the delay would be reset to the minimum even if the connection then immediately failed. Now, if the stream connection fails after it has been up for less than a minute, the reconnect delay will continue to increase. (changed in `LaunchDarkly.EventSource` 3.2.0)
+
+### Fixed
+
+- Fixed an [unobserved exception](https://blogs.msdn.microsoft.com/pfxteam/2011/09/28/task-exception-handling-in-net-4-5/) that could occur following a stream timeout, which could cause a crash in .NET 4.0. (fixed in `LaunchDarkly.EventSource` 3.2.0)
+
+- A `NullReferenceException` could sometimes be logged if a stream connection failed. (fixed in `LaunchDarkly.EventSource` 3.2.0)
+
 ## [1.1.1] - 2018-08-29
 
 Incorporates the fix from 1.0.6 that was not included in 1.1.0.
