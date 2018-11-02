@@ -6,7 +6,7 @@
     <DebugType>portable</DebugType>
     <AssemblyName>LaunchDarkly.Common</AssemblyName>
     <OutputType>Library</OutputType>
-    <PackageId>LaunchDarkly.Common</PackageId>
+    <PackageId>D2L.LaunchDarkly.Common</PackageId>
     <Description>LaunchDarkly common code for .NET and Xamarin clients</Description>
     <Copyright>Copyright 2018 LaunchDarkly</Copyright>
   </PropertyGroup>
@@ -14,7 +14,7 @@
     <PackageReference Include="Common.Logging" Version="3.4.1" />
     <PackageReference Include="LaunchDarkly.EventSource" Version="3.2.0" />
     <PackageReference Include="Newtonsoft.Json" Version="9.0.1" Condition="'$(TargetFramework)' != 'net45'" />
-    <PackageReference Include="Newtonsoft.Json" Version="6.0.1" Condition="'$(TargetFramework)' == 'net45'" />
+    <PackageReference Include="Newtonsoft.Json" Version="6.0.6" Condition="'$(TargetFramework)' == 'net45'" />
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
     <Reference Include="System" />

@@ -4,7 +4,7 @@
     <TargetFrameworks>netstandard1.4;netstandard1.6;netstandard2.0;net45</TargetFrameworks>
     <PackageLicenseUrl>https://raw.githubusercontent.com/launchdarkly/dotnet-client-common/master/LICENSE</PackageLicenseUrl>
     <DebugType>portable</DebugType>
-    <AssemblyName>LaunchDarkly.Common.StrongName</AssemblyName>
+    <AssemblyName>D2L.LaunchDarkly.Common.StrongName</AssemblyName>
     <OutputType>Library</OutputType>
     <PackageId>LaunchDarkly.Common.StrongName</PackageId>
     <Description>LaunchDarkly common code for .NET and Xamarin clients</Description>
@@ -17,7 +17,7 @@
     <PackageReference Include="Common.Logging" Version="3.4.1" />
     <PackageReference Include="LaunchDarkly.EventSource" Version="3.2.0" />
     <PackageReference Include="Newtonsoft.Json" Version="9.0.1" Condition="'$(TargetFramework)' != 'net45'" />
-    <PackageReference Include="Newtonsoft.Json" Version="6.0.1" Condition="'$(TargetFramework)' == 'net45'" />
+    <PackageReference Include="Newtonsoft.Json" Version="6.0.6" Condition="'$(TargetFramework)' == 'net45'" />
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
     <Reference Include="System" />
@@ -25,8 +25,7 @@
     <Reference Include="System.Net.Http" />
   </ItemGroup>
   <PropertyGroup>
-    <AssemblyOriginatorKeyFile>../../LaunchDarkly.Common.snk</AssemblyOriginatorKeyFile>
-    <SignAssembly>true</SignAssembly>
+    <SignAssembly>false</SignAssembly>
     <PublicSign Condition="'$(OS)' != 'Windows_NT'">true</PublicSign>
   </PropertyGroup>
 </Project>

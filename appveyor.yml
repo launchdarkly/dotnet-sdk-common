@@ -1,0 +1,22 @@
+version: 1.2.0-{build}
+
+image: Visual Studio 2017
+
+configuration: Release
+platform: Any CPU
+
+before_build:
+  - dotnet restore
+
+build_script:
+  - dotnet build src\LaunchDarkly.Common\LaunchDarkly.Common.csproj
+
+after_build:
+  - dotnet pack src\LaunchDarkly.Common\LaunchDarkly.Common.csproj
+
+test_script:
+  - dotnet test test\LaunchDarkly.Common.Tests\LaunchDarkly.Common.Tests.csproj
+
+artifacts:
+  - path: 'src\LaunchDarkly.Common\bin\**\*.nupkg'
+    name: Nuget
