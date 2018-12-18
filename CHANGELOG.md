@@ -2,6 +2,15 @@
 
 For full release notes for the projects that depend on this project, see their respective changelogs. This file describes changes only to the common code. This project adheres to [Semantic Versioning](http://semver.org).
 
+## [1.2.1] - 2018-12-17
+
+### Changed
+The only changes in this version are to the build:
+
+- What is published to NuGet is now the Release configuration, without debug information.
+- The Debug configuration (the default) no longer performs strong-name signing. This makes local development easier.
+- `LaunchDarkly.Common` now has an `InternalsVisibleTo` directive for an _unsigned_ version of the `LaunchDarkly.Client` unit tests. Again this is to support local development, since the client will be unsigned by default as well.
+
 ## [1.2.0] - 2018-10-24
 
 ### Changed
