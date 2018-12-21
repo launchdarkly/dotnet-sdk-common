@@ -40,8 +40,8 @@ $env:Path += ";C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Bin"
 
 Exec { dotnet clean }
 
-#Exec { dotnet build -c Debug }
-#Exec { dotnet test -c Debug test\$testProject }
+Exec { dotnet build -c Debug }
+Exec { dotnet test -c Debug test\$testProject }
 
 Exec { dotnet build -c Release }
 
