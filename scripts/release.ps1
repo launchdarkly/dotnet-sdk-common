@@ -13,6 +13,8 @@ $testProject = "LaunchDarkly.Common.Tests"
 # 1. you have set the correct project version in both LaunchDarkly.Common.csproj and
 #    LaunchDarkly.Common.StrongName.csproj
 # 2. you have downloaded the key file, LaunchDarkly.Common.snk, in the project root directory
+# 3. you have downloaded the certificate, catamorphic_code_signing_certificate.p12, in the
+#    project root directory
 #
 
 # This helper function comes from https://github.com/psake/psake - it allows us to terminate the
@@ -43,9 +45,8 @@ Exec { dotnet clean }
 Exec { dotnet build -c Debug }
 Exec { dotnet test -c Debug test\$testProject }
 
-Exec { dotnet build -c Release }
-
 foreach ($assemblyName in $assemblyNames) {
+    Exec { dotnet build -c Release "src\$assemblyName" }
     $dlls = dir -Path "src\$assemblyName\bin\Release" -Filter "$assemblyName.dll" -Recurse | %{$_.FullName}
     Exec { signtool sign /f $certFile /p $password $dlls }
 
