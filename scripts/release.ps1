@@ -10,11 +10,14 @@ $testProject = "LaunchDarkly.Common.Tests"
 # configuration (after first building and testing in Debug configuration to make sure it works).
 #
 # Before you run this script, make sure:
-# 1. you have set the correct project version in both LaunchDarkly.Common.csproj and
+# 1. you have the Visual Studio tools in your path (easiest way to ensure this is to run
+#    Developer Command Prompt and then run PowerShell from within that)
+# 2. you have set the correct project version in both LaunchDarkly.Common.csproj and
 #    LaunchDarkly.Common.StrongName.csproj
-# 2. you have downloaded the key file, LaunchDarkly.Common.snk, in the project root directory
-# 3. you have downloaded the certificate, catamorphic_code_signing_certificate.p12, in the
+# 3. you have downloaded the key file, LaunchDarkly.Common.snk, in the project root directory
+# 4. you have downloaded the certificate, catamorphic_code_signing_certificate.p12, in the
 #    project root directory
+# 5. you have the password for the certificate (paste it after -password on the command line)_
 #
 
 # This helper function comes from https://github.com/psake/psake - it allows us to terminate the
@@ -37,8 +40,6 @@ $certFile = "catamorphic_code_signing_certificate.p12"
 if (-not (Test-Path $certFile)) {
     throw ("Certificate file $certfile must be in the current directory. Download it from s3://launchdarkly-pastebin/ci/dotnet/")
 }
-
-$env:Path += ";C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Bin"
 
 Exec { dotnet clean }
 
