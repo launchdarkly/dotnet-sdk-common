@@ -2,6 +2,14 @@
 
 For full release notes for the projects that depend on this project, see their respective changelogs. This file describes changes only to the common code. This project adheres to [Semantic Versioning](http://semver.org).
 
+## [1.2.2] - 2018-01-09
+
+### Changed
+The only changes in this version are to the build:
+
+- The assembly is now signed as well as strong-named.
+- Its dependency on `dotnet-eventsource` has been updated to use the latest version, which is also signed.
+
 ## [1.2.1] - 2018-12-17
 
 ### Changed
