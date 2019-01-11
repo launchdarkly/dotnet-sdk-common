@@ -4,11 +4,7 @@ For full release notes for the projects that depend on this project, see their r
 
 ## [1.2.2] - 2018-01-09
 
-### Changed
-The only changes in this version are to the build:
-
-- The assembly is now signed as well as strong-named.
-- Its dependency on `dotnet-eventsource` has been updated to use the latest version, which is also signed.
+This release was an error. It works, but there are no changes from 1.2.1 except for using a newer version of `dotnet-eventsource`, which was also an unintended re-release of the previous version.
 
 ## [1.2.1] - 2018-12-17
 
