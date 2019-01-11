@@ -12,7 +12,7 @@ See [Contributing](https://github.com/launchdarkly/.net-client/blob/master/CONTR
 
 Signing
 -------
-The packages published from this repository are digitally signed by LaunchDarkly and also strong-named. The public key file is in this repo at `LaunchDarkly.Common.pk` as well as here:
+The packages published from this repository are strong-named. The public key file is in this repo at `LaunchDarkly.Common.pk` as well as here:
 
 ```
 Public Key:
@@ -25,7 +25,7 @@ d4b4320e820f32e024ad50a786f86d37ea45e0c25ec431a7a0f3e93575a0d2ad
 Public Key Token: 45ef1738a929a7df
 ```
 
-If you build the solution locally in the default Debug configuration, the assemblies will not be signed or strong-named. Note that the unit tests can only be run in the Debug configuration.
+If you build the solution locally in the default Debug configuration, the assemblies will not be strong-named. Note that the unit tests can only be run in the Debug configuration.
 
 About LaunchDarkly
 -----------
