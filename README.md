@@ -12,7 +12,8 @@ See [Contributing](https://github.com/launchdarkly/.net-client/blob/master/CONTR
 
 Signing
 -------
-The packages published from this repository are strong-named. The public key file is in this repo at `LaunchDarkly.Common.pk` as well as here:
+
+The published version of this assembly is digitally signed with Authenticode, and also strong-named. The public key file is in this repo at `LaunchDarkly.Common.pk` as well as here:
 
 ```
 Public Key:
@@ -25,10 +26,10 @@ d4b4320e820f32e024ad50a786f86d37ea45e0c25ec431a7a0f3e93575a0d2ad
 Public Key Token: 45ef1738a929a7df
 ```
 
-If you build the solution locally in the default Debug configuration, the assemblies will not be strong-named. Note that the unit tests can only be run in the Debug configuration.
+Building the code locally in the default Debug configuration does not sign the assembly and does not require a key file. Note that the unit tests can only be run in the Debug configuration.
 
 About LaunchDarkly
------------
+------------------
 
 * LaunchDarkly is a continuous delivery platform that provides feature flags as a service and allows developers to iterate quickly and safely. We allow you to easily flag your features and manage them from the LaunchDarkly dashboard.  With LaunchDarkly, you can:
     * Roll out a new feature to a subset of your users (like a group of users who opt-in to a beta tester group), gathering feedback and bug reports from real-world use cases.
