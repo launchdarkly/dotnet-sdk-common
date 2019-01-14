@@ -2,6 +2,10 @@
 
 For full release notes for the projects that depend on this project, see their respective changelogs. This file describes changes only to the common code. This project adheres to [Semantic Versioning](http://semver.org).
 
+## [1.2.3] - 2018-01-14
+### Fixed:
+- The assemblies in this package now have Authenticode signatures.
+
 ## [1.2.2] - 2018-01-09
 
 This release was an error. It works, but there are no changes from 1.2.1 except for using a newer version of `dotnet-eventsource`, which was also an unintended re-release of the previous version.
