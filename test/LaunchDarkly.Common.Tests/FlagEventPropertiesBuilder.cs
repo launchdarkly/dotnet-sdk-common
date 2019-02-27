@@ -1,4 +1,5 @@
-﻿
+﻿using LaunchDarkly.Client;
+
 namespace LaunchDarkly.Common.Tests
 {
     // A minimal implementation of IFlagEventProperties for use in the common unit tests.
@@ -8,6 +9,13 @@ namespace LaunchDarkly.Common.Tests
         public int Version { get; internal set; }
         public bool TrackEvents { get; internal set; }
         public long? DebugEventsUntilDate { get; internal set; }
+
+        public EvaluationReason ExperimentReason { get; internal set; }
+
+        public bool IsExperiment(EvaluationReason reason)
+        {
+            return reason != null && reason.Equals(ExperimentReason);
+        }
     }
 
     internal class FlagEventPropertiesBuilder
@@ -16,6 +24,7 @@ namespace LaunchDarkly.Common.Tests
         private int _version;
         private bool _trackEvents;
         private long? _debugEventsUntilDate;
+        private EvaluationReason _experimentReason;
 
         internal FlagEventPropertiesBuilder(string key)
         {
@@ -37,7 +46,8 @@ namespace LaunchDarkly.Common.Tests
                 Key = _key,
                 Version = _version,
                 TrackEvents = _trackEvents,
-                DebugEventsUntilDate = _debugEventsUntilDate
+                DebugEventsUntilDate = _debugEventsUntilDate,
+                ExperimentReason = _experimentReason
             };
         }
 
@@ -56,6 +66,12 @@ namespace LaunchDarkly.Common.Tests
         internal FlagEventPropertiesBuilder DebugEventsUntilDate(long? debugEventsUntilDate)
         {
             _debugEventsUntilDate = debugEventsUntilDate;
+            return this;
+        }
+
+        internal FlagEventPropertiesBuilder ExperimentReason(EvaluationReason experimentReason)
+        {
+            _experimentReason = experimentReason;
             return this;
         }
     }
