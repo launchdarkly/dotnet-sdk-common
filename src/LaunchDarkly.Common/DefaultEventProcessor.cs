@@ -407,16 +407,25 @@ namespace LaunchDarkly.Common
                     _flushWorkersCounter.AddCount(1);
                 }
                 buffer.Clear();
-                Task.Run(() => FlushEventsAsync(payload));
+                Task.Run(async () => {
+                    try
+                    {
+                        await FlushEventsAsync(payload);
+                    }
+                    finally
+                    {
+                        _flushWorkersCounter.Signal();
+                    }
+                });
             }
         }
 
         private async Task FlushEventsAsync(FlushPayload payload)
         {
             EventOutputFormatter formatter = new EventOutputFormatter(_config);
-            var cts = new CancellationTokenSource(_config.HttpClientTimeout);
             List<EventOutput> eventsOut;
             string jsonEvents;
+            const int maxAttempts = 2;
             try
             {
                 eventsOut = formatter.MakeOutputEvents(payload.Events, payload.Summary);
@@ -428,76 +437,86 @@ namespace LaunchDarkly.Common
                     e, Util.ExceptionMessage(e));
                 return;
             }
-            try
+            for (var attempt = 0; attempt < maxAttempts; attempt++)
             {
-                await SendEventsAsync(jsonEvents, eventsOut.Count, cts);
-            }
-            catch (Exception e)
-            {
-                DefaultEventProcessor.Log.DebugFormat("Error sending events: {0}; waiting 1 second before retrying.",
-                    e, Util.ExceptionMessage(e));
+                if (attempt > 0)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(1));
+                }
 
-                Task.Delay(TimeSpan.FromSeconds(1)).Wait();
-                cts = new CancellationTokenSource(_config.HttpClientTimeout);
-                try
+                using (var cts = new CancellationTokenSource(_config.HttpClientTimeout))
                 {
-                    await SendEventsAsync(jsonEvents, eventsOut.Count, cts);
-                }
-                catch (TaskCanceledException tce)
-                {
-                    if (tce.CancellationToken == cts.Token)
+                    try
                     {
-                        //Indicates the task was cancelled by something other than a request timeout
-                        DefaultEventProcessor.Log.ErrorFormat("Error submitting events using uri: '{0}' '{1}'",
-                            tce, _uri.AbsoluteUri, Util.ExceptionMessage(tce));
+                        await SendEventsAsync(jsonEvents, eventsOut.Count, cts.Token);
+                        return; // success
                     }
-                    else
+                    catch (Exception e)
                     {
-                        //Otherwise this was a request timeout.
-                        DefaultEventProcessor.Log.ErrorFormat("Timed out trying to send {0} events after {1}",
-                            tce, eventsOut.Count, _config.HttpClientTimeout);
+                        var errorMessage = "Error ({1})";
+                        switch (e)
+                        {
+                            case TaskCanceledException tce:
+                                if (tce.CancellationToken == cts.Token)
+                                {
+                                    // Indicates the task was cancelled deliberately somehow; in this case don't retry
+                                    DefaultEventProcessor.Log.Warn("Event sending task was cancelled");
+                                    return;
+                                }
+                                else
+                                {
+                                    // Otherwise this was a request timeout.
+                                    errorMessage = "Timed out";
+                                }
+                                break;
+                            default:
+                                break;
+                        }
+                        DefaultEventProcessor.Log.WarnFormat(errorMessage + " sending {0} events; {2}",
+                            eventsOut.Count,
+                            Util.ExceptionMessage(e),
+                            attempt == maxAttempts - 1 ? "will not retry" : "will retry after one second");
                     }
-                }
-                catch (Exception ex)
-                {
-                    DefaultEventProcessor.Log.ErrorFormat("Error submitting events using uri: '{0}' '{1}'",
-                        ex,
-                        _uri.AbsoluteUri,
-                         Util.ExceptionMessage(ex));
                 }
             }
-            _flushWorkersCounter.Signal();
         }
 
-        private async Task SendEventsAsync(String jsonEvents, int count, CancellationTokenSource cts)
+        private async Task SendEventsAsync(String jsonEvents, int count, CancellationToken token)
         {
             DefaultEventProcessor.Log.DebugFormat("Submitting {0} events to {1} with json: {2}",
                 count, _uri.AbsoluteUri, jsonEvents);
 
-            Stopwatch timer = new Stopwatch();
             using (var stringContent = new StringContent(jsonEvents, Encoding.UTF8, "application/json"))
-            using (var response = await _httpClient.PostAsync(_uri, stringContent).ConfigureAwait(false))
             {
-                timer.Stop();
-                DefaultEventProcessor.Log.DebugFormat("Event delivery took {0} ms, response status {1}",
-                    timer.ElapsedMilliseconds, response.StatusCode);
-                if (response.IsSuccessStatusCode)
+                Stopwatch timer = new Stopwatch();
+                var response = await _httpClient.PostAsync(_uri, stringContent, token);
+                try
                 {
-                    DateTimeOffset? respDate = response.Headers.Date;
-                    if (respDate.HasValue)
+                    timer.Stop();
+                    DefaultEventProcessor.Log.DebugFormat("Event delivery took {0} ms, response status {1}",
+                        timer.ElapsedMilliseconds, response.StatusCode);
+                    if (response.IsSuccessStatusCode)
                     {
-                        Interlocked.Exchange(ref _lastKnownPastTime,
-                            Util.GetUnixTimestampMillis(respDate.Value.DateTime));
+                        DateTimeOffset? respDate = response.Headers.Date;
+                        if (respDate.HasValue)
+                        {
+                            Interlocked.Exchange(ref _lastKnownPastTime,
+                                Util.GetUnixTimestampMillis(respDate.Value.DateTime));
+                        }
+                    }
+                    else
+                    {
+                        DefaultEventProcessor.Log.Error(Util.HttpErrorMessage((int)response.StatusCode,
+                            "event delivery", "some events were dropped"));
+                        if (!Util.IsHttpErrorRecoverable((int)response.StatusCode))
+                        {
+                            _disabled = true;
+                        }
                     }
                 }
-                else
+                finally
                 {
-                    DefaultEventProcessor.Log.Error(Util.HttpErrorMessage((int)response.StatusCode,
-                        "event delivery", "some events were dropped"));
-                    if (!Util.IsHttpErrorRecoverable((int)response.StatusCode))
-                    {
-                        _disabled = true;
-                    }
+                    response.Dispose();
                 }
             }
         }
