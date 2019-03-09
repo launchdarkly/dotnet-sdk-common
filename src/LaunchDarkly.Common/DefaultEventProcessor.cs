@@ -485,38 +485,31 @@ namespace LaunchDarkly.Common
         {
             DefaultEventProcessor.Log.DebugFormat("Submitting {0} events to {1} with json: {2}",
                 count, _uri.AbsoluteUri, jsonEvents);
+            Stopwatch timer = new Stopwatch();
 
             using (var stringContent = new StringContent(jsonEvents, Encoding.UTF8, "application/json"))
+            using (var response = await _httpClient.PostAsync(_uri, stringContent, token))
             {
-                Stopwatch timer = new Stopwatch();
-                var response = await _httpClient.PostAsync(_uri, stringContent, token);
-                try
+                timer.Stop();
+                DefaultEventProcessor.Log.DebugFormat("Event delivery took {0} ms, response status {1}",
+                    timer.ElapsedMilliseconds, response.StatusCode);
+                if (response.IsSuccessStatusCode)
                 {
-                    timer.Stop();
-                    DefaultEventProcessor.Log.DebugFormat("Event delivery took {0} ms, response status {1}",
-                        timer.ElapsedMilliseconds, response.StatusCode);
-                    if (response.IsSuccessStatusCode)
+                    DateTimeOffset? respDate = response.Headers.Date;
+                    if (respDate.HasValue)
                     {
-                        DateTimeOffset? respDate = response.Headers.Date;
-                        if (respDate.HasValue)
-                        {
-                            Interlocked.Exchange(ref _lastKnownPastTime,
-                                Util.GetUnixTimestampMillis(respDate.Value.DateTime));
-                        }
-                    }
-                    else
-                    {
-                        DefaultEventProcessor.Log.Error(Util.HttpErrorMessage((int)response.StatusCode,
-                            "event delivery", "some events were dropped"));
-                        if (!Util.IsHttpErrorRecoverable((int)response.StatusCode))
-                        {
-                            _disabled = true;
-                        }
+                        Interlocked.Exchange(ref _lastKnownPastTime,
+                            Util.GetUnixTimestampMillis(respDate.Value.DateTime));
                     }
                 }
-                finally
+                else
                 {
-                    response.Dispose();
+                    DefaultEventProcessor.Log.Error(Util.HttpErrorMessage((int)response.StatusCode,
+                        "event delivery", "some events were dropped"));
+                    if (!Util.IsHttpErrorRecoverable((int)response.StatusCode))
+                    {
+                        _disabled = true;
+                    }
                 }
             }
         }
