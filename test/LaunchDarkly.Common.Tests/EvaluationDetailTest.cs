@@ -1,4 +1,6 @@
-﻿using Xunit;
+﻿using System.Collections;
+using System.Collections.Generic;
+using Xunit;
 using LaunchDarkly.Client;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -21,66 +23,42 @@ namespace LaunchDarkly.Common.Tests
             Assert.False(detail.IsDefaultValue);
         }
 
-        [Fact]
-        public void TestSerializeOffReason()
+        [Theory]
+        [MemberData(nameof(ReasonTestData))]
+        public void TestReasonSerializationDeserialization(EvaluationReason reason,
+            string jsonString, string expectedShortString)
         {
-            EvaluationReason reason = EvaluationReason.Off.Instance;
-            var json = @"{""kind"":""OFF""}";
-            AssertJsonEqual(json, JsonConvert.SerializeObject(reason));
-            Assert.Equal(reason, JsonConvert.DeserializeObject<EvaluationReason>(json));
-            Assert.Equal("OFF", reason.ToString());
+            AssertJsonEqual(jsonString, JsonConvert.SerializeObject(reason));
+            Assert.Equal(reason, JsonConvert.DeserializeObject<EvaluationReason>(jsonString));
+            Assert.Equal(expectedShortString, reason.ToString());
         }
 
-        [Fact]
-        public void TestSerializeFallthroughReason()
+        public static IEnumerable ReasonTestData => new List<object[]>
         {
-            EvaluationReason reason = EvaluationReason.Fallthrough.Instance;
-            var json = @"{""kind"":""FALLTHROUGH""}";
-            AssertJsonEqual(json, JsonConvert.SerializeObject(reason));
-            Assert.Equal(reason, JsonConvert.DeserializeObject<EvaluationReason>(json));
-            Assert.Equal("FALLTHROUGH", reason.ToString());
-        }
-
+            new object[] { EvaluationReason.Off.Instance, @"{""kind"":""OFF""}", "OFF" },
+            new object[] { EvaluationReason.Fallthrough.Instance, @"{""kind"":""FALLTHROUGH""}", "FALLTHROUGH" },
+            new object[] { EvaluationReason.TargetMatch.Instance, @"{""kind"":""TARGET_MATCH""}", "TARGET_MATCH" },
+            new object[] { new EvaluationReason.RuleMatch(1, "id"),
+                @"{""kind"":""RULE_MATCH"",""ruleIndex"":1,""ruleId"":""id""}",
+                "RULE_MATCH(1,id)"
+            },
+            new object[] { new EvaluationReason.PrerequisiteFailed("key"),
+                @"{""kind"":""PREREQUISITE_FAILED"",""prerequisiteKey"":""key""}",
+                "PREREQUISITE_FAILED(key)"
+            },
+            new object[] { new EvaluationReason.Error(EvaluationErrorKind.EXCEPTION),
+                @"{""kind"":""ERROR"",""errorKind"":""EXCEPTION""}",
+                "ERROR(EXCEPTION)"
+            }
+        };
+        
         [Fact]
-        public void TestSerializeTargetMatchReason()
+        public void TestDeserializeNullReason()
         {
-            EvaluationReason reason = EvaluationReason.TargetMatch.Instance;
-            var json = @"{""kind"":""TARGET_MATCH""}";
-            AssertJsonEqual(json, JsonConvert.SerializeObject(reason));
-            Assert.Equal(reason, JsonConvert.DeserializeObject<EvaluationReason>(json));
-            Assert.Equal("TARGET_MATCH", reason.ToString());
+            var reason = JsonConvert.DeserializeObject<EvaluationReason>("null");
+            Assert.Null(reason);
         }
-
-        [Fact]
-        public void TestSerializeRuleMatchReason()
-        {
-            EvaluationReason reason = new EvaluationReason.RuleMatch(1, "id");
-            var json = @"{""kind"":""RULE_MATCH"",""ruleIndex"":1,""ruleId"":""id""}";
-            AssertJsonEqual(json, JsonConvert.SerializeObject(reason));
-            Assert.Equal(reason, JsonConvert.DeserializeObject<EvaluationReason>(json));
-            Assert.Equal("RULE_MATCH(1,id)", reason.ToString());
-        }
-
-        [Fact]
-        public void TestSerializePrerequisiteFailedReason()
-        {
-            EvaluationReason reason = new EvaluationReason.PrerequisiteFailed("key");
-            var json = @"{""kind"":""PREREQUISITE_FAILED"",""prerequisiteKey"":""key""}";
-            AssertJsonEqual(json, JsonConvert.SerializeObject(reason));
-            Assert.Equal(reason, JsonConvert.DeserializeObject<EvaluationReason>(json));
-            Assert.Equal("PREREQUISITE_FAILED(key)", reason.ToString());
-        }
-
-        [Fact]
-        public void TestSerializeErrorReason()
-        {
-            EvaluationReason reason = new EvaluationReason.Error(EvaluationErrorKind.EXCEPTION);
-            var json = @"{""kind"":""ERROR"",""errorKind"":""EXCEPTION""}";
-            AssertJsonEqual(json, JsonConvert.SerializeObject(reason));
-            Assert.Equal(reason, JsonConvert.DeserializeObject<EvaluationReason>(json));
-            Assert.Equal("ERROR(EXCEPTION)", reason.ToString());
-        }
-
+        
         private void AssertJsonEqual(string expectedString, string actualString)
         {
             JToken expected = JsonConvert.DeserializeObject<JToken>(expectedString);
