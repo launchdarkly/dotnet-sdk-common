@@ -453,7 +453,7 @@ namespace LaunchDarkly.Common
                     }
                     catch (Exception e)
                     {
-                        var errorMessage = "Error ({1})";
+                        var errorMessage = "Error ({2})";
                         switch (e)
                         {
                             case TaskCanceledException tce:
@@ -472,10 +472,10 @@ namespace LaunchDarkly.Common
                             default:
                                 break;
                         }
-                        DefaultEventProcessor.Log.WarnFormat(errorMessage + " sending {0} events; {2}",
+                        DefaultEventProcessor.Log.WarnFormat(errorMessage + " sending {0} events; {1}",
                             eventsOut.Count,
-                            Util.ExceptionMessage(e),
-                            attempt == maxAttempts - 1 ? "will not retry" : "will retry after one second");
+                            attempt == maxAttempts - 1 ? "will not retry" : "will retry after one second",
+                            Util.ExceptionMessage(e));
                     }
                 }
             }
