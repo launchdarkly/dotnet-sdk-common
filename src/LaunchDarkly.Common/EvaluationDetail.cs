@@ -385,6 +385,10 @@ namespace LaunchDarkly.Client
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
             JObject o = serializer.Deserialize<JObject>(reader);
+            if (o == null)
+            {
+                return null;
+            }
             EvaluationReasonKind kind = o.GetValue("kind").ToObject<EvaluationReasonKind>();
             switch (kind)
             {
