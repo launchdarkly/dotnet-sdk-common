@@ -97,6 +97,7 @@ namespace LaunchDarkly.Client
         /// Used internally to track which attributes are private. To set private attributes,
         /// you should use extension methods such as <c>AndPrivateName</c>.
         /// </summary>
+        [JsonIgnore]
         public ISet<string> PrivateAttributeNames { get; set; }
 
         internal JToken GetValueForEvaluation(string attribute)

@@ -8,9 +8,26 @@ namespace LaunchDarkly.Common
     /// </summary>
     internal interface IFlagEventProperties
     {
+        /// <summary>
+        /// The flag key.
+        /// </summary>
         string Key { get; }
-        int Version { get; }
+
+        /// <summary>
+        /// The version number that should be included in events for this flag. For server-side SDKs, this
+        /// is just the flag's version property. For client-side SDKs, it is the flagVersion property if
+        /// that property exists, otherwise the version property.
+        /// </summary>
+        int EventVersion { get; }
+
+        /// <summary>
+        /// True if full-fidelity event tracking is enabled for this flag.
+        /// </summary>
         bool TrackEvents { get; }
+
+        /// <summary>
+        /// Non-null if full-fidelity event debugging is enabled until the specified time.
+        /// </summary>
         long? DebugEventsUntilDate { get; }
 
         /// <summary>

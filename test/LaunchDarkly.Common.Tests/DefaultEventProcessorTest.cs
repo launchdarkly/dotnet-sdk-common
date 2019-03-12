@@ -507,7 +507,7 @@ namespace LaunchDarkly.Common.Tests
             Assert.Equal(debug ? "debug" : "feature", (string)o["kind"]);
             Assert.Equal(fe.CreationDate, (long)o["creationDate"]);
             Assert.Equal(flag.Key, (string)o["key"]);
-            Assert.Equal(flag.Version, (int)o["version"]);
+            Assert.Equal(flag.EventVersion, (int)o["version"]);
             if (fe.Variation == null)
             {
                 Assert.Null(o["variation"]);

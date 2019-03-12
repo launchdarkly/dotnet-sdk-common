@@ -37,7 +37,7 @@ namespace LaunchDarkly.Common.Tests
             Assert.True(e.CreationDate >= time);
             Assert.Equal(flag.Key, e.Key);
             Assert.Same(user, e.User);
-            Assert.Equal(flag.Version, e.Version);
+            Assert.Equal(flag.EventVersion, e.Version);
             Assert.Equal(result.VariationIndex, e.Variation);
             Assert.Equal(result.Value, e.Value);
             Assert.Equal(defaultVal, e.Default);
@@ -90,7 +90,7 @@ namespace LaunchDarkly.Common.Tests
             Assert.True(e.CreationDate >= time);
             Assert.Equal(flag.Key, e.Key);
             Assert.Same(user, e.User);
-            Assert.Equal(flag.Version, e.Version);
+            Assert.Equal(flag.EventVersion, e.Version);
             Assert.Null(e.Variation);
             Assert.Equal(defaultVal, e.Value);
             Assert.Equal(defaultVal, e.Default);
@@ -159,7 +159,7 @@ namespace LaunchDarkly.Common.Tests
             Assert.True(e.CreationDate >= time);
             Assert.Equal("prereq-key", e.Key);
             Assert.Same(user, e.User);
-            Assert.Equal(flag.Version, e.Version);
+            Assert.Equal(flag.EventVersion, e.Version);
             Assert.Equal(result.VariationIndex, e.Variation);
             Assert.Equal(result.Value, e.Value);
             Assert.Null(e.Default);
