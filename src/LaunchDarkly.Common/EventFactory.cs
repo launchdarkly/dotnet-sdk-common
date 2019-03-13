@@ -34,7 +34,7 @@ namespace LaunchDarkly.Common
         {
             bool experiment = flag.IsExperiment(result.Reason);
             return new FeatureRequestEvent(GetTimestamp(), flag.Key, user, result.VariationIndex, result.Value, defaultVal,
-                flag.Version, null, experiment || flag.TrackEvents, flag.DebugEventsUntilDate, false,
+                flag.EventVersion, null, experiment || flag.TrackEvents, flag.DebugEventsUntilDate, false,
                 (experiment || IncludeReasons) ? result.Reason : null);
         }
 
@@ -51,7 +51,7 @@ namespace LaunchDarkly.Common
             JToken defaultVal, EvaluationErrorKind errorKind)
         {
             return new FeatureRequestEvent(GetTimestamp(), flag.Key, user, null, defaultVal, defaultVal,
-                flag.Version, null, flag.TrackEvents, flag.DebugEventsUntilDate, false,
+                flag.EventVersion, null, flag.TrackEvents, flag.DebugEventsUntilDate, false,
                 IncludeReasons ? new EvaluationReason.Error(errorKind) : null);
         }
 
@@ -85,7 +85,7 @@ namespace LaunchDarkly.Common
         {
             bool experiment = prereqFlag.IsExperiment(result.Reason);
             return new FeatureRequestEvent(GetTimestamp(), prereqFlag.Key, user, result.VariationIndex, result.Value, null,
-                prereqFlag.Version, prereqOf.Key, experiment || prereqFlag.TrackEvents, prereqFlag.DebugEventsUntilDate, false,
+                prereqFlag.EventVersion, prereqOf.Key, experiment || prereqFlag.TrackEvents, prereqFlag.DebugEventsUntilDate, false,
                 (experiment || IncludeReasons) ? result.Reason : null);
         }
 

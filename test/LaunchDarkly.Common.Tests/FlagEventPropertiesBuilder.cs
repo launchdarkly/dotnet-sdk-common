@@ -6,7 +6,7 @@ namespace LaunchDarkly.Common.Tests
     internal class FlagEventPropertiesImpl : IFlagEventProperties
     {
         public string Key { get; internal set; }
-        public int Version { get; internal set; }
+        public int EventVersion { get; internal set; }
         public bool TrackEvents { get; internal set; }
         public long? DebugEventsUntilDate { get; internal set; }
 
@@ -34,7 +34,7 @@ namespace LaunchDarkly.Common.Tests
         internal FlagEventPropertiesBuilder(IFlagEventProperties from)
         {
             _key = from.Key;
-            _version = from.Version;
+            _version = from.EventVersion;
             _trackEvents = from.TrackEvents;
             _debugEventsUntilDate = from.DebugEventsUntilDate;
         }
@@ -44,7 +44,7 @@ namespace LaunchDarkly.Common.Tests
             return new FlagEventPropertiesImpl
             {
                 Key = _key,
-                Version = _version,
+                EventVersion = _version,
                 TrackEvents = _trackEvents,
                 DebugEventsUntilDate = _debugEventsUntilDate,
                 ExperimentReason = _experimentReason
