@@ -472,7 +472,7 @@ namespace LaunchDarkly.Common
                             default:
                                 break;
                         }
-                        DefaultEventProcessor.Log.WarnFormat(errorMessage + " sending {0} events; {1}",
+                        DefaultEventProcessor.Log.WarnFormat(errorMessage + " sending {0} event(s); {1}",
                             eventsOut.Count,
                             attempt == maxAttempts - 1 ? "will not retry" : "will retry after one second",
                             Util.ExceptionMessage(e));
@@ -483,7 +483,7 @@ namespace LaunchDarkly.Common
 
         private async Task SendEventsAsync(String jsonEvents, int count, CancellationToken token)
         {
-            DefaultEventProcessor.Log.DebugFormat("Submitting {0} events to {1} with json: {2}",
+            DefaultEventProcessor.Log.DebugFormat("Submitting {0} event(s) to {1} with json: {2}",
                 count, _uri.AbsoluteUri, jsonEvents);
             Stopwatch timer = new Stopwatch();
 
