@@ -5,6 +5,7 @@ For full release notes for the projects that depend on this project, see their r
 ## [2.0.0] - 2019-03-26
 ### Added:
 - Added support for planned future LaunchDarkly features related to analytics events and experimentation.
+- It is now possible to deserialize evaluation reasons from JSON (this is used by the Xamarin client).
 
 ### Changed:
 - The `IFlagEventProperties` interface was extended and modified to support the aforementioned features.
