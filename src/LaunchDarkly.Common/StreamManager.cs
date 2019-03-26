@@ -103,17 +103,11 @@ namespace LaunchDarkly.Common
         // Closes and restarts the connection (using the same stream URI).
         public async void Restart()
         {
-            TimeSpan sleepTime = TimeSpan.FromMilliseconds(0);
-            if (_backOff.GetReconnectAttemptCount() > 0 && _config.ReconnectTime > TimeSpan.FromMilliseconds(0))
+            TimeSpan sleepTime = _backOff.GetNextBackOff();
+            if (sleepTime != TimeSpan.Zero)
             {
-                sleepTime = _backOff.GetNextBackOff();
-
                 Log.InfoFormat("Stopping LaunchDarkly StreamProcessor. Waiting {0} milliseconds before reconnecting...",
                     sleepTime.TotalMilliseconds);
-            }
-            else
-            {
-                _backOff.IncrementReconnectAttemptCount();
             }
             _es.Close();
             await Task.Delay(sleepTime);
