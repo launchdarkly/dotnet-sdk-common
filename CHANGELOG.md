@@ -2,6 +2,17 @@
 
 For full release notes for the projects that depend on this project, see their respective changelogs. This file describes changes only to the common code. This project adheres to [Semantic Versioning](http://semver.org).
 
+## [2.0.0] - 2019-03-26
+### Added:
+- Added support for planned future LaunchDarkly features related to analytics events and experimentation.
+- It is now possible to deserialize evaluation reasons from JSON (this is used by the Xamarin client).
+
+### Changed:
+- The `IFlagEventProperties` interface was extended and modified to support the aforementioned features.
+
+### Fixed:
+- Under some circumstances, a `CancellationTokenSource` might not be disposed of after making an HTTP request, which could cause a timer object to be leaked.
+
 ## [1.2.3] - 2018-01-14
 ### Fixed:
 - The assemblies in this package now have Authenticode signatures.
