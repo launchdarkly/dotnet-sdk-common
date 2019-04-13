@@ -61,6 +61,8 @@ namespace LaunchDarkly.Common
         internal string UserKey { get; set; }
         [JsonProperty(PropertyName = "data", NullValueHandling = NullValueHandling.Ignore)]
         internal JToken Data { get; set; }
+        [JsonProperty(PropertyName = "metricValue", NullValueHandling = NullValueHandling.Ignore)]
+        internal double? MetricValue { get; set; }
     }
 
     internal sealed class IndexEventOutput : EventOutput
@@ -196,7 +198,8 @@ namespace LaunchDarkly.Common
                         Key = ce.Key,
                         User = MaybeInlineUser(ce.User, _config.InlineUsersInEvents),
                         UserKey = MaybeUserKey(ce.User, _config.InlineUsersInEvents),
-                        Data = ce.JsonData
+                        Data = ce.JsonData,
+                        MetricValue = ce.MetricValue
                     };
                 case IndexEvent ie:
                     return new IndexEventOutput
