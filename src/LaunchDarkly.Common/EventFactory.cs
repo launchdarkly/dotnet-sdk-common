@@ -108,7 +108,7 @@ namespace LaunchDarkly.Common
         /// <param name="data">optional event data, may be null</param>
         /// <param name="metricValue">optional numeric value for analytics</param>
         /// <returns>an event</returns>
-        internal CustomEvent NewCustomEvent(string key, User user, JToken data, double? metricValue)
+        internal CustomEvent NewCustomEvent(string key, User user, JToken data, double? metricValue = null)
         {
             return new CustomEvent(GetTimestamp(), key, user, data, metricValue);
         }
