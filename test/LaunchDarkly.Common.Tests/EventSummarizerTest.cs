@@ -27,7 +27,7 @@ namespace LaunchDarkly.Common.Tests
         {
             EventSummarizer es = new EventSummarizer();
             EventSummary snapshot = es.Snapshot();
-            es.SummarizeEvent(_eventFactory.NewCustomEvent("whatever", _user, null));
+            es.SummarizeEvent(_eventFactory.NewCustomEvent("whatever", _user, null, null));
             EventSummary snapshot2 = es.Snapshot();
             Assert.Equal(snapshot.StartDate, snapshot2.StartDate);
             Assert.Equal(snapshot.EndDate, snapshot2.EndDate);

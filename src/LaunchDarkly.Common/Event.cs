@@ -124,10 +124,16 @@ namespace LaunchDarkly.Client
         /// </summary>
         public JToken JsonData { get; private set; }
 
-        internal CustomEvent(long creationDate, string key, User user, JToken data) :
+        /// <summary>
+        /// An optional numeric value that can be used in analytics.
+        /// </summary>
+        public double? MetricValue { get; private set; }
+
+        internal CustomEvent(long creationDate, string key, User user, JToken data, double? metricValue) :
             base(creationDate, key, user)
         {
             JsonData = data;
+            MetricValue = metricValue;
         }
     }
 
