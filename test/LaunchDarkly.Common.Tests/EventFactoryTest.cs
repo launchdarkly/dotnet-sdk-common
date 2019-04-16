@@ -197,18 +197,20 @@ namespace LaunchDarkly.Common.Tests
         {
             var time = TimeNow();
             var data = new JValue("hi");
-            var e = EventFactory.Default.NewCustomEvent("yay", user, data);
+            var e = EventFactory.Default.NewCustomEvent("yay", user, data, 1.5);
             Assert.True(e.CreationDate >= time);
             Assert.Equal("yay", e.Key);
             Assert.Same(user, e.User);
             Assert.Equal(data, e.JsonData);
+            Assert.Equal(1.5, e.MetricValue);
         }
 
         [Fact]
         public void CustomEventCanOmitData()
         {
-            var e = EventFactory.Default.NewCustomEvent("yay", user, null);
+            var e = EventFactory.Default.NewCustomEvent("yay", user, null, null);
             Assert.Null(e.JsonData);
+            Assert.Null(e.MetricValue);
         }
 
         [Fact]
