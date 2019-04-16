@@ -2,6 +2,10 @@
 
 For full release notes for the projects that depend on this project, see their respective changelogs. This file describes changes only to the common code. This project adheres to [Semantic Versioning](http://semver.org).
 
+## [2.1.0] - 2019-04-16
+### Added:
+- Added support for planned future LaunchDarkly features related to analytics events and experimentation (metric values).
+
 ## [2.0.0] - 2019-03-26
 ### Added:
 - Added support for planned future LaunchDarkly features related to analytics events and experimentation.
