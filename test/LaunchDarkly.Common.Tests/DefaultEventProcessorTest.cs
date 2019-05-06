@@ -316,7 +316,7 @@ namespace LaunchDarkly.Common.Tests
         public void CustomEventIsQueuedWithUser()
         {
             _ep = MakeProcessor(_config);
-            CustomEvent e = EventFactory.Default.NewCustomEvent("eventkey", _user, new JValue(3));
+            CustomEvent e = EventFactory.Default.NewCustomEvent("eventkey", _user, new JValue(3), 1.5);
             _ep.SendEvent(e);
 
             JArray output = FlushAndGetEvents(OkResponse());
@@ -324,13 +324,13 @@ namespace LaunchDarkly.Common.Tests
                 item => CheckIndexEvent(item, e, _userJson),
                 item => CheckCustomEvent(item, e, null));
         }
-
+        
         [Fact]
         public void CustomEventCanContainInlineUser()
         {
             _config.InlineUsersInEvents = true;
             _ep = MakeProcessor(_config);
-            CustomEvent e = EventFactory.Default.NewCustomEvent("eventkey", _user, new JValue(3));
+            CustomEvent e = EventFactory.Default.NewCustomEvent("eventkey", _user, new JValue(3), null);
             _ep.SendEvent(e);
 
             JArray output = FlushAndGetEvents(OkResponse());
@@ -344,7 +344,7 @@ namespace LaunchDarkly.Common.Tests
             _config.AllAttributesPrivate = true;
             _config.InlineUsersInEvents = true;
             _ep = MakeProcessor(_config);
-            CustomEvent e = EventFactory.Default.NewCustomEvent("eventkey", _user, new JValue(3));
+            CustomEvent e = EventFactory.Default.NewCustomEvent("eventkey", _user, new JValue(3), null);
             _ep.SendEvent(e);
 
             JArray output = FlushAndGetEvents(OkResponse());
@@ -356,7 +356,7 @@ namespace LaunchDarkly.Common.Tests
         public void CustomEventCanHaveNullUser()
         {
             _ep = MakeProcessor(_config);
-            CustomEvent e = EventFactory.Default.NewCustomEvent("eventkey", null, "data");
+            CustomEvent e = EventFactory.Default.NewCustomEvent("eventkey", null, "data", null);
             _ep.SendEvent(e);
 
             JArray output = FlushAndGetEvents(OkResponse());
@@ -507,7 +507,7 @@ namespace LaunchDarkly.Common.Tests
             Assert.Equal(debug ? "debug" : "feature", (string)o["kind"]);
             Assert.Equal(fe.CreationDate, (long)o["creationDate"]);
             Assert.Equal(flag.Key, (string)o["key"]);
-            Assert.Equal(flag.Version, (int)o["version"]);
+            Assert.Equal(flag.EventVersion, (int)o["version"]);
             if (fe.Variation == null)
             {
                 Assert.Null(o["variation"]);
@@ -527,6 +527,14 @@ namespace LaunchDarkly.Common.Tests
             Assert.Equal(e.Key, (string)o["key"]);
             Assert.Equal(e.JsonData, o["data"]);
             CheckEventUserOrKey(o, e, userJson);
+            if (e.MetricValue.HasValue)
+            {
+                Assert.Equal(e.MetricValue, (double)o["metricValue"]);
+            }
+            else
+            {
+                Assert.Null(o["metricValue"]);
+            }
         }
 
         private void CheckEventUserOrKey(JObject o, Event e, JToken userJson)

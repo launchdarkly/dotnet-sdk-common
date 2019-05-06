@@ -2,6 +2,38 @@
 
 For full release notes for the projects that depend on this project, see their respective changelogs. This file describes changes only to the common code. This project adheres to [Semantic Versioning](http://semver.org).
 
+## [2.1.0] - 2019-04-16
+### Added:
+- Added support for planned future LaunchDarkly features related to analytics events and experimentation (metric values).
+
+## [2.0.0] - 2019-03-26
+### Added:
+- Added support for planned future LaunchDarkly features related to analytics events and experimentation.
+- It is now possible to deserialize evaluation reasons from JSON (this is used by the Xamarin client).
+
+### Changed:
+- The `IFlagEventProperties` interface was extended and modified to support the aforementioned features.
+
+### Fixed:
+- Under some circumstances, a `CancellationTokenSource` might not be disposed of after making an HTTP request, which could cause a timer object to be leaked.
+
+## [1.2.3] - 2018-01-14
+### Fixed:
+- The assemblies in this package now have Authenticode signatures.
+
+## [1.2.2] - 2018-01-09
+
+This release was an error. It works, but there are no changes from 1.2.1 except for using a newer version of `dotnet-eventsource`, which was also an unintended re-release of the previous version.
+
+## [1.2.1] - 2018-12-17
+
+### Changed
+The only changes in this version are to the build:
+
+- What is published to NuGet is now the Release configuration, without debug information.
+- The Debug configuration (the default) no longer performs strong-name signing. This makes local development easier.
+- `LaunchDarkly.Common` now has an `InternalsVisibleTo` directive for an _unsigned_ version of the `LaunchDarkly.Client` unit tests. Again this is to support local development, since the client will be unsigned by default as well.
+
 ## [1.2.0] - 2018-10-24
 
 ### Changed

@@ -27,7 +27,7 @@ namespace LaunchDarkly.Common.Tests
         {
             EventSummarizer es = new EventSummarizer();
             EventSummary snapshot = es.Snapshot();
-            es.SummarizeEvent(_eventFactory.NewCustomEvent("whatever", _user, null));
+            es.SummarizeEvent(_eventFactory.NewCustomEvent("whatever", _user, null, null));
             EventSummary snapshot2 = es.Snapshot();
             Assert.Equal(snapshot.StartDate, snapshot2.StartDate);
             Assert.Equal(snapshot.EndDate, snapshot2.EndDate);
@@ -82,11 +82,11 @@ namespace LaunchDarkly.Common.Tests
 
             Dictionary<EventsCounterKey, EventsCounterValue> expected = new Dictionary<EventsCounterKey, EventsCounterValue>();
             Assert.Equal(new EventsCounterValue(2, new JValue("value1"), default1),
-                data.Counters[new EventsCounterKey(flag1.Key, flag1.Version, 1)]);
+                data.Counters[new EventsCounterKey(flag1.Key, flag1.EventVersion, 1)]);
             Assert.Equal(new EventsCounterValue(1, new JValue("value2"), default1),
-                data.Counters[new EventsCounterKey(flag1.Key, flag1.Version, 2)]);
+                data.Counters[new EventsCounterKey(flag1.Key, flag1.EventVersion, 2)]);
             Assert.Equal(new EventsCounterValue(1, new JValue("value99"), default2),
-                data.Counters[new EventsCounterKey(flag2.Key, flag2.Version, 1)]);
+                data.Counters[new EventsCounterKey(flag2.Key, flag2.EventVersion, 1)]);
             Assert.Equal(new EventsCounterValue(1, default3, default3),
                 data.Counters[new EventsCounterKey(unknownFlagKey, null, null)]);
         }
