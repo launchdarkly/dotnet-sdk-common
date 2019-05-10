@@ -11,7 +11,7 @@ See [Contributing](https://github.com/launchdarkly/dotnet-sdk-common/blob/master
 
 ## Signing
 
-The published version of this assembly is digitally signed with Authenticode, and also strong-named. The public key file is in this repo at `LaunchDarkly.Common.pk` as well as here:
+The published version of this assembly is digitally signed with Authenticode, and also strong-named. The public key file is in this repo at `LaunchDarkly.CommonSdk.pk` as well as here:
 
 ```
 Public Key:
