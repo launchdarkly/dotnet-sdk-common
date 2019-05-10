@@ -27,7 +27,7 @@ dotnet restore
 Then, to build the SDK without running any tests:
 
 ```
-dotnet build src/LaunchDarkly.Common -f netstandard1.4
+dotnet build src/LaunchDarkly.CommonSdk -f netstandard1.4
 ```
  
 ### Testing
@@ -35,7 +35,7 @@ dotnet build src/LaunchDarkly.Common -f netstandard1.4
 To run all unit tests:
 
 ```
-dotnet test test/LaunchDarkly.Common.Tests/LaunchDarkly.Common.Tests.csproj
+dotnet test test/LaunchDarkly.CommonSdk.Tests/LaunchDarkly.CommonSdk.Tests.csproj
 ```
 
 ## Miscellaneous

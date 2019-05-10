@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26730.16
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LaunchDarkly.Common", "src\LaunchDarkly.Common\LaunchDarkly.Common.csproj", "{97897D61-FEDF-4ABD-AD53-F4A43D788225}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LaunchDarkly.CommonSdk", "src\LaunchDarkly.CommonSdk\LaunchDarkly.CommonSdk.csproj", "{97897D61-FEDF-4ABD-AD53-F4A43D788225}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LaunchDarkly.Common.Tests", "test\LaunchDarkly.Common.Tests\LaunchDarkly.Common.Tests.csproj", "{9F8D6033-F6C3-462B-B728-550C5172206D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LaunchDarkly.CommonSdk.Tests", "test\LaunchDarkly.CommonSdk.Tests\LaunchDarkly.CommonSdk.Tests.csproj", "{9F8D6033-F6C3-462B-B728-550C5172206D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LaunchDarkly.Common.StrongName", "src\LaunchDarkly.Common.StrongName\LaunchDarkly.Common.StrongName.csproj", "{1A48902B-A26C-4F5E-BACF-67FF990F32B9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LaunchDarkly.Common.StrongName", "src\LaunchDarkly.CommonSdk.StrongName\LaunchDarkly.CommonSdk.StrongName.csproj", "{1A48902B-A26C-4F5E-BACF-67FF990F32B9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
