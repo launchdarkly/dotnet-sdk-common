@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\LaunchDarkly.Common\LaunchDarkly.Common.csproj" />
+    <ProjectReference Include="..\..\src\LaunchDarkly.CommonSdk\LaunchDarkly.CommonSdk.csproj" />
   </ItemGroup>
 
   <ItemGroup>
