@@ -1,17 +1,15 @@
-LaunchDarkly SDK .NET Common Code
-=================================
-[![CircleCI](https://circleci.com/gh/launchdarkly/dotnet-client-common/tree/master.svg?style=svg)](https://circleci.com/gh/launchdarkly/dotnet-client-common/tree/master)
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Flaunchdarkly%2Fdotnet-client-common.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Flaunchdarkly%2Fdotnet-client-common?ref=badge_shield)
+# LaunchDarkly SDK .NET Common Code
 
-This project contains .NET classes and interfaces that are shared between the LaunchDarkly .NET and Xamarin SDKs. Code that is specific to one or the other is in [.net-client](https://github.com/launchdarkly/.net-client) or [xamarin-client](https://github.com/launchdarkly/xamarin-client).
+[![CircleCI](https://circleci.com/gh/launchdarkly/dotnet-sdk-common/tree/master.svg?style=svg)](https://circleci.com/gh/launchdarkly/dotnet-sdk-common/tree/master)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Flaunchdarkly%2Fdotnet-sdk-common.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Flaunchdarkly%2Fdotnet-sdk-common?ref=badge_shield)
 
-Contributing
-------------
+This project contains .NET classes and interfaces that are shared between the LaunchDarkly .NET and Xamarin SDKs. Code that is specific to one or the other is in [dotnet-server-sdk](https://github.com/launchdarkly/dotnet-server-sdk) or [xamarin-client-sdk](https://github.com/launchdarkly/xamarin-client-sdk).
 
-See [Contributing](https://github.com/launchdarkly/.net-client/blob/master/CONTRIBUTING.md).
+## Contributing
 
-Signing
--------
+See [Contributing](https://github.com/launchdarkly/dotnet-sdk-common/blob/master/CONTRIBUTING.md).
+
+## Signing
 
 The published version of this assembly is digitally signed with Authenticode, and also strong-named. The public key file is in this repo at `LaunchDarkly.Common.pk` as well as here:
 
@@ -28,33 +26,17 @@ Public Key Token: 45ef1738a929a7df
 
 Building the code locally in the default Debug configuration does not sign the assembly and does not require a key file. Note that the unit tests can only be run in the Debug configuration.
 
-About LaunchDarkly
-------------------
-
+## About LaunchDarkly
+ 
 * LaunchDarkly is a continuous delivery platform that provides feature flags as a service and allows developers to iterate quickly and safely. We allow you to easily flag your features and manage them from the LaunchDarkly dashboard.  With LaunchDarkly, you can:
     * Roll out a new feature to a subset of your users (like a group of users who opt-in to a beta tester group), gathering feedback and bug reports from real-world use cases.
     * Gradually roll out a feature to an increasing percentage of users, and track the effect that the feature has on key metrics (for instance, how likely is a user to complete a purchase if they have feature A versus feature B?).
     * Turn off a feature that you realize is causing performance problems in production, without needing to re-deploy, or even restart the application with a changed configuration file.
     * Grant access to certain features based on user attributes, like payment plan (eg: users on the ‘gold’ plan get access to more features than users in the ‘silver’ plan). Disable parts of your application to facilitate maintenance, without taking everything offline.
-* LaunchDarkly provides feature flag SDKs for
-    * [Java](http://docs.launchdarkly.com/docs/java-sdk-reference "Java SDK")
-    * [JavaScript](http://docs.launchdarkly.com/docs/js-sdk-reference "LaunchDarkly JavaScript SDK")
-    * [PHP](http://docs.launchdarkly.com/docs/php-sdk-reference "LaunchDarkly PHP SDK")
-    * [Python](http://docs.launchdarkly.com/docs/python-sdk-reference "LaunchDarkly Python SDK")
-    * [Go](http://docs.launchdarkly.com/docs/go-sdk-reference "LaunchDarkly Go SDK")
-    * [Node.JS](http://docs.launchdarkly.com/docs/node-sdk-reference "LaunchDarkly Node SDK")
-    * [Electron](http://docs.launchdarkly.com/docs/electron-sdk-reference "LaunchDarkly Electron SDK")
-    * [.NET](http://docs.launchdarkly.com/docs/dotnet-sdk-reference "LaunchDarkly .Net SDK")
-    * [Ruby](http://docs.launchdarkly.com/docs/ruby-sdk-reference "LaunchDarkly Ruby SDK")
-    * [iOS](http://docs.launchdarkly.com/docs/ios-sdk-reference "LaunchDarkly iOS SDK")
-    * [Android](http://docs.launchdarkly.com/docs/android-sdk-reference "LaunchDarkly Android SDK")
+* LaunchDarkly provides feature flag SDKs for a wide variety of languages and technologies. Check out [our documentation](https://docs.launchdarkly.com/docs) for a complete list.
 * Explore LaunchDarkly
-    * [launchdarkly.com](http://www.launchdarkly.com/ "LaunchDarkly Main Website") for more information
-    * [docs.launchdarkly.com](http://docs.launchdarkly.com/  "LaunchDarkly Documentation") for our documentation and SDKs
-    * [apidocs.launchdarkly.com](http://apidocs.launchdarkly.com/  "LaunchDarkly API Documentation") for our API documentation
-    * [blog.launchdarkly.com](http://blog.launchdarkly.com/  "LaunchDarkly Blog Documentation") for the latest product updates
+    * [launchdarkly.com](https://www.launchdarkly.com/ "LaunchDarkly Main Website") for more information
+    * [docs.launchdarkly.com](https://docs.launchdarkly.com/  "LaunchDarkly Documentation") for our documentation and SDK reference guides
+    * [apidocs.launchdarkly.com](https://apidocs.launchdarkly.com/  "LaunchDarkly API Documentation") for our API documentation
+    * [blog.launchdarkly.com](https://blog.launchdarkly.com/  "LaunchDarkly Blog Documentation") for the latest product updates
     * [Feature Flagging Guide](https://github.com/launchdarkly/featureflags/  "Feature Flagging Guide") for best practices and strategies
-
-
-## License
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Flaunchdarkly%2Fdotnet-client-common.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Flaunchdarkly%2Fdotnet-client-common?ref=badge_large)
