@@ -2,6 +2,10 @@
 
 For full release notes for the projects that depend on this project, see their respective changelogs. This file describes changes only to the common code. This project adheres to [Semantic Versioning](http://semver.org).
 
+## [2.1.2] - 2019-05-10
+### Fixed:
+- Fixed a build error that caused classes to be omitted from `LaunchDarkly.CommonSdk.StrongName`.
+
 ## [2.1.1] - 2019-05-10
 ### Changed:
 - The package and assembly name are now `LaunchDarkly.CommonSdk`, and the `InternalsVisibleTo` directives now refer to `LaunchDarkly.ServerSdk` and `LaunchDarkly.XamarinSdk`. There are no other changes. All future releases of the LaunchDarkly server-side .NET SDK and client-side Xamarin SDK will use the new package names, and no further updates of the old `LaunchDarkly.Common` package will be published.
