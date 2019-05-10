@@ -2,11 +2,11 @@
   <PropertyGroup>
     <Version>2.1.0</Version>
     <TargetFrameworks>netstandard1.4;netstandard1.6;netstandard2.0;net45</TargetFrameworks>
-    <PackageLicenseUrl>https://raw.githubusercontent.com/launchdarkly/dotnet-client-common/master/LICENSE</PackageLicenseUrl>
+    <PackageLicenseUrl>https://raw.githubusercontent.com/launchdarkly/dotnet-sdk-common/master/LICENSE</PackageLicenseUrl>
     <DebugType>portable</DebugType>
-    <AssemblyName>LaunchDarkly.Common.StrongName</AssemblyName>
+    <AssemblyName>LaunchDarkly.CommonSdk.StrongName</AssemblyName>
     <OutputType>Library</OutputType>
-    <PackageId>LaunchDarkly.Common.StrongName</PackageId>
+    <PackageId>LaunchDarkly.CommonSdk.StrongName</PackageId>
     <Description>LaunchDarkly common code for .NET and Xamarin clients</Description>
     <Copyright>Copyright 2018 LaunchDarkly</Copyright>
   </PropertyGroup>
@@ -25,7 +25,7 @@
     <Reference Include="System.Net.Http" />
   </ItemGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
-    <AssemblyOriginatorKeyFile>../../LaunchDarkly.Common.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>../../LaunchDarkly.CommonSdk.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>
   </PropertyGroup>
 </Project>
