@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>netcoreapp1.1;netcoreapp2.0</TargetFrameworks>
-    <AssemblyName>LaunchDarkly.Common.Tests</AssemblyName>
+    <AssemblyName>LaunchDarkly.CommonSdk.Tests</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
