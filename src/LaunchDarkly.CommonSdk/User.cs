@@ -68,13 +68,16 @@ namespace LaunchDarkly.Client
         /// and will be removed in a future version. See remarks on <c>User</c>.
         /// </remarks>
         [JsonProperty(PropertyName = "ip", NullValueHandling = NullValueHandling.Ignore)]
+        [Obsolete("use IPAddress")]
         public string IpAddress { get; set; }
 
         /// <summary>
         /// The IP address of the user.
         /// </summary>
         [JsonIgnore]
+#pragma warning disable 618
         public string IPAddress => IpAddress;
+#pragma warning restore 618
 
         /// <summary>
         /// The country code for the user.
@@ -186,7 +189,7 @@ namespace LaunchDarkly.Client
                 case "secondary":
                     return null;
                 case "ip":
-                    return new JValue(IpAddress);
+                    return new JValue(IPAddress);
                 case "email":
                     return new JValue(Email);
                 case "avatar":
@@ -275,7 +278,9 @@ namespace LaunchDarkly.Client
         {
             Key = from.Key;
             SecondaryKey = from.SecondaryKey;
-            IpAddress = from.IpAddress;
+#pragma warning disable 618
+            IpAddress = from.IPAddress;
+#pragma warning restore 618
             Country = from.Country;
             FirstName = from.FirstName;
             LastName = from.LastName;
@@ -297,7 +302,9 @@ namespace LaunchDarkly.Client
         {
             Key = key;
             SecondaryKey = secondaryKey;
+#pragma warning disable 618
             IpAddress = ip;
+#pragma warning restore 618
             Country = country;
             FirstName = firstName;
             LastName = lastName;
@@ -370,7 +377,7 @@ namespace LaunchDarkly.Client
             }
             return Object.Equals(Key, u.Key) &&
                 Object.Equals(SecondaryKey, u.SecondaryKey) &&
-                Object.Equals(IpAddress, u.IpAddress) &&
+                Object.Equals(IPAddress, u.IPAddress) &&
                 Object.Equals(Country, u.Country) &&
                 Object.Equals(FirstName, u.FirstName) &&
                 Object.Equals(LastName, u.LastName) &&
@@ -395,7 +402,7 @@ namespace LaunchDarkly.Client
             var hb = Util.Hash()
                 .With(Key)
                 .With(SecondaryKey)
-                .With(IpAddress)
+                .With(IPAddress)
                 .With(Country)
                 .With(FirstName)
                 .With(LastName)

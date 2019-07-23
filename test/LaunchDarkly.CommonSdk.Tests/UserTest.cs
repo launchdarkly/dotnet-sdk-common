@@ -32,7 +32,7 @@ namespace LaunchDarkly.Common.Tests
         {
             var user = User.WithKey(key);
             Assert.Null(user.SecondaryKey);
-            Assert.Null(user.IpAddress);
+            Assert.Null(user.IPAddress);
             Assert.Null(user.Country);
             Assert.Null(user.FirstName);
             Assert.Null(user.LastName);
@@ -49,7 +49,9 @@ namespace LaunchDarkly.Common.Tests
         {
             var ip = "1.2.3.4";
             var user = User.WithKey(key);
+#pragma warning disable 618
             user.IpAddress = ip;
+#pragma warning restore 618
             Assert.Equal(ip, user.IPAddress);
         }
 

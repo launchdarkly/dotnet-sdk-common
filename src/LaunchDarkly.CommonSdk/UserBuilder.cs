@@ -40,7 +40,7 @@ namespace LaunchDarkly.Client
         {
             _key = fromUser.Key;
             _secondaryKey = fromUser.SecondaryKey;
-            _ipAddress = fromUser.IpAddress;
+            _ipAddress = fromUser.IPAddress;
             _country = fromUser.Country;
             _firstName = fromUser.FirstName;
             _lastName = fromUser.LastName;
@@ -64,7 +64,9 @@ namespace LaunchDarkly.Client
             return new User(_key)
             {
                 SecondaryKey = _secondaryKey,
+#pragma warning disable 618
                 IpAddress = _ipAddress,
+#pragma warning restore 618
                 Country = _country,
                 FirstName = _firstName,
                 LastName = _lastName,
