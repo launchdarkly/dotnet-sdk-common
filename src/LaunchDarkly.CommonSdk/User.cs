@@ -177,6 +177,8 @@ namespace LaunchDarkly.Client
         /// Although there is currently a public setter method for this property, you should avoid modifying
         /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
         /// and will be removed in a future version. See remarks on <c>User</c>.
+        /// 
+        /// Also, in a future version this will be changed to an immutable dictionary.
         /// </remarks>
         [JsonProperty(PropertyName = "custom", NullValueHandling = NullValueHandling.Ignore)]
         public Dictionary<string, JToken> Custom { get; set; }
@@ -189,6 +191,8 @@ namespace LaunchDarkly.Client
         /// Although there is currently a public setter method for this property, you should avoid modifying
         /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
         /// and will be removed in a future version. See remarks on <c>User</c>.
+        /// 
+        /// Also, in a future version this will be changed to an immutable set.
         /// </remarks>
         [JsonIgnore]
         public ISet<string> PrivateAttributeNames { get; set; }
@@ -276,7 +280,12 @@ namespace LaunchDarkly.Client
         /// <summary>
         /// Creates a user with the given key.
         /// </summary>
+        /// <remarks>
+        /// In a future version, the <c>User</c> constructors will not be used directly; use a factory method like
+        /// <see cref="WithKey(string)"/>, or the builder pattern with <see cref="Builder(string)"/>.
+        /// </remarks>
         /// <param name="key">a <c>string</c> that uniquely identifies a user</param>
+        [Obsolete("use User.WithKey")]
         public User(string key)
         {
             Key = key;
@@ -286,7 +295,12 @@ namespace LaunchDarkly.Client
         /// <summary>
         /// Creates a user by copying all properties from another user.
         /// </summary>
+        /// <remarks>
+        /// In a future version, <c>User</c> will be immutable, so there will be no reason to make an exact copy
+        /// of an instance. If you want to make a copy but then change some properties, use <see cref="User.Builder(User)"/>.
+        /// </remarks>
         /// <param name="from">the user to copy</param>
+        [Obsolete("use User.Builder(User)")]
         public User(User from)
         {
             Key = from.Key;
@@ -336,7 +350,9 @@ namespace LaunchDarkly.Client
         /// <returns>a <c>User</c> instance</returns>
         public static User WithKey(string key)
         {
+#pragma warning disable 618
             return new User(key);
+#pragma warning restore 618
         }
 
         internal User AddCustom(string attribute, JToken value)

@@ -7,7 +7,7 @@ namespace LaunchDarkly.Common.Tests
 {
     public class EventFactoryTest
     {
-        private static readonly User user = new User("user-key");
+        private static readonly User user = User.WithKey("user-key");
         private static readonly JToken resultVal = new JValue("result");
         private static readonly JToken defaultVal = new JValue("default");
 

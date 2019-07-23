@@ -21,6 +21,15 @@ namespace LaunchDarkly.Common.Tests
                 .Build();
 
         [Fact]
+        public void ConstructorSetsKey()
+        {
+#pragma warning disable 618
+            var user = new User(key);
+#pragma warning restore 618
+            Assert.Equal(key, user.Key);
+        }
+
+        [Fact]
         public void UserWithKeySetsKey()
         {
             var user = User.WithKey(key);
@@ -75,7 +84,9 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void TestUserEqualityWithCopyConstructor()
         {
+#pragma warning disable 618
             User copy = new User(UserToCopy);
+#pragma warning restore 618
             Assert.NotSame(UserToCopy, copy);
             Assert.True(copy.Equals(UserToCopy));
             Assert.True(UserToCopy.Equals(copy));

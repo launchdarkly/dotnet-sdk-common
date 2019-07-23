@@ -235,6 +235,7 @@ namespace LaunchDarkly.Client
 
         public User Build()
         {
+#pragma warning disable 618
             return new User(_key)
             {
                 SecondaryKey = _secondaryKey,
@@ -253,6 +254,7 @@ namespace LaunchDarkly.Client
                 Custom = _custom == null ? new Dictionary<string, JToken>() :
                     new Dictionary<string, JToken>(_custom)
             };
+#pragma warning restore 618
         }
 
         public IUserBuilder SecondaryKey(string secondaryKey)
