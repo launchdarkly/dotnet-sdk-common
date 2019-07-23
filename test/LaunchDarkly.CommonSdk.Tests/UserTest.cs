@@ -45,6 +45,15 @@ namespace LaunchDarkly.Common.Tests
         }
 
         [Fact]
+        public void DeprecatedIpSetsIP()
+        {
+            var ip = "1.2.3.4";
+            var user = User.WithKey(key);
+            user.IpAddress = ip;
+            Assert.Equal(ip, user.IPAddress);
+        }
+
+        [Fact]
         public void TestUserSelfEquality()
         {
             Assert.True(UserToCopy.Equals(UserToCopy));

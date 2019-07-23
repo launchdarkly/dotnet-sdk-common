@@ -60,7 +60,7 @@ namespace LaunchDarkly.Client
         public string SecondaryKey { get; set; }
 
         /// <summary>
-        /// The IP address of the user.
+        /// The IP address of the user (deprecated property name; use <see cref="IPAddress"/>).
         /// </summary>
         /// <remarks>
         /// Although there is currently a public setter method for this property, you should avoid modifying
@@ -69,6 +69,12 @@ namespace LaunchDarkly.Client
         /// </remarks>
         [JsonProperty(PropertyName = "ip", NullValueHandling = NullValueHandling.Ignore)]
         public string IpAddress { get; set; }
+
+        /// <summary>
+        /// The IP address of the user.
+        /// </summary>
+        [JsonIgnore]
+        public string IPAddress => IpAddress;
 
         /// <summary>
         /// The country code for the user.

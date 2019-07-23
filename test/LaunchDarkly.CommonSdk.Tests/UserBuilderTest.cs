@@ -45,7 +45,7 @@ namespace LaunchDarkly.Common.Tests
             StringTest[] stringTests =
             {
                 new StringTest("secondary", b => b.SecondaryKey, u => u.SecondaryKey),
-                new StringTest("ip", b => b.IPAddress, u => u.IpAddress),
+                new StringTest("ip", b => b.IPAddress, u => u.IPAddress),
                 new StringTest("country", b => b.Country, u => u.Country),
                 new StringTest("firstName", b => b.FirstName, u => u.FirstName),
                 new StringTest("lastName", b => b.LastName, u => u.LastName),
@@ -72,7 +72,7 @@ namespace LaunchDarkly.Common.Tests
         {
             StringTest[] stringTests =
             {
-                new StringTest("ip", b => b.PrivateIPAddress, u => u.IpAddress),
+                new StringTest("ip", b => b.PrivateIPAddress, u => u.IPAddress),
                 new StringTest("country", b => b.PrivateCountry, u => u.Country),
                 new StringTest("firstName", b => b.PrivateFirstName, u => u.FirstName),
                 new StringTest("lastName", b => b.PrivateLastName, u => u.LastName),
