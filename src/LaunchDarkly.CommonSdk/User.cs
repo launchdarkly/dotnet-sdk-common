@@ -412,7 +412,7 @@ namespace LaunchDarkly.Client
         /// <returns>a hash code</returns>
         public override int GetHashCode()
         {
-            var hb = Util.Hash()
+            var hashBuilder = Util.Hash()
                 .With(Key)
                 .With(SecondaryKey)
                 .With(IPAddress)
@@ -427,17 +427,17 @@ namespace LaunchDarkly.Client
             {
                 foreach (var c in Custom)
                 {
-                    hb.With(c.Key).With(c.Value);
+                    hashBuilder.With(c.Key).With(c.Value);
                 }
             }
             if (PrivateAttributeNames != null)
             {
                 foreach (var p in PrivateAttributeNames)
                 {
-                    hb.With(p);
+                    hashBuilder.With(p);
                 }
             }
-            return hb.Value;
+            return hashBuilder.Value;
         }
     }
 }
