@@ -28,13 +28,20 @@ namespace LaunchDarkly.Client
     /// changed to be immutable. The preferred method of setting user properties is to obtain a builder with
     /// <see cref="User.Builder(string)"/>; avoid using the <see cref="UserExtensions"/> methods or an object
     /// initializer expression such as <c>new User("key") { Name = "name" }</c>, since these will no longer work
-    /// once <c>User</c> is immutable.
+    /// once <c>User</c> is immutable. Modifying properties after creating a <c>User</c> could result in
+    /// unexpected inconsistencies in your analytics events, since events that have not yet been delivered
+    /// retain a reference to the original <c>User</c>.
     /// </remarks>
     public class User : IEquatable<User>
     {
         /// <summary>
         /// The unique key for the user.
         /// </summary>
+        /// <remarks>
+        /// Although there is currently a public setter method for this property, you should avoid modifying
+        /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
+        /// and will be removed in a future version. See remarks on <c>User</c>.
+        /// </remarks>
         [JsonProperty(PropertyName = "key", NullValueHandling = NullValueHandling.Ignore)]
         public string Key { get; set; }
 
@@ -44,54 +51,99 @@ namespace LaunchDarkly.Client
         /// as follows: if you have chosen to bucket users by a specific attribute, the secondary key (if set)
         /// is used to further distinguish between users who are otherwise identical according to that attribute.
         /// </summary>
+        /// <remarks>
+        /// Although there is currently a public setter method for this property, you should avoid modifying
+        /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
+        /// and will be removed in a future version. See remarks on <c>User</c>.
+        /// </remarks>
         [JsonProperty(PropertyName = "secondary", NullValueHandling = NullValueHandling.Ignore)]
         public string SecondaryKey { get; set; }
 
         /// <summary>
         /// The IP address of the user.
         /// </summary>
+        /// <remarks>
+        /// Although there is currently a public setter method for this property, you should avoid modifying
+        /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
+        /// and will be removed in a future version. See remarks on <c>User</c>.
+        /// </remarks>
         [JsonProperty(PropertyName = "ip", NullValueHandling = NullValueHandling.Ignore)]
         public string IpAddress { get; set; }
 
         /// <summary>
         /// The country code for the user.
         /// </summary>
+        /// <remarks>
+        /// Although there is currently a public setter method for this property, you should avoid modifying
+        /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
+        /// and will be removed in a future version. See remarks on <c>User</c>.
+        /// </remarks>
         [JsonProperty(PropertyName = "country", NullValueHandling = NullValueHandling.Ignore)]
         public string Country { get; set; }
 
         /// <summary>
         /// The user's first name.
         /// </summary>
+        /// <remarks>
+        /// Although there is currently a public setter method for this property, you should avoid modifying
+        /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
+        /// and will be removed in a future version. See remarks on <c>User</c>.
+        /// </remarks>
         [JsonProperty(PropertyName = "firstName", NullValueHandling = NullValueHandling.Ignore)]
         public string FirstName { get; set; }
 
         /// <summary>
         /// The user's last name.
         /// </summary>
+        /// <remarks>
+        /// Although there is currently a public setter method for this property, you should avoid modifying
+        /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
+        /// and will be removed in a future version. See remarks on <c>User</c>.
+        /// </remarks>
         [JsonProperty(PropertyName = "lastName", NullValueHandling = NullValueHandling.Ignore)]
         public string LastName { get; set; }
 
         /// <summary>
         /// The user's full name.
         /// </summary>
+        /// <remarks>
+        /// Although there is currently a public setter method for this property, you should avoid modifying
+        /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
+        /// and will be removed in a future version. See remarks on <c>User</c>.
+        /// </remarks>
         [JsonProperty(PropertyName = "name", NullValueHandling = NullValueHandling.Ignore)]
         public string Name { get; set; }
 
         /// <summary>
         /// The user's avatar.
         /// </summary>
+        /// <remarks>
+        /// Although there is currently a public setter method for this property, you should avoid modifying
+        /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
+        /// and will be removed in a future version. See remarks on <c>User</c>.
+        /// </remarks>
         [JsonProperty(PropertyName = "avatar", NullValueHandling = NullValueHandling.Ignore)]
         public string Avatar { get; set; }
 
         /// <summary>
         /// The user's email address.
         /// </summary>
+        /// <remarks>
+        /// Although there is currently a public setter method for this property, you should avoid modifying
+        /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
+        /// and will be removed in a future version. See remarks on <c>User</c>.
+        /// </remarks>
         [JsonProperty(PropertyName = "email", NullValueHandling = NullValueHandling.Ignore)]
         public string Email { get; set; }
 
         /// <summary>
         /// Whether or not the user is anonymous.
         /// </summary>
+        /// <remarks>
+        /// Although there is currently a public setter method for this property, you should avoid modifying
+        /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
+        /// and will be removed in a future version. See remarks on <c>User</c>.
+        /// </remarks>
         [JsonProperty(PropertyName = "anonymous", NullValueHandling = NullValueHandling.Ignore)]
         public bool? Anonymous { get; set; }
 
@@ -99,6 +151,11 @@ namespace LaunchDarkly.Client
         /// Custom attributes for the user. These can be more conveniently set via the extension
         /// methods <c>AndCustomAttribute</c> or <c>AndPrivateCustomAttribute</c>.
         /// </summary>
+        /// <remarks>
+        /// Although there is currently a public setter method for this property, you should avoid modifying
+        /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
+        /// and will be removed in a future version. See remarks on <c>User</c>.
+        /// </remarks>
         [JsonProperty(PropertyName = "custom", NullValueHandling = NullValueHandling.Ignore)]
         public Dictionary<string, JToken> Custom { get; set; }
 
@@ -106,6 +163,11 @@ namespace LaunchDarkly.Client
         /// Used internally to track which attributes are private. To set private attributes,
         /// you should use extension methods such as <c>AndPrivateName</c>.
         /// </summary>
+        /// <remarks>
+        /// Although there is currently a public setter method for this property, you should avoid modifying
+        /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
+        /// and will be removed in a future version. See remarks on <c>User</c>.
+        /// </remarks>
         [JsonIgnore]
         public ISet<string> PrivateAttributeNames { get; set; }
 
