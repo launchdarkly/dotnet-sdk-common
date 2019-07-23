@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using LaunchDarkly.Client;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -7,10 +8,55 @@ using Xunit;
 
 namespace LaunchDarkly.Common.Tests
 {
-    public class UserBuilderTest
+    public class UserBuilderTestBase
+    {
+        public struct StringPropertyDesc
+        {
+            public string Name;
+            public Func<UserBuilder, Func<string, UserBuilder>> Setter;
+            public Func<User, string> Getter;
+
+            public StringPropertyDesc(string name, Func<UserBuilder, Func<string, UserBuilder>> setter, Func<User, string> getter)
+            {
+                Name = name;
+                Setter = setter;
+                Getter = getter;
+            }
+
+            public override string ToString() => Name;
+        }
+
+        private static IEnumerable<object[]> MakeProperties(params StringPropertyDesc[] ps)
+        {
+            return ps.Select(p => new object[] { p });
+        }
+
+        public static IEnumerable<object[]> AllStringProperties => MakeProperties(
+            new StringPropertyDesc("secondary", b => b.SecondaryKey, u => u.SecondaryKey),
+            new StringPropertyDesc("ip", b => b.IPAddress, u => u.IPAddress),
+            new StringPropertyDesc("country", b => b.Country, u => u.Country),
+            new StringPropertyDesc("firstName", b => b.FirstName, u => u.FirstName),
+            new StringPropertyDesc("lastName", b => b.LastName, u => u.LastName),
+            new StringPropertyDesc("name", b => b.Name, u => u.Name),
+            new StringPropertyDesc("avatar", b => b.Avatar, u => u.Avatar),
+            new StringPropertyDesc("email", b => b.Email, u => u.Email)
+        );
+
+        public static IEnumerable<object[]> PrivateStringProperties = MakeProperties(
+            new StringPropertyDesc("ip", b => b.PrivateIPAddress, u => u.IPAddress),
+            new StringPropertyDesc("country", b => b.PrivateCountry, u => u.Country),
+            new StringPropertyDesc("firstName", b => b.PrivateFirstName, u => u.FirstName),
+            new StringPropertyDesc("lastName", b => b.PrivateLastName, u => u.LastName),
+            new StringPropertyDesc("name", b => b.PrivateName, u => u.Name),
+            new StringPropertyDesc("avatar", b => b.PrivateAvatar, u => u.Avatar),
+            new StringPropertyDesc("email", b => b.PrivateEmail, u => u.Email)
+        );
+    }
+
+    public class UserBuilderTest : UserBuilderTestBase
     {
         private const string key = "UserKey";
-
+   
         [Fact]
         public void UserWithKeySetsKey()
         {
@@ -25,68 +71,32 @@ namespace LaunchDarkly.Common.Tests
             Assert.Equal(key, user.Key);
         }
 
-        struct StringTest
+        [Theory]
+        [MemberData(nameof(AllStringProperties))]
+        public void StringPropertyIsNullByDefault(StringPropertyDesc p)
         {
-            public string Name;
-            public Func<UserBuilder, Func<string, UserBuilder>> Setter;
-            public Func<User, string> Getter;
-
-            public StringTest(string name, Func<UserBuilder, Func<string, UserBuilder>> setter, Func<User, string> getter)
-            {
-                Name = name;
-                Setter = setter;
-                Getter = getter;
-            }
+            var user = User.Builder(key).Build();
+            Assert.Null(p.Getter(user));
         }
 
-        [Fact]
-        public void TestStringProperties()
+        [Theory]
+        [MemberData(nameof(AllStringProperties))]
+        public void BuilderCanSetStringProperty(StringPropertyDesc p)
         {
-            StringTest[] stringTests =
-            {
-                new StringTest("secondary", b => b.SecondaryKey, u => u.SecondaryKey),
-                new StringTest("ip", b => b.IPAddress, u => u.IPAddress),
-                new StringTest("country", b => b.Country, u => u.Country),
-                new StringTest("firstName", b => b.FirstName, u => u.FirstName),
-                new StringTest("lastName", b => b.LastName, u => u.LastName),
-                new StringTest("name", b => b.Name, u => u.Name),
-                new StringTest("avatar", b => b.Avatar, u => u.Avatar),
-                new StringTest("email", b => b.Email, u => u.Email)
-            };
-            foreach (var t in stringTests)
-            {
-                var user = User.Builder(key).Build();
-                Assert.True(t.Getter(user) == null, t.Name + " should default to null");
-            }
-            foreach (var t in stringTests)
-            {
-                var expectedValue = t.Name + " value";
-                var user = t.Setter(User.Builder(key))(expectedValue).Build();
-                Assert.Equal(expectedValue, t.Getter(user));
-                Assert.Null(user.PrivateAttributeNames);
-            }
+            var expectedValue = "x";
+            var user = p.Setter(User.Builder(key))(expectedValue).Build();
+            Assert.Equal(expectedValue, p.Getter(user));
+            Assert.Null(user.PrivateAttributeNames);
         }
 
-        [Fact]
-        public void TestPrivateStringProperties()
+        [Theory]
+        [MemberData(nameof(PrivateStringProperties))]
+        public void BuilderCanSetPrivateStringProperty(StringPropertyDesc p)
         {
-            StringTest[] stringTests =
-            {
-                new StringTest("ip", b => b.PrivateIPAddress, u => u.IPAddress),
-                new StringTest("country", b => b.PrivateCountry, u => u.Country),
-                new StringTest("firstName", b => b.PrivateFirstName, u => u.FirstName),
-                new StringTest("lastName", b => b.PrivateLastName, u => u.LastName),
-                new StringTest("name", b => b.PrivateName, u => u.Name),
-                new StringTest("avatar", b => b.PrivateAvatar, u => u.Avatar),
-                new StringTest("email", b => b.PrivateEmail, u => u.Email)
-            };
-            foreach (var t in stringTests)
-            {
-                var expectedValue = t.Name + " value";
-                var user = t.Setter(User.Builder(key))(expectedValue).Build();
-                Assert.Equal(expectedValue, t.Getter(user));
-                Assert.Equal(new HashSet<string> { t.Name }, user.PrivateAttributeNames);
-            }
+            var expectedValue = p.Name + " value";
+            var user = p.Setter(User.Builder(key))(expectedValue).Build();
+            Assert.Equal(expectedValue, p.Getter(user));
+            Assert.Equal(new HashSet<string> { p.Name }, user.PrivateAttributeNames);
         }
 
         [Fact]

@@ -85,7 +85,7 @@ namespace LaunchDarkly.Common
             _result.Key = _user.Key;
             _result.SecondaryKey = _user.SecondaryKey;
             _result.Anonymous = _user.Anonymous;
-            _result.IpAddress = CheckPrivateAttr("ip", _user.IpAddress);
+            _result.IpAddress = CheckPrivateAttr("ip", _user.IPAddress);
             _result.Country = CheckPrivateAttr("country", _user.Country);
             _result.FirstName = CheckPrivateAttr("firstName", _user.FirstName);
             _result.LastName = CheckPrivateAttr("lastName", _user.LastName);

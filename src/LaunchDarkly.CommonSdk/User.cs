@@ -67,9 +67,19 @@ namespace LaunchDarkly.Client
         /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
         /// and will be removed in a future version. See remarks on <c>User</c>.
         /// </remarks>
-        [JsonProperty(PropertyName = "ip", NullValueHandling = NullValueHandling.Ignore)]
         [Obsolete("use IPAddress")]
-        public string IpAddress { get; set; }
+        [JsonIgnore]
+        public string IpAddress
+        {
+            get
+            {
+                return IPAddress;
+            }
+            set
+            {
+                IPAddress = value;
+            }
+        }
 
         /// <summary>
         /// The IP address of the user.
@@ -79,20 +89,8 @@ namespace LaunchDarkly.Client
         /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
         /// and will be removed in a future version. See remarks on <c>User</c>.
         /// </remarks>
-        [JsonIgnore]
-#pragma warning disable 618
-        public string IPAddress
-        {
-            get
-            {
-                return IpAddress;
-            }
-            set
-            {
-                IpAddress = value;
-            }
-        }
-#pragma warning restore 618
+        [JsonProperty(PropertyName = "ip", NullValueHandling = NullValueHandling.Ignore)]
+        public string IPAddress { get; set; }
 
         /// <summary>
         /// The country code for the user.

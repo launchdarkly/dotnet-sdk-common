@@ -1,25 +1,28 @@
 ﻿using LaunchDarkly.Client;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Xunit;
 
 namespace LaunchDarkly.Common.Tests
 {
-    public class UserSerializationTests
+    public class UserSerializationTests : UserBuilderTestBase
     {
+        private const string key = "UserKey";
+
         // Note that users are never deserialized from JSON in the .NET SDK, but they are in the Xamarin SDK.
 
         [Fact]
         public void DeserializeBasicUserAsJson()
         {
-            var json = "{\"key\":\"user@test.com\"}";
+            var json = $"{{\"key\":\"{key}\"}}";
             var user = JsonConvert.DeserializeObject<User>(json);
-            Assert.Equal("user@test.com", user.Key);
+            Assert.Equal(key, user.Key);
         }
 
         [Fact]
         public void DeserializeUserWithCustomAsJson()
         {
-            var json = "{\"key\":\"user@test.com\", \"custom\": {\"a\":\"b\"}}";
+            var json = $"{{\"key\":\"{key}\", \"custom\": {{\"a\":\"b\"}}}}";
             var user = JsonConvert.DeserializeObject<User>(json);
             Assert.Equal("b", (string)user.Custom["a"]);
         }
@@ -27,27 +30,37 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void SerializingAndDeserializingAUserWithCustomAttributesIsIdempotent()
         {
-            var user = User.Builder("foo@bar.com").Custom("a", "b").Build();
+            var user = User.Builder(key).Custom("a", "b").Build();
             var json = JsonConvert.SerializeObject(user);
             var newUser = JsonConvert.DeserializeObject<User>(json);
             Assert.Equal("b", (string)user.Custom["a"]);
-            Assert.Equal("foo@bar.com", user.Key);
+            Assert.Equal(key, user.Key);
         }
 
         [Fact]
         public void SerializingAUserWithNoAnonymousSetYieldsNoAnonymous()
         {
-            var user = User.WithKey("foo@bar.com");
-            var json = JsonConvert.SerializeObject(user);
-            Assert.DoesNotContain("anonymous", json);
+            var user = User.WithKey(key);
+            var json = JObject.FromObject(user);
+            Assert.Null(json["anonymous"]);
         }
 
         [Fact]
         public void SerializingAUserWithAnonymousSetYieldsAnonymousTrue()
         {
-            var user = User.Builder("foo@bar.com").Anonymous(true).Build();
-            var json = JsonConvert.SerializeObject(user);
-            Assert.Contains("\"anonymous\":true", json);
+            var user = User.Builder(key).Anonymous(true).Build();
+            var json = JObject.FromObject(user);
+            Assert.Equal(new JValue(true), json["anonymous"]);
+        }
+
+        [Theory]
+        [MemberData(nameof(AllStringProperties))]
+        public void CanSerializeStringProperty(StringPropertyDesc p)
+        {
+            var value = "x";
+            var user = p.Setter(User.Builder(key))(value).Build();
+            var json = JObject.FromObject(user);
+            Assert.Equal(new JValue(value), json[p.Name]);
         }
     }
 }

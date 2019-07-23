@@ -45,7 +45,7 @@ namespace LaunchDarkly.Common.Tests
         }
 
         [Fact]
-        public void DeprecatedIpSetsIP()
+        public void SettingDeprecatedIpSetsIP()
         {
             var ip = "1.2.3.4";
             var user = User.WithKey(key);
@@ -53,6 +53,17 @@ namespace LaunchDarkly.Common.Tests
             user.IpAddress = ip;
 #pragma warning restore 618
             Assert.Equal(ip, user.IPAddress);
+        }
+
+        [Fact]
+        public void GettingDeprecatedIpGetsIP()
+        {
+            var ip = "1.2.3.4";
+            var user = User.WithKey(key);
+            user.IPAddress = ip;
+#pragma warning disable 618
+            Assert.Equal(ip, user.IpAddress);
+#pragma warning restore 618
         }
 
         [Fact]
