@@ -5,17 +5,14 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Xunit;
 
+// This file should be removed in the next major version.
+
 namespace LaunchDarkly.Common.Tests
 {
-    public class UserTests
+    public class UserExtensionsTest
     {
-        [Fact]
-        public void WhenCreatingAUser_AKeyMustBeProvided()
-        {
-            var user = User.WithKey("AnyUniqueKey");
-            Assert.Equal("AnyUniqueKey", user.Key);
-        }
-
+        // suppress warnings for these obsolete methods
+#pragma warning disable 618
         [Fact]
         public void WhenCreatingAUser_AnOptionalSecondaryKeyCanBeProvided()
         {
@@ -63,7 +60,7 @@ namespace LaunchDarkly.Common.Tests
                 .AndCustomAttribute("AnyAttributeName", "AnyValue");
 
             Assert.Equal("AnyUniqueKey", user.Key);
-            Assert.Equal("AnyValue", (string) user.Custom["AnyAttributeName"]);
+            Assert.Equal("AnyValue", (string)user.Custom["AnyAttributeName"]);
         }
 
         [Fact]
@@ -90,8 +87,8 @@ namespace LaunchDarkly.Common.Tests
                 .AndCustomAttribute("AnyOtherAttributeName", "AnyOtherValue");
 
             Assert.Equal("AnyUniqueKey", user.Key);
-            Assert.Equal("AnyValue", (string) user.Custom["AnyAttributeName"]);
-            Assert.Equal("AnyOtherValue", (string) user.Custom["AnyOtherAttributeName"]);
+            Assert.Equal("AnyValue", (string)user.Custom["AnyAttributeName"]);
+            Assert.Equal("AnyOtherValue", (string)user.Custom["AnyOtherAttributeName"]);
         }
 
 
@@ -107,8 +104,8 @@ namespace LaunchDarkly.Common.Tests
             Assert.Equal("AnyUniqueKey", user.Key);
             Assert.Equal("1.2.3.4", user.IpAddress);
             Assert.Equal("US", user.Country);
-            Assert.Equal("AnyValue", (string) user.Custom["AnyAttributeName"]);
-            Assert.Equal("AnyOtherValue", (string) user.Custom["AnyOtherAttributeName"]);
+            Assert.Equal("AnyValue", (string)user.Custom["AnyAttributeName"]);
+            Assert.Equal("AnyOtherValue", (string)user.Custom["AnyOtherAttributeName"]);
         }
 
         [Fact]
@@ -243,89 +240,6 @@ namespace LaunchDarkly.Common.Tests
             var user = User.WithKey("key").AndPrivateCountry("us");
             Assert.True(user.PrivateAttributeNames.Contains("country"));
         }
-
-        // Note that we never deserialize users from JSON in the client code; however, our integration tests
-        // do require that User be deserializable.
-
-        [Fact]
-        public void DeserializeBasicUserAsJson()
-        {
-            var json = "{\"key\":\"user@test.com\"}";
-            var user = JsonConvert.DeserializeObject<User>(json);
-            Assert.Equal("user@test.com", user.Key);
-        }
-
-        [Fact]
-        public void DeserializeUserWithCustomAsJson()
-        {
-            var json = "{\"key\":\"user@test.com\", \"custom\": {\"bizzle\":\"cripps\"}}";
-            var user = JsonConvert.DeserializeObject<User>(json);
-            Assert.Equal("cripps", (string) user.Custom["bizzle"]);
-        }
-
-        [Fact]
-        public void SerializingAndDeserializingAUserWithCustomAttributesIsIdempotent()
-        {
-            var user = User.WithKey("foo@bar.com").AndCustomAttribute("bizzle", "cripps");
-            var json = JsonConvert.SerializeObject(user);
-            var newUser = JsonConvert.DeserializeObject<User>(json);
-            Assert.Equal("cripps", (string) user.Custom["bizzle"]);
-            Assert.Equal("foo@bar.com", user.Key);
-        }
-
-        [Fact]
-        public void SerializingAUserWithNoAnonymousSetYieldsNoAnonymous()
-        {
-            var user = User.WithKey("foo@bar.com");
-            var json = JsonConvert.SerializeObject(user);
-            Assert.False(json.Contains("anonymous"));
-        }
-
-        [Fact]
-        public void TestUserEqualityAndCopyConstructor()
-        {
-            User user = User.WithKey("userkey")
-                .AndSecondaryKey("s")
-                .AndIpAddress("1")
-                .AndCountry("US")
-                .AndFirstName("f")
-                .AndLastName("l")
-                .AndName("n")
-                .AndAvatar("a")
-                .AndEmail("e")
-                .AndCustomAttribute("c1", "v1")
-                .AndPrivateCustomAttribute("c2", "v2");
-            User copy = new User(user);
-            Assert.True(user.Equals(user));
-            Assert.True(user.Equals(copy));
-            Assert.Equal(user.GetHashCode(), copy.GetHashCode());
-            Func<User, User>[] mods = {
-                u => u.AndSecondaryKey("x"),
-                u => u.AndSecondaryKey(null),
-                u => u.AndIpAddress("x"),
-                u => u.AndIpAddress(null),
-                u => u.AndCountry("FR"),
-                u => u.AndCountry(null),
-                u => u.AndFirstName("x"),
-                u => u.AndFirstName(null),
-                u => u.AndLastName("x"),
-                u => u.AndLastName(null),
-                u => u.AndName("x"),
-                u => u.AndName(null),
-                u => u.AndAvatar("x"),
-                u => u.AndAvatar(null),
-                u => u.AndEmail("x"),
-                u => u.AndEmail(null),
-                u => u.AndAnonymous(true),
-                u => u.AndAnonymous(false),
-                u => u.AndCustomAttribute("c3", "v3"),
-                u => u.AndPrivateName("x")
-            };
-            foreach (var mod in mods)
-            {
-                User modUser = mod.Invoke(new User(user));
-                Assert.False(user.Equals(modUser));
-            }
-        }
+#pragma warning restore 618
     }
 }
