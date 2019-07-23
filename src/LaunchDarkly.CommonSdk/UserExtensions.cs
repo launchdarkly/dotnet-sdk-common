@@ -65,7 +65,7 @@ namespace LaunchDarkly.Client
         /// 
         /// This requirement is obsolete and is maintained for backward compatibility; the LaunchDarkly
         /// service does not require that the country value be a two-character code. There is no such
-        /// requirement in the newer method <see cref="UserBuilder.Country(string)"/>.
+        /// requirement in the newer method <see cref="IUserBuilder.Country(string)"/>.
         /// </remarks>
         /// <param name="user">the user</param>
         /// <param name="country">the country code for the user</param>
@@ -92,7 +92,7 @@ namespace LaunchDarkly.Client
         /// 
         /// This requirement is obsolete and is maintained for backward compatibility; the LaunchDarkly
         /// service does not require that the country value be a two-character code. There is no such
-        /// requirement in the newer method <see cref="UserBuilder.PrivateCountry(string)"/>.
+        /// requirement in the newer method <see cref="IUserBuilder.Country(string)"/>.
         /// </remarks>
         /// <param name="user">the user</param>
         /// <param name="country">the country code for the user</param>
