@@ -17,8 +17,7 @@ namespace LaunchDarkly.Common.Tests
             var user = User.WithKey(key);
             Assert.Equal(key, user.Key);
         }
-
-
+        
         [Fact]
         public void BuilderCanSetKey()
         {
