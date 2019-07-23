@@ -19,9 +19,9 @@ namespace LaunchDarkly.Common.Tests
         private SimpleConfiguration _config = new SimpleConfiguration();
         private IEventProcessor _ep;
         private FluentMockServer _server;
-        private User _user = new User("userKey").AndName("Red");
-        private JToken _userJson = JToken.Parse("{\"key\":\"userKey\",\"name\":\"Red\"}");
-        private JToken _scrubbedUserJson = JToken.Parse("{\"key\":\"userKey\",\"privateAttrs\":[\"name\"]}");
+        private readonly User _user = User.Builder("userKey").Name("Red").Build();
+        private readonly JToken _userJson = JToken.Parse("{\"key\":\"userKey\",\"name\":\"Red\"}");
+        private readonly JToken _scrubbedUserJson = JToken.Parse("{\"key\":\"userKey\",\"privateAttrs\":[\"name\"]}");
 
         public DefaultEventProcessorTest()
         {

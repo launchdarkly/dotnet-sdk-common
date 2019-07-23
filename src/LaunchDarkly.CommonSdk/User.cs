@@ -8,9 +8,12 @@ using Newtonsoft.Json.Linq;
 namespace LaunchDarkly.Client
 {
     /// <summary>
-    /// A <c>User</c> object contains specific attributes of a user browsing your site. The only mandatory
-    /// property is the <c>Key</c>, which must uniquely identify each user. For authenticated users, this
-    /// may be a username or e-mail address. For anonymous users, this could be an IP address or session ID.
+    /// A <c>User</c> object contains specific attributes of a user browsing your site. These attributes may
+    /// affect the values of feature flags evaluated for that user.
+    /// </summary>
+    /// <remarks>
+    /// The only mandatory property is the <c>Key</c>, which must uniquely identify each user. For authenticated
+    /// users, this may be a username or e-mail address. For anonymous users, this could be an IP address or session ID.
     ///
     /// Besides the mandatory <c>Key</c>, <c>User</c> supports two kinds of optional attributes: interpreted
     /// attributes (e.g. <c>IpAddress</c> and <c>Country</c>) and custom attributes. LaunchDarkly can parse
@@ -20,7 +23,13 @@ namespace LaunchDarkly.Client
     /// Custom attributes are not parsed by LaunchDarkly. They can be used in custom rules-- for example, a
     /// custom attribute such as "customer_ranking" can be used to launch a feature to the top 10% of users
     /// on a site.
-    /// </summary>
+    /// 
+    /// Note that the properties of <c>User</c> are mutable. In future versions of the SDK, this class may be
+    /// changed to be immutable. The preferred method of setting user properties is to obtain a builder with
+    /// <see cref="User.Builder(string)"/>; avoid using the <see cref="UserExtensions"/> methods or an object
+    /// initializer expression such as <c>new User("key") { Name = "name" }</c>, since these will no longer work
+    /// once <c>User</c> is immutable.
+    /// </remarks>
     public class User : IEquatable<User>
     {
         /// <summary>
@@ -45,7 +54,7 @@ namespace LaunchDarkly.Client
         public string IpAddress { get; set; }
 
         /// <summary>
-        /// The 2-character country code for the user.
+        /// The country code for the user.
         /// </summary>
         [JsonProperty(PropertyName = "country", NullValueHandling = NullValueHandling.Ignore)]
         public string Country { get; set; }
@@ -132,6 +141,55 @@ namespace LaunchDarkly.Client
         }
 
         /// <summary>
+        /// Creates a <see cref="UserBuilder"/> for constructing a user object using a fluent syntax.
+        /// </summary>
+        /// <remarks>
+        /// This is the preferred method for building a <c>User</c> if you are setting properties
+        /// besides the <c>Key</c>. The <c>UserBuilder</c> has methods for setting any number of
+        /// properties, after which you call <see cref="UserBuilder.Build"/> to get the resulting
+        /// <c>User</c> instance.
+        /// 
+        /// This is different from using the extension methods such as
+        /// <see cref="UserExtensions.AndName(User, string)"/>, which modify the properties of an
+        /// existing <c>User</c> instance. Those methods are now deprecated, because in a future
+        /// version of the SDK, <c>User</c> will be an immutable object.
+        /// </remarks>
+        /// <example>
+        /// <code>
+        ///     var user = User.Builder("my-key").Name("Bob").Email("test@example.com").Build();
+        /// </code>
+        /// </example>
+        /// <param name="key">a <c>string</c> that uniquely identifies a user</param>
+        /// <returns>a builder object</returns>
+        public static UserBuilder Builder(string key)
+        {
+            return new UserBuilder(key);
+        }
+
+        /// <summary>
+        /// Creates a <see cref="UserBuilder"/> for constructing a user object, with its initial
+        /// properties copied from an existeing user.
+        /// </summary>
+        /// <remarks>
+        /// This is the same as calling <c>User.Build(fromUser.Key)</c> and then calling the
+        /// <c>UserBuilder</c> methods to set each of the individual properties from their current
+        /// values in <c>fromUser</c>. Modifying the builder does not affect the original <c>User</c>.
+        /// </remarks>
+        /// <example>
+        /// <code>
+        ///     var user1 = User.Builder("my-key").FirstName("Joe").LastName("Schmoe").Build();
+        ///     var user2 = User.Builder(user1).FirstName("Jane").Build();
+        ///     // this is equvalent to: user2 = User.Builder("my-key").FirstName("Jane").LastName("Schmoe").Build();
+        /// </code>
+        /// </example>
+        /// <param name="fromUser">the user to copy</param>
+        /// <returns>a builder object</returns>
+        public static UserBuilder Builder(User fromUser)
+        {
+            return new UserBuilder(fromUser);
+        }
+
+        /// <summary>
         /// Creates a user with the given key.
         /// </summary>
         /// <param name="key">a <c>string</c> that uniquely identifies a user</param>
@@ -157,7 +215,7 @@ namespace LaunchDarkly.Client
             Avatar = from.Avatar;
             Email = from.Email;
             Anonymous = from.Anonymous;
-            Custom = from.Custom == null ? new Dictionary<string, JToken>() : new Dictionary<string, JToken>(from.Custom);
+            Custom = from.Custom == null ? null : new Dictionary<string, JToken>(from.Custom);
             PrivateAttributeNames = from.PrivateAttributeNames == null ? null : new HashSet<string>(from.PrivateAttributeNames);
         }
 
@@ -179,7 +237,7 @@ namespace LaunchDarkly.Client
             Avatar = avatar;
             Email = email;
             Anonymous = anonymous;
-            Custom = custom == null ? new Dictionary<string, JToken>() : new Dictionary<string, JToken>(custom);
+            Custom = custom == null ? null : new Dictionary<string, JToken>(custom);
             PrivateAttributeNames = privateAttributeNames == null ? null : new HashSet<string>(privateAttributeNames);
         }
 
@@ -266,7 +324,7 @@ namespace LaunchDarkly.Client
         /// <returns>a hash code</returns>
         public override int GetHashCode()
         {
-            return Util.Hash()
+            var hb = Util.Hash()
                 .With(Key)
                 .With(SecondaryKey)
                 .With(IpAddress)
@@ -276,16 +334,439 @@ namespace LaunchDarkly.Client
                 .With(Name)
                 .With(Avatar)
                 .With(Email)
-                .With(Anonymous)
-                .Value;
+                .With(Anonymous);
+            if (Custom != null)
+            {
+                foreach (var c in Custom)
+                {
+                    hb.With(c.Key).With(c.Value);
+                }
+            }
+            if (PrivateAttributeNames != null)
+            {
+                foreach (var p in PrivateAttributeNames)
+                {
+                    hb.With(p);
+                }
+            }
+            return hb.Value;
+        }
+    }
+
+    /// <summary>
+    /// A mutable object that uses the Builder pattern to specify properties for a
+    /// <see cref="User"/> object.
+    /// </summary>
+    /// <remarks>
+    /// Obtain an instance of this class by calling <see cref="User.Builder(string)"/>.
+    /// </remarks>
+    /// <example>
+    /// <code>
+    ///     var user = User.Build("my-key").Name("Bob").Email("test@example.com").Build();
+    /// </code>
+    /// </example>
+    public class UserBuilder
+    {
+        private readonly string _key;
+        private string _secondaryKey;
+        private string _ipAddress;
+        private string _country;
+        private string _firstName;
+        private string _lastName;
+        private string _name;
+        private string _avatar;
+        private string _email;
+        private bool _anonymous;
+        private HashSet<string> _privateAttributeNames;
+        private Dictionary<string, JToken> _custom;
+
+        internal UserBuilder(string key)
+        {
+            _key = key;
+        }
+
+        internal UserBuilder(User fromUser)
+        {
+            _key = fromUser.Key;
+            _secondaryKey = fromUser.SecondaryKey;
+            _ipAddress = fromUser.IpAddress;
+            _country = fromUser.Country;
+            _firstName = fromUser.FirstName;
+            _lastName = fromUser.LastName;
+            _name = fromUser.Name;
+            _avatar = fromUser.Avatar;
+            _email = fromUser.Email;
+            _anonymous = fromUser.Anonymous.HasValue && fromUser.Anonymous.Value;
+            _privateAttributeNames = fromUser.PrivateAttributeNames == null ? null :
+                new HashSet<string>(fromUser.PrivateAttributeNames);
+            _custom = fromUser.Custom == null ? null :
+                new Dictionary<string, JToken>(fromUser.Custom);
+        }
+
+        /// <summary>
+        /// Creates a <see cref="User"/> based on the properties that have been set on the builder.
+        /// Modifying the builder after this point does not affect the returned <c>User</c>.
+        /// </summary>
+        /// <returns>the configured <c>User</c> object</returns>
+        public User Build()
+        {
+            return new User(_key)
+            {
+                SecondaryKey = _secondaryKey,
+                IpAddress = _ipAddress,
+                Country = _country,
+                FirstName = _firstName,
+                LastName = _lastName,
+                Name = _name,
+                Avatar = _avatar,
+                Email = _email,
+                Anonymous = _anonymous ? (bool?)true : null,
+                PrivateAttributeNames = _privateAttributeNames == null ? null :
+                    new HashSet<string>(_privateAttributeNames),
+                Custom = _custom == null ? null :
+                    new Dictionary<string, JToken>(_custom)
+            };
+        }
+
+        /// <summary>
+        /// Sets the secondary key for a user.
+        /// </summary>
+        /// <remarks>
+        /// This affects <a href="https://docs.launchdarkly.com/docs/targeting-users#section-targeting-rules-based-on-user-attributes">feature flag targeting</a>
+        /// as follows: if you have chosen to bucket users by a specific attribute, the secondary key (if set)
+        /// is used to further distinguish between users who are otherwise identical according to that attribute.
+        /// </remarks>
+        /// <param name="secondaryKey">the secondary key</param>
+        /// <returns>the same builder instance</returns>
+        public UserBuilder SecondaryKey(string secondaryKey)
+        {
+            _secondaryKey = secondaryKey;
+            return this;
+        }
+
+        /// <summary>
+        /// Sets the IP address for a user.
+        /// </summary>
+        /// <param name="ipAddress">the IP address for the user</param>
+        /// <returns>the same builder instance</returns>
+        public UserBuilder IPAddress(string ipAddress)
+        {
+            _ipAddress = ipAddress;
+            return this;
+        }
+
+        /// <summary>
+        /// same as <see cref="IPAddress(string)"/>, but also specifies that this attribute should not be sent to LaunchDarkly.
+        /// </summary>
+        /// <param name="ipAddress">the IP address for the user</param>
+        /// <returns>the same builder instance</returns>
+        public UserBuilder PrivateIPAddress(string ipAddress)
+        {
+            AddPrivateAttribute("ip");
+            return IPAddress(ipAddress);
+        }
+
+        /// <summary>
+        /// Sets the country identifier for a user.
+        /// </summary>
+        /// <remarks>
+        /// This is commonly either a 2- or 3-character standard country code, but LaunchDarkly does not validate
+        /// this property or restrict its possible values.
+        /// </remarks>
+        /// <param name="country">the country for the user</param>
+        /// <returns>the same builder instance</returns>
+        public UserBuilder Country(string country)
+        {
+            _country = country;
+            return this;
+        }
+
+        /// <summary>
+        /// same as <see cref="Country(string)"/>, but also specifies that this attribute should not be sent to LaunchDarkly.
+        /// </summary>
+        /// <param name="country">the country for the user</param>
+        /// <returns>the same builder instance</returns>
+        public UserBuilder PrivateCountry(string country)
+        {
+            AddPrivateAttribute("country");
+            return Country(country);
+        }
+
+        /// <summary>
+        /// Sets the first name for a user.
+        /// </summary>
+        /// <param name="firstName">the first name for the user</param>
+        /// <returns>the same builder instance</returns>
+        public UserBuilder FirstName(string firstName)
+        {
+            _firstName = firstName;
+            return this;
+        }
+
+        /// <summary>
+        /// same as <see cref="FirstName(string)"/>, but also specifies that this attribute should not be sent to LaunchDarkly.
+        /// </summary>
+        /// <param name="firstName">the first n ame for the user</param>
+        /// <returns>the same builder instance</returns>
+        public UserBuilder PrivateFirstName(string firstName)
+        {
+            AddPrivateAttribute("firstName");
+            return FirstName(firstName);
+        }
+
+        /// <summary>
+        /// Sets the last name for a user.
+        /// </summary>
+        /// <param name="lastName">the last name for the user</param>
+        /// <returns>the same builder instance</returns>
+        public UserBuilder LastName(string lastName)
+        {
+            _lastName = lastName;
+            return this;
+        }
+
+        /// <summary>
+        /// same as <see cref="LastName(string)"/>, but also specifies that this attribute should not be sent to LaunchDarkly.
+        /// </summary>
+        /// <param name="lastName">the last name for the user</param>
+        /// <returns>the same builder instance</returns>
+        public UserBuilder PrivateLastName(string lastName)
+        {
+            AddPrivateAttribute("lastName");
+            return LastName(lastName);
+        }
+
+        /// <summary>
+        /// Sets the full name for a user.
+        /// </summary>
+        /// <param name="name">the name for the user</param>
+        /// <returns>the same builder instance</returns>
+        public UserBuilder Name(string name)
+        {
+            _name = name;
+            return this;
+        }
+
+        /// <summary>
+        /// same as <see cref="Name(string)"/>, but also specifies that this attribute should not be sent to LaunchDarkly.
+        /// </summary>
+        /// <param name="name">the name for the user</param>
+        /// <returns>the same builder instance</returns>
+        public UserBuilder PrivateName(string name)
+        {
+            AddPrivateAttribute("name");
+            return Name(name);
+        }
+
+        /// <summary>
+        /// Sets the avatar URL for a user.
+        /// </summary>
+        /// <param name="avatar">the avatar URL for the user</param>
+        /// <returns>the same builder instance</returns>
+        public UserBuilder Avatar(string avatar)
+        {
+            _avatar = avatar;
+            return this;
+        }
+
+        /// <summary>
+        /// same as <see cref="Avatar(string)"/>, but also specifies that this attribute should not be sent to LaunchDarkly.
+        /// </summary>
+        /// <param name="avatar">the avatar URL for the user</param>
+        /// <returns>the same builder instance</returns>
+        public UserBuilder PrivateAvatar(string avatar)
+        {
+            AddPrivateAttribute("avatar");
+            return Avatar(avatar);
+        }
+
+        /// <summary>
+        /// Sets the email address for a user.
+        /// </summary>
+        /// <param name="email">the email address for the user</param>
+        /// <returns>the same builder instance</returns>
+        public UserBuilder Email(string email)
+        {
+            _email = email;
+            return this;
+        }
+
+        /// <summary>
+        /// same as <see cref="Email(string)"/>, but also specifies that this attribute should not be sent to LaunchDarkly.
+        /// </summary>
+        /// <param name="email">the email address for the user</param>
+        /// <returns>the same builder instance</returns>
+        public UserBuilder PrivateEmail(string email)
+        {
+            AddPrivateAttribute("email");
+            return Email(email);
+        }
+
+        /// <summary>
+        /// Sets whether this user is anonymous, meaning that the user key will not appear on your LaunchDarkly dashboard.
+        /// </summary>
+        /// <param name="anonymous">true if the user is anonymous</param>
+        /// <returns>the same builder instance</returns>
+        public UserBuilder Anonymous(bool anonymous)
+        {
+            _anonymous = anonymous;
+            return this;
+        }
+
+        /// <summary>
+        /// Adds a custom attribute whose value is a JSON value of any kind.
+        /// </summary>
+        /// <remarks>
+        /// When set to one of the <a href="http://docs.launchdarkly.com/docs/targeting-users#targeting-based-on-user-attributes">built-in
+        /// user attribute keys</a>, this custom attribute will be ignored.
+        /// </remarks>
+        /// <param name="name">the key for the custom attribute</param>
+        /// <param name="value">the value for the custom attribute</param>
+        /// <returns>the same builder instance</returns>
+        public UserBuilder Custom(string name, JToken value)
+        {
+            if (_custom == null)
+            {
+                _custom = new Dictionary<string, JToken>();
+            }
+            _custom[name] = value;
+            return this;
+        }
+
+        /// <summary>
+        /// same as <see cref="Custom(string, JToken)"/>, but also specifies that this attribute should not be sent to LaunchDarkly.
+        /// </summary>
+        /// <param name="name">the key for the custom attribute</param>
+        /// <param name="value">the value for the custom attribute</param>
+        /// <returns>the same builder instance</returns>
+        public UserBuilder PrivateCustom(string name, JToken value)
+        {
+            AddPrivateAttribute(name);
+            return Custom(name, value);
+        }
+
+        /// <summary>
+        /// Adds a custom attribute with a boolean value.
+        /// </summary>
+        /// <remarks>
+        /// When set to one of the <a href="http://docs.launchdarkly.com/docs/targeting-users#targeting-based-on-user-attributes">built-in
+        /// user attribute keys</a>, this custom attribute will be ignored.
+        /// </remarks>
+        /// <param name="name">the key for the custom attribute</param>
+        /// <param name="value">the value for the custom attribute</param>
+        /// <returns>the same builder instance</returns>
+        public UserBuilder Custom(string name, bool value)
+        {
+            return Custom(name, new JValue(value));
+        }
+
+        /// <summary>
+        /// same as <see cref="Custom(string, bool)"/>, but also specifies that this attribute should not be sent to LaunchDarkly.
+        /// </summary>
+        /// <param name="name">the key for the custom attribute</param>
+        /// <param name="value">the value for the custom attribute</param>
+        /// <returns>the same builder instance</returns>
+        public UserBuilder PrivateCustom(string name, bool value)
+        {
+            return PrivateCustom(name, new JValue(value));
+        }
+
+        /// <summary>
+        /// Adds a custom attribute with a string value.
+        /// </summary>
+        /// <remarks>
+        /// When set to one of the <a href="http://docs.launchdarkly.com/docs/targeting-users#targeting-based-on-user-attributes">built-in
+        /// user attribute keys</a>, this custom attribute will be ignored.
+        /// </remarks>
+        /// <param name="name">the key for the custom attribute</param>
+        /// <param name="value">the value for the custom attribute</param>
+        /// <returns>the same builder instance</returns>
+        public UserBuilder Custom(string name, string value)
+        {
+            return Custom(name, new JValue(value));
+        }
+
+        /// <summary>
+        /// same as <see cref="Custom(string, string)"/>, but also specifies that this attribute should not be sent to LaunchDarkly.
+        /// </summary>
+        /// <param name="name">the key for the custom attribute</param>
+        /// <param name="value">the value for the custom attribute</param>
+        /// <returns>the same builder instance</returns>
+        public UserBuilder PrivateCustom(string name, string value)
+        {
+            return PrivateCustom(name, new JValue(value));
+        }
+
+        /// <summary>
+        /// Adds a custom attribute with an integer value.
+        /// </summary>
+        /// <remarks>
+        /// When set to one of the <a href="http://docs.launchdarkly.com/docs/targeting-users#targeting-based-on-user-attributes">built-in
+        /// user attribute keys</a>, this custom attribute will be ignored.
+        /// </remarks>
+        /// <param name="name">the key for the custom attribute</param>
+        /// <param name="value">the value for the custom attribute</param>
+        /// <returns>the same builder instance</returns>
+        public UserBuilder Custom(string name, int value)
+        {
+            return Custom(name, new JValue(value));
+        }
+
+        /// <summary>
+        /// same as <see cref="Custom(string, int)"/>, but also specifies that this attribute should not be sent to LaunchDarkly.
+        /// </summary>
+        /// <param name="name">the key for the custom attribute</param>
+        /// <param name="value">the value for the custom attribute</param>
+        /// <returns>the same builder instance</returns>
+        public UserBuilder PrivateCustom(string name, int value)
+        {
+            return PrivateCustom(name, new JValue(value));
+        }
+
+        /// <summary>
+        /// Adds a custom attribute with a floating-point value.
+        /// </summary>
+        /// <remarks>
+        /// When set to one of the <a href="http://docs.launchdarkly.com/docs/targeting-users#targeting-based-on-user-attributes">built-in
+        /// user attribute keys</a>, this custom attribute will be ignored.
+        /// </remarks>
+        /// <param name="name">the key for the custom attribute</param>
+        /// <param name="value">the value for the custom attribute</param>
+        /// <returns>the same builder instance</returns>
+        public UserBuilder Custom(string name, float value)
+        {
+            return Custom(name, new JValue(value));
+        }
+
+        /// <summary>
+        /// same as <see cref="Custom(string, float)"/>, but also specifies that this attribute should not be sent to LaunchDarkly.
+        /// </summary>
+        /// <param name="name">the key for the custom attribute</param>
+        /// <param name="value">the value for the custom attribute</param>
+        /// <returns>the same builder instance</returns>
+        public UserBuilder PrivateCustom(string name, float value)
+        {
+            return PrivateCustom(name, new JValue(value));
+        }
+
+        private void AddPrivateAttribute(string attrName)
+        {
+            if (_privateAttributeNames == null)
+            {
+                _privateAttributeNames = new HashSet<string>();
+            }
+            _privateAttributeNames.Add(attrName);
         }
     }
 
     /// <summary>
     /// Extension methods that can be called on a <see cref="User"/> to add to its properties.
     /// </summary>
+    [Obsolete(ObsoleteMessage)]
     public static class UserExtensions
     {
+        private const string ObsoleteMessage =
+            "Use User.Build() and the UserBuilder methods instead; UserExtensions modifies User properties, which will eventually become immutable";
         /// <summary>
         /// Sets the secondary key for a user. This affects
         /// <a href="https://docs.launchdarkly.com/docs/targeting-users#section-targeting-rules-based-on-user-attributes">feature flag targeting</a>
@@ -295,6 +776,7 @@ namespace LaunchDarkly.Client
         /// <param name="user"></param>
         /// <param name="secondaryKey"></param>
         /// <returns></returns>
+        [Obsolete(ObsoleteMessage)]
         public static User AndSecondaryKey(this User user, string secondaryKey)
         {
             user.SecondaryKey = secondaryKey;
@@ -307,6 +789,7 @@ namespace LaunchDarkly.Client
         /// <param name="user">the user</param>
         /// <param name="ipAddress">the IP address for the user</param>
         /// <returns>the same user</returns>
+        [Obsolete(ObsoleteMessage)]
         public static User AndIpAddress(this User user, string ipAddress)
         {
             user.IpAddress = ipAddress;
@@ -319,19 +802,29 @@ namespace LaunchDarkly.Client
         /// <param name="user">the user</param>
         /// <param name="ipAddress">the IP address for the user</param>
         /// <returns>the same user</returns>
+        [Obsolete(ObsoleteMessage)]
         public static User AndPrivateIpAddress(this User user, string ipAddress)
         {
             return user.AndIpAddress(ipAddress).AddPrivate("ip");
         }
 
         /// <summary>
-        /// Sets the country for a user. The country should be a valid
-        /// <a href="http://en.wikipedia.org/wiki/ISO_3166-1">ISO 3166-1</a> alpha-2 code. If it
-        /// is not a 2-character string, an <c>ArgumentException</c> will be thrown.
+        /// Sets the country for a user to a two-character country code.
         /// </summary>
+        /// <remarks>
+        /// This method requires non-null values to be two characters long; otherwise it will throw an
+        /// <c>ArgumentException</c>. However, it does not validate that the value  is actually a valid
+        /// <a href="http://en.wikipedia.org/wiki/ISO_3166-1">ISO 3166-1</a> alpha-2 code.
+        /// 
+        /// This requirement is obsolete and is maintained for backward compatibility; the LaunchDarkly
+        /// service does not require that the country value be a two-character code. There is no such
+        /// requirement in the newer method <see cref="UserBuilder.Country(string)"/>.
+        /// </remarks>
         /// <param name="user">the user</param>
         /// <param name="country">the country code for the user</param>
         /// <returns>the same user</returns>
+        /// <exception cref="ArgumentException">if the value is not a 2-character string and is not null</exception>
+        [Obsolete(ObsoleteMessage)]
         public static User AndCountry(this User user, string country)
         {
             if (country != null && country.Length != 2)
@@ -343,13 +836,22 @@ namespace LaunchDarkly.Client
 
         /// <summary>
         /// Sets the country for a user, and ensures that the country attribute will not be sent back
-        /// to LaunchDarkly. The country should be a valid
-        /// <a href="http://en.wikipedia.org/wiki/ISO_3166-1">ISO 3166-1</a> alpha-2 code. If it
-        /// is not a 2-character string, an <c>ArgumentException</c> will be thrown.
+        /// to LaunchDarkly.
         /// </summary>
+        /// <remarks>
+        /// This method requires non-null values to be two characters long; otherwise it will throw an
+        /// <c>ArgumentException</c>. However, it does not validate that the value  is actually a valid
+        /// <a href="http://en.wikipedia.org/wiki/ISO_3166-1">ISO 3166-1</a> alpha-2 code.
+        /// 
+        /// This requirement is obsolete and is maintained for backward compatibility; the LaunchDarkly
+        /// service does not require that the country value be a two-character code. There is no such
+        /// requirement in the newer method <see cref="UserBuilder.PrivateCountry(string)"/>.
+        /// </remarks>
         /// <param name="user">the user</param>
         /// <param name="country">the country code for the user</param>
+        /// <exception cref="ArgumentException">if the value is not a 2-character string and is not null</exception>
         /// <returns>the same user</returns>
+        [Obsolete(ObsoleteMessage)]
         public static User AndPrivateCountry(this User user, string country)
         {
             return user.AndCountry(country).AddPrivate("country");
@@ -361,6 +863,7 @@ namespace LaunchDarkly.Client
         /// <param name="user">the user</param>
         /// <param name="firstName">the user's first name</param>
         /// <returns>the same user</returns>
+        [Obsolete(ObsoleteMessage)]
         public static User AndFirstName(this User user, string firstName)
         {
             user.FirstName = firstName;
@@ -374,6 +877,7 @@ namespace LaunchDarkly.Client
         /// <param name="user">the user</param>
         /// <param name="firstName">the user's first name</param>
         /// <returns>the same user</returns>
+        [Obsolete(ObsoleteMessage)]
         public static User AndPrivateFirstName(this User user, string firstName)
         {
             return user.AndFirstName(firstName).AddPrivate("firstName");
@@ -385,6 +889,7 @@ namespace LaunchDarkly.Client
         /// <param name="user">the user</param>
         /// <param name="lastName">the user's last name</param>
         /// <returns>the same user</returns>
+        [Obsolete(ObsoleteMessage)]
         public static User AndLastName(this User user, string lastName)
         {
             user.LastName = lastName;
@@ -398,6 +903,7 @@ namespace LaunchDarkly.Client
         /// <param name="user">the user</param>
         /// <param name="lastName">the user's last name</param>
         /// <returns>the same user</returns>
+        [Obsolete(ObsoleteMessage)]
         public static User AndPrivateLastName(this User user, string lastName)
         {
             return user.AndLastName(lastName).AddPrivate("lastName");
@@ -409,6 +915,7 @@ namespace LaunchDarkly.Client
         /// <param name="user">the user</param>
         /// <param name="name">the user's name</param>
         /// <returns>the same user</returns>
+        [Obsolete(ObsoleteMessage)]
         public static User AndName(this User user, string name)
         {
             user.Name = name;
@@ -422,6 +929,7 @@ namespace LaunchDarkly.Client
         /// <param name="user">the user</param>
         /// <param name="name">the user's name</param>
         /// <returns>the same user</returns>
+        [Obsolete(ObsoleteMessage)]
         public static User AndPrivateName(this User user, string name)
         {
             return user.AndName(name).AddPrivate("name");
@@ -433,6 +941,7 @@ namespace LaunchDarkly.Client
         /// <param name="user">the user</param>
         /// <param name="email">the user's email</param>
         /// <returns>the same user</returns>
+        [Obsolete(ObsoleteMessage)]
         public static User AndEmail(this User user, string email)
         {
             user.Email = email;
@@ -446,6 +955,7 @@ namespace LaunchDarkly.Client
         /// <param name="user">the user</param>
         /// <param name="email">the user's email</param>
         /// <returns>the same user</returns>
+        [Obsolete(ObsoleteMessage)]
         public static User AndPrivateEmail(this User user, string email)
         {
             return user.AndEmail(email).AddPrivate("email");
@@ -457,6 +967,7 @@ namespace LaunchDarkly.Client
         /// <param name="user">the user</param>
         /// <param name="anonymous">true if the user is anonymous</param>
         /// <returns></returns>
+        [Obsolete(ObsoleteMessage)]
         public static User AndAnonymous(this User user, bool anonymous)
         {
             user.Anonymous = anonymous;
@@ -469,6 +980,7 @@ namespace LaunchDarkly.Client
         /// <param name="user">the user</param>
         /// <param name="avatar">the user's avatar</param>
         /// <returns>the same user</returns>
+        [Obsolete(ObsoleteMessage)]
         public static User AndAvatar(this User user, string avatar)
         {
             user.Avatar = avatar;
@@ -482,6 +994,7 @@ namespace LaunchDarkly.Client
         /// <param name="user">the user</param>
         /// <param name="avatar">the user's avatar</param>
         /// <returns>the same user</returns>
+        [Obsolete(ObsoleteMessage)]
         public static User AndPrivateAvatar(this User user, string avatar)
         {
             return user.AndAvatar(avatar).AddPrivate("avatar");
@@ -496,6 +1009,7 @@ namespace LaunchDarkly.Client
         /// <param name="attribute">the key for the custom attribute</param>
         /// <param name="value">the value for the custom attribute</param>
         /// <returns>the same user</returns>
+        [Obsolete(ObsoleteMessage)]
         public static User AndCustomAttribute(this User user, string attribute, string value)
         {
             return user.AddCustom(attribute, new JValue(value));
@@ -510,6 +1024,7 @@ namespace LaunchDarkly.Client
         /// <param name="attribute">the key for the custom attribute</param>
         /// <param name="value">the value for the custom attribute</param>
         /// <returns>the same user</returns>
+        [Obsolete(ObsoleteMessage)]
         public static User AndCustomAttribute(this User user, string attribute, bool value)
         {
             return user.AddCustom(attribute, new JValue(value));
@@ -524,6 +1039,7 @@ namespace LaunchDarkly.Client
         /// <param name="attribute">the key for the custom attribute</param>
         /// <param name="value">the value for the custom attribute</param>
         /// <returns>the same user</returns>
+        [Obsolete(ObsoleteMessage)]
         public static User AndCustomAttribute(this User user, string attribute, int value)
         {
             return user.AddCustom(attribute, new JValue(value));
@@ -538,6 +1054,7 @@ namespace LaunchDarkly.Client
         /// <param name="attribute">the key for the custom attribute</param>
         /// <param name="value">the value for the custom attribute</param>
         /// <returns>the same user</returns>
+        [Obsolete(ObsoleteMessage)]
         public static User AndCustomAttribute(this User user, string attribute, float value)
         {
             return user.AddCustom(attribute, new JValue(value));
@@ -552,6 +1069,7 @@ namespace LaunchDarkly.Client
         /// <param name="attribute">the key for the custom attribute</param>
         /// <param name="value">the value for the custom attribute</param>
         /// <returns>the same user</returns>
+        [Obsolete(ObsoleteMessage)]
         public static User AndCustomAttribute(this User user, string attribute, long value)
         {
             return user.AddCustom(attribute, new JValue(value));
@@ -566,6 +1084,7 @@ namespace LaunchDarkly.Client
         /// <param name="attribute">the key for the custom attribute</param>
         /// <param name="value">the value for the custom attribute</param>
         /// <returns>the same user</returns>
+        [Obsolete(ObsoleteMessage)]
         public static User AndCustomAttribute(this User user, string attribute, List<string> value)
         {
             return user.AddCustom(attribute, new JArray(value.ToArray()));
@@ -580,6 +1099,7 @@ namespace LaunchDarkly.Client
         /// <param name="attribute">the key for the custom attribute</param>
         /// <param name="value">the value for the custom attribute</param>
         /// <returns>the same user</returns>
+        [Obsolete(ObsoleteMessage)]
         public static User AndCustomAttribute(this User user, string attribute, List<int> value)
         {
             return user.AddCustom(attribute, new JArray(value.ToArray()));
@@ -594,6 +1114,7 @@ namespace LaunchDarkly.Client
         /// <param name="attribute">the key for the custom attribute</param>
         /// <param name="value">the value for the custom attribute</param>
         /// <returns>the same user</returns>
+        [Obsolete(ObsoleteMessage)]
         public static User AndCustomAttribute(this User user, string attribute, JToken value)
         {
             return user.AddCustom(attribute, value);
@@ -609,6 +1130,7 @@ namespace LaunchDarkly.Client
         /// <param name="attribute">the key for the custom attribute</param>
         /// <param name="value">the value for the custom attribute</param>
         /// <returns>the same user</returns>
+        [Obsolete(ObsoleteMessage)]
         public static User AndPrivateCustomAttribute(this User user, string attribute, string value)
         {
             return user.AddCustom(attribute, new JValue(value)).AddPrivate(attribute);
@@ -624,6 +1146,7 @@ namespace LaunchDarkly.Client
         /// <param name="attribute">the key for the custom attribute</param>
         /// <param name="value">the value for the custom attribute</param>
         /// <returns>the same user</returns>
+        [Obsolete(ObsoleteMessage)]
         public static User AndPrivateCustomAttribute(this User user, string attribute, bool value)
         {
             return user.AddCustom(attribute, new JValue(value)).AddPrivate(attribute);
@@ -639,6 +1162,7 @@ namespace LaunchDarkly.Client
         /// <param name="attribute">the key for the custom attribute</param>
         /// <param name="value">the value for the custom attribute</param>
         /// <returns>the same user</returns>
+        [Obsolete(ObsoleteMessage)]
         public static User AndPrivateCustomAttribute(this User user, string attribute, int value)
         {
             return user.AddCustom(attribute, new JValue(value)).AddPrivate(attribute);
@@ -654,6 +1178,7 @@ namespace LaunchDarkly.Client
         /// <param name="attribute">the key for the custom attribute</param>
         /// <param name="value">the value for the custom attribute</param>
         /// <returns>the same user</returns>
+        [Obsolete(ObsoleteMessage)]
         public static User AndPrivateCustomAttribute(this User user, string attribute, float value)
         {
             return user.AddCustom(attribute, new JValue(value)).AddPrivate(attribute);
@@ -669,6 +1194,7 @@ namespace LaunchDarkly.Client
         /// <param name="attribute">the key for the custom attribute</param>
         /// <param name="value">the value for the custom attribute</param>
         /// <returns>the same user</returns>
+        [Obsolete(ObsoleteMessage)]
         public static User AndPrivateCustomAttribute(this User user, string attribute, long value)
         {
             return user.AddCustom(attribute, new JValue(value)).AddPrivate(attribute);
@@ -684,6 +1210,7 @@ namespace LaunchDarkly.Client
         /// <param name="attribute">the key for the custom attribute</param>
         /// <param name="value">the value for the custom attribute</param>
         /// <returns>the same user</returns>
+        [Obsolete(ObsoleteMessage)]
         public static User AndPrivateCustomAttribute(this User user, string attribute, List<string> value)
         {
             return user.AddCustom(attribute, new JArray(value.ToArray())).AddPrivate(attribute);
@@ -699,11 +1226,12 @@ namespace LaunchDarkly.Client
         /// <param name="attribute">the key for the custom attribute</param>
         /// <param name="value">the value for the custom attribute</param>
         /// <returns>the same user</returns>
+        [Obsolete(ObsoleteMessage)]
         public static User AndPrivateCustomAttribute(this User user, string attribute, List<int> value)
         {
             return user.AddCustom(attribute, new JArray(value.ToArray())).AddPrivate(attribute);
         }
-        
+
         /// <summary>
         /// Adds a custom attribute whose value is a JSON value of any kind, and ensures that the
         /// attribute will not be sent back to LaunchDarkly. When set to one of the
@@ -714,6 +1242,7 @@ namespace LaunchDarkly.Client
         /// <param name="attribute">the key for the custom attribute</param>
         /// <param name="value">the value for the custom attribute</param>
         /// <returns>the same user</returns>
+        [Obsolete(ObsoleteMessage)]
         public static User AndPrivateCustomAttribute(this User user, string attribute, JToken value)
         {
             return user.AddCustom(attribute, value).AddPrivate(attribute);

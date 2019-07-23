@@ -9,48 +9,51 @@ namespace LaunchDarkly.Common.Tests
 {
     public class EventUserTest
     {
-        static IBaseConfiguration _baseConfig = new SimpleConfiguration();
+        static readonly IBaseConfiguration _baseConfig = new SimpleConfiguration();
 
-        static IBaseConfiguration _configWithAllAttrsPrivate = new SimpleConfiguration
+        static readonly IBaseConfiguration _configWithAllAttrsPrivate = new SimpleConfiguration
         {
             AllAttributesPrivate = true
         };
 
-        static IBaseConfiguration _configWithSomeAttrsPrivate = new SimpleConfiguration
+        static readonly IBaseConfiguration _configWithSomeAttrsPrivate = new SimpleConfiguration
         {
             PrivateAttributeNames = new HashSet<string>(new string[] { "firstName", "bizzle" })
         };
-        
-        static User _baseUser = new User("abc")
-            .AndSecondaryKey("xyz")
-            .AndFirstName("Sue")
-            .AndLastName("Storm")
-            .AndName("Susan")
-            .AndCountry("us")
-            .AndAvatar("http://avatar")
-            .AndIpAddress("1.2.3.4")
-            .AndEmail("test@example.com")
-            .AndCustomAttribute("bizzle", "def")
-            .AndCustomAttribute("dizzle", "ghi");
 
-        static User _userSpecifyingOwnPrivateAttrs = new User("abc")
-            .AndSecondaryKey("xyz")
-            .AndPrivateFirstName("Sue")
-            .AndLastName("Storm")
-            .AndName("Susan")
-            .AndCountry("us")
-            .AndAvatar("http://avatar")
-            .AndIpAddress("1.2.3.4")
-            .AndEmail("test@example.com")
-            .AndPrivateCustomAttribute("bizzle", "def")
-            .AndCustomAttribute("dizzle", "ghi");
+        static readonly User _baseUser = User.Builder("abc")
+            .SecondaryKey("xyz")
+            .FirstName("Sue")
+            .LastName("Storm")
+            .Name("Susan")
+            .Country("us")
+            .Avatar("http://avatar")
+            .IPAddress("1.2.3.4")
+            .Email("test@example.com")
+            .Custom("bizzle", "def")
+            .Custom("dizzle", "ghi")
+            .Build();
 
-        static User _anonUser = new User("abc")
-            .AndAnonymous(true)
-            .AndCustomAttribute("bizzle", "def")
-            .AndCustomAttribute("dizzle", "ghi");
+        static readonly User _userSpecifyingOwnPrivateAttrs = User.Builder("abc")
+            .SecondaryKey("xyz")
+            .PrivateFirstName("Sue")
+            .LastName("Storm")
+            .Name("Susan")
+            .Country("us")
+            .Avatar("http://avatar")
+            .IPAddress("1.2.3.4")
+            .Email("test@example.com")
+            .PrivateCustom("bizzle", "def")
+            .Custom("dizzle", "ghi")
+            .Build();
 
-        static JObject _userWithAllAttributesJson = JObject.Parse(@"
+        static readonly User _anonUser = User.Builder("abc")
+            .Anonymous(true)
+            .Custom("bizzle", "def")
+            .Custom("dizzle", "ghi")
+            .Build();
+
+        static readonly JObject _userWithAllAttributesJson = JObject.Parse(@"
             { ""key"": ""abc"",
               ""secondary"": ""xyz"",
               ""firstName"": ""Sue"",
@@ -63,14 +66,14 @@ namespace LaunchDarkly.Common.Tests
               ""custom"": { ""bizzle"": ""def"", ""dizzle"": ""ghi"" }
             } ");
 
-        static JObject _userWithAllAttributesPrivateJson = JObject.Parse(@"
+        static readonly JObject _userWithAllAttributesPrivateJson = JObject.Parse(@"
             { ""key"": ""abc"",
               ""secondary"": ""xyz"",
               ""privateAttrs"": [ ""ip"", ""country"", ""firstName"", ""lastName"",
                                   ""name"", ""avatar"", ""email"", ""bizzle"", ""dizzle"" ]
             } ");
 
-        static JObject _userWithSomeAttributesPrivateJson = JObject.Parse(@"
+        static readonly JObject _userWithSomeAttributesPrivateJson = JObject.Parse(@"
             { ""key"": ""abc"",
               ""secondary"": ""xyz"",
               ""lastName"": ""Storm"",
@@ -83,7 +86,7 @@ namespace LaunchDarkly.Common.Tests
               ""privateAttrs"": [ ""firstName"", ""bizzle"" ]
             } ");
 
-        static JObject _anonUserWithAllAttributesPrivateJson = JObject.Parse(@"
+        static readonly JObject _anonUserWithAllAttributesPrivateJson = JObject.Parse(@"
             { ""key"": ""abc"",
               ""anonymous"": true,
               ""privateAttrs"": [ ""bizzle"", ""dizzle"" ]
