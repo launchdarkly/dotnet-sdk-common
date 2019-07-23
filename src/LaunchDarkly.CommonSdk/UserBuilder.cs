@@ -30,6 +30,7 @@ namespace LaunchDarkly.Client
         private bool _anonymous;
         private HashSet<string> _privateAttributeNames;
         private Dictionary<string, JToken> _custom;
+        private string _lastAttrName;
 
         internal UserBuilder(string key)
         {
@@ -94,6 +95,7 @@ namespace LaunchDarkly.Client
         public UserBuilder SecondaryKey(string secondaryKey)
         {
             _secondaryKey = secondaryKey;
+            _lastAttrName = null; // "secondary" can't be made private
             return this;
         }
 
@@ -105,20 +107,10 @@ namespace LaunchDarkly.Client
         public UserBuilder IPAddress(string ipAddress)
         {
             _ipAddress = ipAddress;
+            _lastAttrName = "ip";
             return this;
         }
-
-        /// <summary>
-        /// same as <see cref="IPAddress(string)"/>, but also specifies that this attribute should not be sent to LaunchDarkly.
-        /// </summary>
-        /// <param name="ipAddress">the IP address for the user</param>
-        /// <returns>the same builder instance</returns>
-        public UserBuilder PrivateIPAddress(string ipAddress)
-        {
-            AddPrivateAttribute("ip");
-            return IPAddress(ipAddress);
-        }
-
+        
         /// <summary>
         /// Sets the country identifier for a user.
         /// </summary>
@@ -131,20 +123,10 @@ namespace LaunchDarkly.Client
         public UserBuilder Country(string country)
         {
             _country = country;
+            _lastAttrName = "country";
             return this;
         }
-
-        /// <summary>
-        /// same as <see cref="Country(string)"/>, but also specifies that this attribute should not be sent to LaunchDarkly.
-        /// </summary>
-        /// <param name="country">the country for the user</param>
-        /// <returns>the same builder instance</returns>
-        public UserBuilder PrivateCountry(string country)
-        {
-            AddPrivateAttribute("country");
-            return Country(country);
-        }
-
+        
         /// <summary>
         /// Sets the first name for a user.
         /// </summary>
@@ -153,20 +135,10 @@ namespace LaunchDarkly.Client
         public UserBuilder FirstName(string firstName)
         {
             _firstName = firstName;
+            _lastAttrName = "firstName";
             return this;
         }
-
-        /// <summary>
-        /// same as <see cref="FirstName(string)"/>, but also specifies that this attribute should not be sent to LaunchDarkly.
-        /// </summary>
-        /// <param name="firstName">the first n ame for the user</param>
-        /// <returns>the same builder instance</returns>
-        public UserBuilder PrivateFirstName(string firstName)
-        {
-            AddPrivateAttribute("firstName");
-            return FirstName(firstName);
-        }
-
+        
         /// <summary>
         /// Sets the last name for a user.
         /// </summary>
@@ -175,20 +147,10 @@ namespace LaunchDarkly.Client
         public UserBuilder LastName(string lastName)
         {
             _lastName = lastName;
+            _lastAttrName = "lastName";
             return this;
         }
-
-        /// <summary>
-        /// same as <see cref="LastName(string)"/>, but also specifies that this attribute should not be sent to LaunchDarkly.
-        /// </summary>
-        /// <param name="lastName">the last name for the user</param>
-        /// <returns>the same builder instance</returns>
-        public UserBuilder PrivateLastName(string lastName)
-        {
-            AddPrivateAttribute("lastName");
-            return LastName(lastName);
-        }
-
+        
         /// <summary>
         /// Sets the full name for a user.
         /// </summary>
@@ -197,20 +159,10 @@ namespace LaunchDarkly.Client
         public UserBuilder Name(string name)
         {
             _name = name;
+            _lastAttrName = "name";
             return this;
         }
-
-        /// <summary>
-        /// same as <see cref="Name(string)"/>, but also specifies that this attribute should not be sent to LaunchDarkly.
-        /// </summary>
-        /// <param name="name">the name for the user</param>
-        /// <returns>the same builder instance</returns>
-        public UserBuilder PrivateName(string name)
-        {
-            AddPrivateAttribute("name");
-            return Name(name);
-        }
-
+        
         /// <summary>
         /// Sets the avatar URL for a user.
         /// </summary>
@@ -219,20 +171,10 @@ namespace LaunchDarkly.Client
         public UserBuilder Avatar(string avatar)
         {
             _avatar = avatar;
+            _lastAttrName = "avatar";
             return this;
         }
-
-        /// <summary>
-        /// same as <see cref="Avatar(string)"/>, but also specifies that this attribute should not be sent to LaunchDarkly.
-        /// </summary>
-        /// <param name="avatar">the avatar URL for the user</param>
-        /// <returns>the same builder instance</returns>
-        public UserBuilder PrivateAvatar(string avatar)
-        {
-            AddPrivateAttribute("avatar");
-            return Avatar(avatar);
-        }
-
+        
         /// <summary>
         /// Sets the email address for a user.
         /// </summary>
@@ -241,20 +183,10 @@ namespace LaunchDarkly.Client
         public UserBuilder Email(string email)
         {
             _email = email;
+            _lastAttrName = "email";
             return this;
         }
-
-        /// <summary>
-        /// same as <see cref="Email(string)"/>, but also specifies that this attribute should not be sent to LaunchDarkly.
-        /// </summary>
-        /// <param name="email">the email address for the user</param>
-        /// <returns>the same builder instance</returns>
-        public UserBuilder PrivateEmail(string email)
-        {
-            AddPrivateAttribute("email");
-            return Email(email);
-        }
-
+        
         /// <summary>
         /// Sets whether this user is anonymous, meaning that the user key will not appear on your LaunchDarkly dashboard.
         /// </summary>
@@ -263,6 +195,7 @@ namespace LaunchDarkly.Client
         public UserBuilder Anonymous(bool anonymous)
         {
             _anonymous = anonymous;
+            _lastAttrName = null; // "anonymous" can't be made private
             return this;
         }
 
@@ -283,21 +216,10 @@ namespace LaunchDarkly.Client
                 _custom = new Dictionary<string, JToken>();
             }
             _custom[name] = value;
+            _lastAttrName = name;
             return this;
         }
-
-        /// <summary>
-        /// same as <see cref="Custom(string, JToken)"/>, but also specifies that this attribute should not be sent to LaunchDarkly.
-        /// </summary>
-        /// <param name="name">the key for the custom attribute</param>
-        /// <param name="value">the value for the custom attribute</param>
-        /// <returns>the same builder instance</returns>
-        public UserBuilder PrivateCustom(string name, JToken value)
-        {
-            AddPrivateAttribute(name);
-            return Custom(name, value);
-        }
-
+        
         /// <summary>
         /// Adds a custom attribute with a boolean value.
         /// </summary>
@@ -312,18 +234,7 @@ namespace LaunchDarkly.Client
         {
             return Custom(name, new JValue(value));
         }
-
-        /// <summary>
-        /// same as <see cref="Custom(string, bool)"/>, but also specifies that this attribute should not be sent to LaunchDarkly.
-        /// </summary>
-        /// <param name="name">the key for the custom attribute</param>
-        /// <param name="value">the value for the custom attribute</param>
-        /// <returns>the same builder instance</returns>
-        public UserBuilder PrivateCustom(string name, bool value)
-        {
-            return PrivateCustom(name, new JValue(value));
-        }
-
+        
         /// <summary>
         /// Adds a custom attribute with a string value.
         /// </summary>
@@ -338,18 +249,7 @@ namespace LaunchDarkly.Client
         {
             return Custom(name, new JValue(value));
         }
-
-        /// <summary>
-        /// same as <see cref="Custom(string, string)"/>, but also specifies that this attribute should not be sent to LaunchDarkly.
-        /// </summary>
-        /// <param name="name">the key for the custom attribute</param>
-        /// <param name="value">the value for the custom attribute</param>
-        /// <returns>the same builder instance</returns>
-        public UserBuilder PrivateCustom(string name, string value)
-        {
-            return PrivateCustom(name, new JValue(value));
-        }
-
+        
         /// <summary>
         /// Adds a custom attribute with an integer value.
         /// </summary>
@@ -364,18 +264,7 @@ namespace LaunchDarkly.Client
         {
             return Custom(name, new JValue(value));
         }
-
-        /// <summary>
-        /// same as <see cref="Custom(string, int)"/>, but also specifies that this attribute should not be sent to LaunchDarkly.
-        /// </summary>
-        /// <param name="name">the key for the custom attribute</param>
-        /// <param name="value">the value for the custom attribute</param>
-        /// <returns>the same builder instance</returns>
-        public UserBuilder PrivateCustom(string name, int value)
-        {
-            return PrivateCustom(name, new JValue(value));
-        }
-
+        
         /// <summary>
         /// Adds a custom attribute with a floating-point value.
         /// </summary>
@@ -392,23 +281,41 @@ namespace LaunchDarkly.Client
         }
 
         /// <summary>
-        /// same as <see cref="Custom(string, float)"/>, but also specifies that this attribute should not be sent to LaunchDarkly.
+        /// Marks the last attribute that was set on this builder as being a private attribute: that is, its value will not be
+        /// sent to LaunchDarkly.
         /// </summary>
-        /// <param name="name">the key for the custom attribute</param>
-        /// <param name="value">the value for the custom attribute</param>
+        /// <remarks>
+        /// If the last attribute that was set was <c>Key</c>, <c>SecondaryKey</c>, or <c>Anonymous</c>, calling this method
+        /// has no effect since those attributes cannot be private.
+        /// 
+        /// This action only affects analytics events that are generated by this particular user object. To mark some (or all)
+        /// user attribues as private for <i>all</i> users, use the configuration properties <see cref="LaunchDarkly.Common.IBaseConfiguration.PrivateAttributeNames"/>
+        /// and <see cref="LaunchDarkly.Common.IBaseConfiguration.AllAttributesPrivate"/>.
+        /// </remarks>
+        /// <example>
+        /// In this example, <c>FirstName</c> and <c>LastName</c> are marked as private, but <c>Country</c> is not.
+        /// 
+        /// <code>
+        ///     var user = User.Build("user-key")
+        ///         .FirstName("Pierre").AsPrivateAttribute()
+        ///         .LastName("Menard").AsPrivateAttribute()
+        ///         .Country("ES")
+        ///         .Build();
+        /// </code>
+        /// </example>
         /// <returns>the same builder instance</returns>
-        public UserBuilder PrivateCustom(string name, float value)
+        public UserBuilder AsPrivateAttribute()
         {
-            return PrivateCustom(name, new JValue(value));
-        }
-
-        private void AddPrivateAttribute(string attrName)
-        {
-            if (_privateAttributeNames == null)
+            if (_lastAttrName != null)
             {
-                _privateAttributeNames = new HashSet<string>();
+                if (_privateAttributeNames == null)
+                {
+                    _privateAttributeNames = new HashSet<string>();
+                }
+                _privateAttributeNames.Add(_lastAttrName);
+                _lastAttrName = null;
             }
-            _privateAttributeNames.Add(attrName);
+            return this;
         }
     }
 }

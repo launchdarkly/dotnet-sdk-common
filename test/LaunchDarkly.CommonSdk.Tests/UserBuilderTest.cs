@@ -43,13 +43,13 @@ namespace LaunchDarkly.Common.Tests
         );
 
         public static IEnumerable<object[]> PrivateStringProperties = MakeProperties(
-            new StringPropertyDesc("ip", b => b.PrivateIPAddress, u => u.IPAddress),
-            new StringPropertyDesc("country", b => b.PrivateCountry, u => u.Country),
-            new StringPropertyDesc("firstName", b => b.PrivateFirstName, u => u.FirstName),
-            new StringPropertyDesc("lastName", b => b.PrivateLastName, u => u.LastName),
-            new StringPropertyDesc("name", b => b.PrivateName, u => u.Name),
-            new StringPropertyDesc("avatar", b => b.PrivateAvatar, u => u.Avatar),
-            new StringPropertyDesc("email", b => b.PrivateEmail, u => u.Email)
+            new StringPropertyDesc("ip", b => b.IPAddress, u => u.IPAddress),
+            new StringPropertyDesc("country", b => b.Country, u => u.Country),
+            new StringPropertyDesc("firstName", b => b.FirstName, u => u.FirstName),
+            new StringPropertyDesc("lastName", b => b.LastName, u => u.LastName),
+            new StringPropertyDesc("name", b => b.Name, u => u.Name),
+            new StringPropertyDesc("avatar", b => b.Avatar, u => u.Avatar),
+            new StringPropertyDesc("email", b => b.Email, u => u.Email)
         );
     }
 
@@ -94,7 +94,7 @@ namespace LaunchDarkly.Common.Tests
         public void BuilderCanSetPrivateStringProperty(StringPropertyDesc p)
         {
             var expectedValue = p.Name + " value";
-            var user = p.Setter(User.Builder(key))(expectedValue).Build();
+            var user = p.Setter(User.Builder(key))(expectedValue).AsPrivateAttribute().Build();
             Assert.Equal(expectedValue, p.Getter(user));
             Assert.Equal(new HashSet<string> { p.Name }, user.PrivateAttributeNames);
         }
@@ -145,31 +145,31 @@ namespace LaunchDarkly.Common.Tests
         public void BuilderCanSetJsonCustomAttribute()
         {
             var value = new JArray(new List<JToken>() { new JValue(true), new JValue(1.5) });
-            TestCustomAttribute<JToken>(value, (b, n, v) => b.Custom(n, v), (b, n, v) => b.PrivateCustom(n, v));
+            TestCustomAttribute<JToken>(value, (b, n, v) => b.Custom(n, v), (b, n, v) => b.Custom(n, v).AsPrivateAttribute());
         }
 
         [Fact]
         public void BuilderCanSetBoolCustomAttribute()
         {
-            TestCustomAttribute<bool>(true, (b, n, v) => b.Custom(n, v), (b, n, v) => b.PrivateCustom(n, v));
+            TestCustomAttribute<bool>(true, (b, n, v) => b.Custom(n, v), (b, n, v) => b.Custom(n, v).AsPrivateAttribute());
         }
 
         [Fact]
         public void BuilderCanSetStringCustomAttribute()
         {
-            TestCustomAttribute<string>("x", (b, n, v) => b.Custom(n, v), (b, n, v) => b.PrivateCustom(n, v));
+            TestCustomAttribute<string>("x", (b, n, v) => b.Custom(n, v), (b, n, v) => b.Custom(n, v).AsPrivateAttribute());
         }
 
         [Fact]
         public void BuilderCanSetIntCustomAttribute()
         {
-            TestCustomAttribute<int>(3, (b, n, v) => b.Custom(n, v), (b, n, v) => b.PrivateCustom(n, v));
+            TestCustomAttribute<int>(3, (b, n, v) => b.Custom(n, v), (b, n, v) => b.Custom(n, v).AsPrivateAttribute());
         }
 
         [Fact]
         public void BuilderCanSetFloatCustomAttribute()
         {
-            TestCustomAttribute<float>(1.5f, (b, n, v) => b.Custom(n, v), (b, n, v) => b.PrivateCustom(n, v));
+            TestCustomAttribute<float>(1.5f, (b, n, v) => b.Custom(n, v), (b, n, v) => b.Custom(n, v).AsPrivateAttribute());
         }
         
         [Fact]
@@ -204,8 +204,8 @@ namespace LaunchDarkly.Common.Tests
                 b => b.Email(null),
                 b => b.Anonymous(true),
                 b => b.Custom("c3", "v3"),
-                b => b.PrivateName("n"),
-                b => b.PrivateName("o")
+                b => b.Name("n").AsPrivateAttribute(),
+                b => b.Name("o").AsPrivateAttribute()
             };
             foreach (var mod in mods)
             {
