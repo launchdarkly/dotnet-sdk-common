@@ -74,9 +74,24 @@ namespace LaunchDarkly.Client
         /// <summary>
         /// The IP address of the user.
         /// </summary>
+        /// <remarks>
+        /// Although there is currently a public setter method for this property, you should avoid modifying
+        /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
+        /// and will be removed in a future version. See remarks on <c>User</c>.
+        /// </remarks>
         [JsonIgnore]
 #pragma warning disable 618
-        public string IPAddress => IpAddress;
+        public string IPAddress
+        {
+            get
+            {
+                return IpAddress;
+            }
+            set
+            {
+                IpAddress = value;
+            }
+        }
 #pragma warning restore 618
 
         /// <summary>
