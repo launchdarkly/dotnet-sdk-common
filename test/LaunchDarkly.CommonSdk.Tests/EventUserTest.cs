@@ -36,14 +36,14 @@ namespace LaunchDarkly.Common.Tests
 
         static readonly User _userSpecifyingOwnPrivateAttrs = User.Builder("abc")
             .SecondaryKey("xyz")
-            .PrivateFirstName("Sue")
+            .FirstName("Sue").AsPrivateAttribute()
             .LastName("Storm")
             .Name("Susan")
             .Country("us")
             .Avatar("http://avatar")
             .IPAddress("1.2.3.4")
             .Email("test@example.com")
-            .PrivateCustom("bizzle", "def")
+            .Custom("bizzle", "def").AsPrivateAttribute()
             .Custom("dizzle", "ghi")
             .Build();
 

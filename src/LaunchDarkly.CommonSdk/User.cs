@@ -245,7 +245,7 @@ namespace LaunchDarkly.Client
         /// </example>
         /// <param name="key">a <c>string</c> that uniquely identifies a user</param>
         /// <returns>a builder object</returns>
-        public static UserBuilder Builder(string key)
+        public static IUserBuilder Builder(string key)
         {
             return new UserBuilder(key);
         }
@@ -268,7 +268,7 @@ namespace LaunchDarkly.Client
         /// </example>
         /// <param name="fromUser">the user to copy</param>
         /// <returns>a builder object</returns>
-        public static UserBuilder Builder(User fromUser)
+        public static IUserBuilder Builder(User fromUser)
         {
             return new UserBuilder(fromUser);
         }

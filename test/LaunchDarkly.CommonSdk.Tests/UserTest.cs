@@ -17,7 +17,7 @@ namespace LaunchDarkly.Common.Tests
                 .Avatar("a")
                 .Email("e")
                 .Custom("c1", "v1")
-                .PrivateCustom("c2", "v2")
+                .Custom("c2", "v2").AsPrivateAttribute()
                 .Build();
 
         [Fact]

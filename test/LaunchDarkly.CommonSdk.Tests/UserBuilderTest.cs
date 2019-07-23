@@ -13,10 +13,10 @@ namespace LaunchDarkly.Common.Tests
         public struct StringPropertyDesc
         {
             public string Name;
-            public Func<UserBuilder, Func<string, UserBuilder>> Setter;
+            public Func<IUserBuilder, Func<string, IUserBuilder>> Setter;
             public Func<User, string> Getter;
 
-            public StringPropertyDesc(string name, Func<UserBuilder, Func<string, UserBuilder>> setter, Func<User, string> getter)
+            public StringPropertyDesc(string name, Func<IUserBuilder, Func<string, IUserBuilder>> setter, Func<User, string> getter)
             {
                 Name = name;
                 Setter = setter;
@@ -26,12 +26,28 @@ namespace LaunchDarkly.Common.Tests
             public override string ToString() => Name;
         }
 
-        private static IEnumerable<object[]> MakeProperties(params StringPropertyDesc[] ps)
+        public struct StringPropertyCanBePrivateDesc
+        {
+            public string Name;
+            public Func<IUserBuilder, Func<string, IUserBuilderCanMakeAttributePrivate>> Setter;
+            public Func<User, string> Getter;
+
+            public StringPropertyCanBePrivateDesc(string name, Func<IUserBuilder, Func<string, IUserBuilderCanMakeAttributePrivate>> setter, Func<User, string> getter)
+            {
+                Name = name;
+                Setter = setter;
+                Getter = getter;
+            }
+
+            public override string ToString() => Name;
+        }
+
+        private static IEnumerable<object[]> MakeParams(params object[] ps)
         {
             return ps.Select(p => new object[] { p });
         }
 
-        public static IEnumerable<object[]> AllStringProperties => MakeProperties(
+        public static IEnumerable<object[]> AllStringProperties => MakeParams(
             new StringPropertyDesc("secondary", b => b.SecondaryKey, u => u.SecondaryKey),
             new StringPropertyDesc("ip", b => b.IPAddress, u => u.IPAddress),
             new StringPropertyDesc("country", b => b.Country, u => u.Country),
@@ -42,14 +58,14 @@ namespace LaunchDarkly.Common.Tests
             new StringPropertyDesc("email", b => b.Email, u => u.Email)
         );
 
-        public static IEnumerable<object[]> PrivateStringProperties = MakeProperties(
-            new StringPropertyDesc("ip", b => b.PrivateIPAddress, u => u.IPAddress),
-            new StringPropertyDesc("country", b => b.PrivateCountry, u => u.Country),
-            new StringPropertyDesc("firstName", b => b.PrivateFirstName, u => u.FirstName),
-            new StringPropertyDesc("lastName", b => b.PrivateLastName, u => u.LastName),
-            new StringPropertyDesc("name", b => b.PrivateName, u => u.Name),
-            new StringPropertyDesc("avatar", b => b.PrivateAvatar, u => u.Avatar),
-            new StringPropertyDesc("email", b => b.PrivateEmail, u => u.Email)
+        public static IEnumerable<object[]> PrivateStringProperties = MakeParams(
+            new StringPropertyCanBePrivateDesc("ip", b => b.IPAddress, u => u.IPAddress),
+            new StringPropertyCanBePrivateDesc("country", b => b.Country, u => u.Country),
+            new StringPropertyCanBePrivateDesc("firstName", b => b.FirstName, u => u.FirstName),
+            new StringPropertyCanBePrivateDesc("lastName", b => b.LastName, u => u.LastName),
+            new StringPropertyCanBePrivateDesc("name", b => b.Name, u => u.Name),
+            new StringPropertyCanBePrivateDesc("avatar", b => b.Avatar, u => u.Avatar),
+            new StringPropertyCanBePrivateDesc("email", b => b.Email, u => u.Email)
         );
     }
 
@@ -91,10 +107,10 @@ namespace LaunchDarkly.Common.Tests
 
         [Theory]
         [MemberData(nameof(PrivateStringProperties))]
-        public void BuilderCanSetPrivateStringProperty(StringPropertyDesc p)
+        public void BuilderCanSetPrivateStringProperty(StringPropertyCanBePrivateDesc p)
         {
             var expectedValue = p.Name + " value";
-            var user = p.Setter(User.Builder(key))(expectedValue).Build();
+            var user = p.Setter(User.Builder(key))(expectedValue).AsPrivateAttribute().Build();
             Assert.Equal(expectedValue, p.Getter(user));
             Assert.Equal(new HashSet<string> { p.Name }, user.PrivateAttributeNames);
         }
@@ -129,14 +145,13 @@ namespace LaunchDarkly.Common.Tests
         }
 
         private void TestCustomAttribute<T>(T value,
-            Func<UserBuilder, string, T, UserBuilder> setter,
-            Func<UserBuilder, string, T, UserBuilder> privateSetter)
+            Func<IUserBuilder, string, T, IUserBuilderCanMakeAttributePrivate> setter)
         {
             var user0 = setter(User.Builder(key), "foo", value).Build();
             Assert.Equal<object>(value, user0.Custom["foo"].Value<T>());
             Assert.Null(user0.PrivateAttributeNames);
 
-            var user1 = privateSetter(User.Builder(key), "bar", value).Build();
+            var user1 = setter(User.Builder(key), "bar", value).AsPrivateAttribute().Build();
             Assert.Equal<object>(value, user1.Custom["bar"].Value<T>());
             Assert.Equal(new HashSet<string> { "bar" }, user1.PrivateAttributeNames);
         }
@@ -145,31 +160,31 @@ namespace LaunchDarkly.Common.Tests
         public void BuilderCanSetJsonCustomAttribute()
         {
             var value = new JArray(new List<JToken>() { new JValue(true), new JValue(1.5) });
-            TestCustomAttribute<JToken>(value, (b, n, v) => b.Custom(n, v), (b, n, v) => b.PrivateCustom(n, v));
+            TestCustomAttribute<JToken>(value, (b, n, v) => b.Custom(n, v));
         }
 
         [Fact]
         public void BuilderCanSetBoolCustomAttribute()
         {
-            TestCustomAttribute<bool>(true, (b, n, v) => b.Custom(n, v), (b, n, v) => b.PrivateCustom(n, v));
+            TestCustomAttribute<bool>(true, (b, n, v) => b.Custom(n, v));
         }
 
         [Fact]
         public void BuilderCanSetStringCustomAttribute()
         {
-            TestCustomAttribute<string>("x", (b, n, v) => b.Custom(n, v), (b, n, v) => b.PrivateCustom(n, v));
+            TestCustomAttribute<string>("x", (b, n, v) => b.Custom(n, v));
         }
 
         [Fact]
         public void BuilderCanSetIntCustomAttribute()
         {
-            TestCustomAttribute<int>(3, (b, n, v) => b.Custom(n, v), (b, n, v) => b.PrivateCustom(n, v));
+            TestCustomAttribute<int>(3, (b, n, v) => b.Custom(n, v));
         }
 
         [Fact]
         public void BuilderCanSetFloatCustomAttribute()
         {
-            TestCustomAttribute<float>(1.5f, (b, n, v) => b.Custom(n, v), (b, n, v) => b.PrivateCustom(n, v));
+            TestCustomAttribute<float>(1.5f, (b, n, v) => b.Custom(n, v));
         }
         
         [Fact]
@@ -185,7 +200,7 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void TestUserInequalityWithModifiedBuilder()
         {
-            Func<UserBuilder, UserBuilder>[] mods = {
+            Func<IUserBuilder, IUserBuilder>[] mods = {
                 b => b.SecondaryKey("x"),
                 b => b.SecondaryKey(null),
                 b => b.IPAddress("x"),
@@ -204,8 +219,8 @@ namespace LaunchDarkly.Common.Tests
                 b => b.Email(null),
                 b => b.Anonymous(true),
                 b => b.Custom("c3", "v3"),
-                b => b.PrivateName("n"),
-                b => b.PrivateName("o")
+                b => b.Name("n").AsPrivateAttribute(),
+                b => b.Name("o").AsPrivateAttribute()
             };
             foreach (var mod in mods)
             {
