@@ -7,8 +7,8 @@ namespace LaunchDarkly.Common.Tests
 {
     public class EventSummarizerTest
     {
-        private User _user = new User("key");
-        private TestEventFactory _eventFactory = new TestEventFactory();
+        private static readonly User _user = User.WithKey("key");
+        private static readonly TestEventFactory _eventFactory = new TestEventFactory();
 
         [Fact]
         public void SummarizeEventDoesNothingForIdentifyEvent()

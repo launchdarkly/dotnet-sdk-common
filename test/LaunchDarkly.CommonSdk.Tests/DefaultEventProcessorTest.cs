@@ -223,7 +223,7 @@ namespace LaunchDarkly.Common.Tests
             long serverTime = Util.GetUnixTimestampMillis(DateTime.Now) - 20000;
 
             // Send and flush an event we don't care about, just to set the last server time
-            _ep.SendEvent(EventFactory.Default.NewIdentifyEvent(new User("otherUser")));
+            _ep.SendEvent(EventFactory.Default.NewIdentifyEvent(User.WithKey("otherUser")));
             FlushAndGetEvents(AddDateHeader(OkResponse(), serverTime));
 
             // Now send an event with debug mode on, with a "debug until" time that is further in
@@ -250,7 +250,7 @@ namespace LaunchDarkly.Common.Tests
             long serverTime = Util.GetUnixTimestampMillis(DateTime.Now) + 20000;
 
             // Send and flush an event we don't care about, just to set the last server time
-            _ep.SendEvent(EventFactory.Default.NewIdentifyEvent(new User("otherUser")));
+            _ep.SendEvent(EventFactory.Default.NewIdentifyEvent(User.WithKey("otherUser")));
             FlushAndGetEvents(AddDateHeader(OkResponse(), serverTime));
 
             // Now send an event with debug mode on, with a "debug until" time that is further in
