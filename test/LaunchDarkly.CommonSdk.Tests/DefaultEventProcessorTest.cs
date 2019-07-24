@@ -541,7 +541,7 @@ namespace LaunchDarkly.Common.Tests
         {
             if (userJson != null)
             {
-                Assert.Equal(userJson, o["user"]);
+                TestUtil.AssertJsonEquals(userJson, o["user"]);
                 Assert.Null(o["userKey"]);
             }
             else

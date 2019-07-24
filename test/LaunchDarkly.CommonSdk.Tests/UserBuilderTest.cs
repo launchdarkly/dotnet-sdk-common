@@ -233,5 +233,14 @@ namespace LaunchDarkly.Common.Tests
                     JsonConvert.SerializeObject(UserTest.UserToCopy));
             }
         }
+
+        [Fact]
+        public void TestEmptyImmutableCollectionsAreReused()
+        {
+            var user0 = User.Builder("a").Build();
+            var user1 = User.Builder("b").Build();
+            Assert.Same(user0.Custom, user1.Custom);
+            Assert.Same(user0.PrivateAttributeNames, user1.PrivateAttributeNames);
+        }
     }
 }

@@ -41,9 +41,19 @@ namespace LaunchDarkly.Common.Tests
             Assert.Null(user.Email);
             Assert.NotNull(user.Custom);
             Assert.Equal(0, user.Custom.Count);
-            Assert.Null(user.PrivateAttributeNames);
+            Assert.NotNull(user.PrivateAttributeNames);
+            Assert.Equal(0, user.PrivateAttributeNames.Count);
         }
         
+        [Fact]
+        public void TestEmptyImmutableCollectionsAreReused()
+        {
+            var user0 = User.WithKey("a");
+            var user1 = User.WithKey("b");
+            Assert.Same(user0.Custom, user1.Custom);
+            Assert.Same(user0.PrivateAttributeNames, user1.PrivateAttributeNames);
+        }
+
         [Fact]
         public void TestUserSelfEquality()
         {

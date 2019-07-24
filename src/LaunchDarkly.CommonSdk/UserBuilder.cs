@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Collections.Immutable;
 using Newtonsoft.Json.Linq;
 
 namespace LaunchDarkly.Client
@@ -206,8 +207,8 @@ namespace LaunchDarkly.Client
         private string _avatar;
         private string _email;
         private bool _anonymous;
-        private HashSet<string> _privateAttributeNames;
-        private Dictionary<string, JToken> _custom;
+        private ImmutableDictionary<string, JToken>.Builder _custom;
+        private ImmutableHashSet<string>.Builder _privateAttributeNames;
 
         internal UserBuilder(string key)
         {
@@ -226,16 +227,17 @@ namespace LaunchDarkly.Client
             _avatar = fromUser.Avatar;
             _email = fromUser.Email;
             _anonymous = fromUser.Anonymous;
-            _privateAttributeNames = fromUser.PrivateAttributeNames == null ? null :
-                new HashSet<string>(fromUser.PrivateAttributeNames);
-            _custom = fromUser.Custom == null ? null :
-                new Dictionary<string, JToken>(fromUser.Custom);
+            _privateAttributeNames = fromUser._privateAttributeNames.Count == 0 ? null :
+                fromUser._privateAttributeNames.ToBuilder();
+            _custom = fromUser._custom.Count == 0 ? null : fromUser._custom.ToBuilder();
         }
 
         public User Build()
         {
             return new User(_key, _secondaryKey, _ipAddress, _country, _firstName, _lastName, _name, _avatar, _email,
-                _anonymous, _custom ?? new Dictionary<string, JToken>(), _privateAttributeNames ?? new HashSet<string>());
+                _anonymous,
+                _custom == null ? ImmutableDictionary.Create<string, JToken>() : _custom.ToImmutableDictionary(),
+                _privateAttributeNames == null ? ImmutableHashSet.Create<string>() : _privateAttributeNames.ToImmutableHashSet());
         }
 
         public IUserBuilder SecondaryKey(string secondaryKey)
@@ -296,7 +298,7 @@ namespace LaunchDarkly.Client
         {
             if (_custom == null)
             {
-                _custom = new Dictionary<string, JToken>();
+                _custom = ImmutableDictionary.CreateBuilder<string, JToken>();
             }
             _custom[name] = value;
             return CanMakeAttributePrivate(name);
@@ -331,7 +333,7 @@ namespace LaunchDarkly.Client
         {
             if (_privateAttributeNames == null)
             {
-                _privateAttributeNames = new HashSet<string>();
+                _privateAttributeNames = ImmutableHashSet.CreateBuilder<string>();
             }
             _privateAttributeNames.Add(attrName);
             return this;
