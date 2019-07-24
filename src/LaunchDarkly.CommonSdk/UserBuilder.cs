@@ -28,6 +28,13 @@ namespace LaunchDarkly.Client
         User Build();
 
         /// <summary>
+        /// Sets the unique key for a user.
+        /// </summary>
+        /// <param name="key">the key</param>
+        /// <returns>the same builder</returns>
+        IUserBuilder Key(string key);
+
+        /// <summary>
         /// Sets the secondary key for a user.
         /// </summary>
         /// <remarks>
@@ -196,7 +203,7 @@ namespace LaunchDarkly.Client
 
     internal class UserBuilder : IUserBuilder
     {
-        private readonly string _key;
+        private string _key;
         private string _secondaryKey;
         private string _ipAddress;
         private string _country;
@@ -226,9 +233,9 @@ namespace LaunchDarkly.Client
             _avatar = fromUser.Avatar;
             _email = fromUser.Email;
             _anonymous = fromUser.Anonymous.HasValue && fromUser.Anonymous.Value;
-            _privateAttributeNames = fromUser.PrivateAttributeNames == null ? null :
+            _privateAttributeNames = fromUser.PrivateAttributeNames is null ? null :
                 new HashSet<string>(fromUser.PrivateAttributeNames);
-            _custom = fromUser.Custom == null ? null :
+            _custom = fromUser.Custom is null ? null :
                 new Dictionary<string, JToken>(fromUser.Custom);
         }
 
@@ -248,12 +255,18 @@ namespace LaunchDarkly.Client
                 Avatar = _avatar,
                 Email = _email,
                 Anonymous = _anonymous ? (bool?)true : null,
-                PrivateAttributeNames = _privateAttributeNames == null ? null :
+                PrivateAttributeNames = _privateAttributeNames is null ? null :
                     new HashSet<string>(_privateAttributeNames),
-                Custom = _custom == null ? new Dictionary<string, JToken>() :
+                Custom = _custom is null ? new Dictionary<string, JToken>() :
                     new Dictionary<string, JToken>(_custom)
             };
 #pragma warning restore 618
+        }
+
+        public IUserBuilder Key(string key)
+        {
+            _key = key;
+            return this;
         }
 
         public IUserBuilder SecondaryKey(string secondaryKey)
@@ -312,7 +325,7 @@ namespace LaunchDarkly.Client
 
         public IUserBuilderCanMakeAttributePrivate Custom(string name, JToken value)
         {
-            if (_custom == null)
+            if (_custom is null)
             {
                 _custom = new Dictionary<string, JToken>();
             }
@@ -347,7 +360,7 @@ namespace LaunchDarkly.Client
 
         internal IUserBuilder AddPrivateAttribute(string attrName)
         {
-            if (_privateAttributeNames == null)
+            if (_privateAttributeNames is null)
             {
                 _privateAttributeNames = new HashSet<string>();
             }
@@ -370,6 +383,11 @@ namespace LaunchDarkly.Client
         public User Build()
         {
             return _builder.Build();
+        }
+
+        public IUserBuilder Key(string key)
+        {
+            return _builder.Key(key);
         }
 
         public IUserBuilder SecondaryKey(string secondaryKey)
