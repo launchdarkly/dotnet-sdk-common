@@ -107,21 +107,19 @@ namespace LaunchDarkly.Client
         public bool Anonymous => _anonymous;
 
         /// <summary>
-        /// Custom attributes for the user. These can be more conveniently set via the extension
-        /// methods <c>AndCustomAttribute</c> or <c>AndPrivateCustomAttribute</c>.
+        /// Custom attributes for the user.
         /// </summary>
         /// <remarks>
-        /// Also, in a future version this will be changed to an immutable dictionary.
+        /// In a future version, this will be changed to an immutable dictionary.
         /// </remarks>
         [JsonProperty(PropertyName = "custom", NullValueHandling = NullValueHandling.Ignore)]
         public IDictionary<string, JToken> Custom => _custom;
 
         /// <summary>
-        /// Used internally to track which attributes are private. To set private attributes,
-        /// you should use extension methods such as <c>AndPrivateName</c>.
+        /// Used internally to track which attributes are private.
         /// </summary>
         /// <remarks>
-        /// Also, in a future version this will be changed to an immutable set.
+        /// In a future version, this will be changed to an immutable set.
         /// </remarks>
         [JsonIgnore]
         public ISet<string> PrivateAttributeNames => _privateAttributeNames;
