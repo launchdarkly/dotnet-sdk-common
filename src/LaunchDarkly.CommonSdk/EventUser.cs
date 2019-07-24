@@ -53,7 +53,7 @@ namespace LaunchDarkly.Common
 
         /// <see cref="User.Custom"/>
         [JsonProperty(PropertyName = "custom", NullValueHandling = NullValueHandling.Ignore)]
-        public IImmutableDictionary<string, JToken> Custom { get; internal set; }
+        public IImmutableDictionary<string, ImmutableJsonValue> Custom { get; internal set; }
 
         /// <summary>
         /// A list of attribute names that have been omitted from the event.
@@ -99,37 +99,34 @@ namespace LaunchDarkly.Common
             // With the custom attributes, for efficiency's sake we would like to reuse the same ImmutableDictionary
             // whenever possible. So, we'll lazily create a new collection only if it turns out that there are any
             // changes needed (i.e. if one of the custom attributes turns out to be private).
-            ImmutableDictionary<string, JToken>.Builder customAttrsBuilder = null;
-            foreach (KeyValuePair<string, JToken> kv in _user.Custom)
+            ImmutableDictionary<string, ImmutableJsonValue>.Builder customAttrsBuilder = null;
+            foreach (var kv in _user.Custom)
             {
-                if (kv.Value != null)
+                JToken value = CheckPrivateAttr(kv.Key, kv.Value.InnerValue);
+                if (value is null)
                 {
-                    JToken value = CheckPrivateAttr(kv.Key, kv.Value);
-                    if (value == null)
+                    if (customAttrsBuilder is null)
                     {
-                        if (customAttrsBuilder is null)
+                        // This is the first private custom attribute we've found. Lazily create the builder
+                        // by first copying all of the ones we've already iterated over. We can rely on the
+                        // iteration order being the same because it's immutable.
+                        customAttrsBuilder = ImmutableDictionary.CreateBuilder<string, ImmutableJsonValue>();
+                        foreach (var kv1 in _user.Custom)
                         {
-                            // This is the first private custom attribute we've found. Lazily create the builder
-                            // by first copying all of the ones we've already iterated over. We can rely on the
-                            // iteration order being the same because it's immutable.
-                            customAttrsBuilder = ImmutableDictionary.CreateBuilder<string, JToken>();
-                            foreach (KeyValuePair<string, JToken> kv1 in _user.Custom)
+                            if (kv1.Key == kv.Key)
                             {
-                                if (kv1.Key == kv.Key)
-                                {
-                                    break;
-                                }
-                                customAttrsBuilder[kv1.Key] = kv1.Value;
+                                break;
                             }
+                            customAttrsBuilder[kv1.Key] = kv1.Value;
                         }
                     }
-                    else
+                }
+                else
+                {
+                    // It's not a private attribute.
+                    if (customAttrsBuilder != null)
                     {
-                        // It's not a private attribute.
-                        if (customAttrsBuilder != null)
-                        {
-                            customAttrsBuilder[kv.Key] = kv.Value;
-                        }
+                        customAttrsBuilder[kv.Key] = kv.Value;
                     }
                 }
             }

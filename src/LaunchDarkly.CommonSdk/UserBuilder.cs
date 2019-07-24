@@ -197,6 +197,11 @@ namespace LaunchDarkly.Client
 
     internal class UserBuilder : IUserBuilder
     {
+        // These constants are a minor optimization to reduce the number of JValue instances
+        // when converting from a bool.
+        private static readonly JValue TrueValue = new JValue(true);
+        private static readonly JValue FalseValue = new JValue(false);
+
         private readonly string _key;
         private string _secondaryKey;
         private string _ipAddress;
@@ -207,7 +212,7 @@ namespace LaunchDarkly.Client
         private string _avatar;
         private string _email;
         private bool _anonymous;
-        private ImmutableDictionary<string, JToken>.Builder _custom;
+        private ImmutableDictionary<string, ImmutableJsonValue>.Builder _custom;
         private ImmutableHashSet<string>.Builder _privateAttributeNames;
 
         internal UserBuilder(string key)
@@ -236,7 +241,7 @@ namespace LaunchDarkly.Client
         {
             return new User(_key, _secondaryKey, _ipAddress, _country, _firstName, _lastName, _name, _avatar, _email,
                 _anonymous,
-                _custom == null ? ImmutableDictionary.Create<string, JToken>() : _custom.ToImmutableDictionary(),
+                _custom == null ? ImmutableDictionary.Create<string, ImmutableJsonValue>() : _custom.ToImmutableDictionary(),
                 _privateAttributeNames == null ? ImmutableHashSet.Create<string>() : _privateAttributeNames.ToImmutableHashSet());
         }
 
@@ -298,15 +303,15 @@ namespace LaunchDarkly.Client
         {
             if (_custom == null)
             {
-                _custom = ImmutableDictionary.CreateBuilder<string, JToken>();
+                _custom = ImmutableDictionary.CreateBuilder<string, ImmutableJsonValue>();
             }
-            _custom[name] = value;
+            _custom[name] = ImmutableJsonValue.FromJToken(value);
             return CanMakeAttributePrivate(name);
         }
         
         public IUserBuilderCanMakeAttributePrivate Custom(string name, bool value)
         {
-            return Custom(name, new JValue(value));
+            return Custom(name, value ? TrueValue : FalseValue);
         }
         
         public IUserBuilderCanMakeAttributePrivate Custom(string name, string value)
