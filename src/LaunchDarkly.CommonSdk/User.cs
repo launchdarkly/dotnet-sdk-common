@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using LaunchDarkly.Common;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace LaunchDarkly.Client
 {
@@ -118,40 +116,7 @@ namespace LaunchDarkly.Client
         /// </summary>
         [JsonIgnore]
         public IImmutableSet<string> PrivateAttributeNames => _privateAttributeNames;
-
-        internal JToken GetValueForEvaluation(string attribute)
-        {
-            switch (attribute)
-            {
-                case "key":
-                    return new JValue(Key);
-                case "secondary":
-                    return null;
-                case "ip":
-                    return new JValue(IPAddress);
-                case "email":
-                    return new JValue(Email);
-                case "avatar":
-                    return new JValue(Avatar);
-                case "firstName":
-                    return new JValue(FirstName);
-                case "lastName":
-                    return new JValue(LastName);
-                case "name":
-                    return new JValue(Name);
-                case "country":
-                    return new JValue(Country);
-                case "anonymous":
-                    return new JValue(Anonymous);
-                default:
-                    if (Custom.TryGetValue(attribute, out var customValue))
-                    {
-                        return customValue.InnerValue;
-                    }
-                    return null;
-            }
-        }
-
+        
         /// <summary>
         /// Creates a <see cref="UserBuilder"/> for constructing a user object using a fluent syntax.
         /// </summary>
