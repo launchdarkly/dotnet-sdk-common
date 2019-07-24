@@ -260,6 +260,10 @@ namespace LaunchDarkly.Client
             {
                 return false;
             }
+            if (ReferenceEquals(this, u))
+            {
+                return true;
+            }
             return Object.Equals(Key, u.Key) &&
                 Object.Equals(SecondaryKey, u.SecondaryKey) &&
                 Object.Equals(IPAddress, u.IPAddress) &&
