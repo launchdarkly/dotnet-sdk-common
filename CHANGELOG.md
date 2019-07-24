@@ -2,6 +2,11 @@
 
 For full release notes for the projects that depend on this project, see their respective changelogs. This file describes changes only to the common code. This project adheres to [Semantic Versioning](http://semver.org).
 
+## [2.3.0] - 2019-07-23
+### Deprecated:
+- `User` constructors.
+- `User.Custom` and `User.PrivateAttributeNames` will be changed to immutable collections in the future.
+
 ## [2.2.0] - 2019-07-23
 ### Added:
 - `User.Builder` provides a fluent builder pattern for constructing `User` objects. This is now the preferred method for building a user, rather than setting `User` properties directly or using `UserExtension` methods like `AndName()` that modify the existing user object.
