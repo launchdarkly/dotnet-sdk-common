@@ -4,13 +4,12 @@ using Newtonsoft.Json.Linq;
 namespace LaunchDarkly.Client
 {
     /// <summary>
-    /// A mutable object that uses the Builder pattern to specify properties for a
-    /// <see cref="User"/> object.
+    /// A mutable object that uses the Builder pattern to specify properties for a <see cref="User"/> object.
     /// </summary>
     /// <remarks>
     /// Obtain an instance of this class by calling <see cref="User.Builder(string)"/>.
     /// 
-    /// All of the builder methods for setting a  user attribute return a reference to the same builder, so they can be
+    /// All of the builder methods for setting a user attribute return a reference to the same builder, so they can be
     /// chained together (see example). Some of them have the return type <see cref="IUserBuilderCanMakeAttributePrivate"/>
     /// rather than <c>IUserBuilder</c>; those are the user attributes that can be designated as private.
     /// </remarks>
@@ -235,6 +234,7 @@ namespace LaunchDarkly.Client
 
         public User Build()
         {
+#pragma warning disable 618
             return new User(_key)
             {
                 SecondaryKey = _secondaryKey,
@@ -253,6 +253,7 @@ namespace LaunchDarkly.Client
                 Custom = _custom == null ? new Dictionary<string, JToken>() :
                     new Dictionary<string, JToken>(_custom)
             };
+#pragma warning restore 618
         }
 
         public IUserBuilder SecondaryKey(string secondaryKey)
