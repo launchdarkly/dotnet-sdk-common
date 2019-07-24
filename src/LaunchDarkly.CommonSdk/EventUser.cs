@@ -18,9 +18,9 @@ namespace LaunchDarkly.Common
         [JsonProperty(PropertyName = "secondary", NullValueHandling = NullValueHandling.Ignore)]
         public string SecondaryKey { get; internal set; }
 
-        /// <see cref="User.IpAddress"/>
+        /// <see cref="User.IPAddress"/>
         [JsonProperty(PropertyName = "ip", NullValueHandling = NullValueHandling.Ignore)]
-        public string IpAddress { get; internal set; }
+        public string IPAddress { get; internal set; }
 
         /// <see cref="User.Country"/>
         [JsonProperty(PropertyName = "country", NullValueHandling = NullValueHandling.Ignore)]
@@ -84,8 +84,8 @@ namespace LaunchDarkly.Common
         {
             _result.Key = _user.Key;
             _result.SecondaryKey = _user.SecondaryKey;
-            _result.Anonymous = _user.Anonymous;
-            _result.IpAddress = CheckPrivateAttr("ip", _user.IPAddress);
+            _result.Anonymous = _user.Anonymous ? (bool?)true : null;
+            _result.IPAddress = CheckPrivateAttr("ip", _user.IPAddress);
             _result.Country = CheckPrivateAttr("country", _user.Country);
             _result.FirstName = CheckPrivateAttr("firstName", _user.FirstName);
             _result.LastName = CheckPrivateAttr("lastName", _user.LastName);
