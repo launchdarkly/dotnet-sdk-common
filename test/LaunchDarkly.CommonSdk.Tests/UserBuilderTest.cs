@@ -48,6 +48,7 @@ namespace LaunchDarkly.Common.Tests
         }
 
         public static IEnumerable<object[]> AllStringProperties => MakeParams(
+            new StringPropertyDesc("key", b => b.Key, u => u.Key),
             new StringPropertyDesc("secondary", b => b.SecondaryKey, u => u.SecondaryKey),
             new StringPropertyDesc("ip", b => b.IPAddress, u => u.IPAddress),
             new StringPropertyDesc("country", b => b.Country, u => u.Country),
@@ -92,7 +93,15 @@ namespace LaunchDarkly.Common.Tests
         public void StringPropertyIsNullByDefault(StringPropertyDesc p)
         {
             var user = User.Builder(key).Build();
-            Assert.Null(p.Getter(user));
+            var value = p.Getter(user);
+            if (p.Name == "key")
+            {
+                Assert.Equal(key, value); 
+            }
+            else
+            {
+                Assert.Null(value);
+            }
         }
 
         [Theory]
