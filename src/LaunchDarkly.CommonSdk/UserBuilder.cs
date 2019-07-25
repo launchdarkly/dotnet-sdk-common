@@ -225,7 +225,7 @@ namespace LaunchDarkly.Client
             _name = fromUser.Name;
             _avatar = fromUser.Avatar;
             _email = fromUser.Email;
-            _anonymous = fromUser.Anonymous.HasValue && fromUser.Anonymous.Value;
+            _anonymous = fromUser.Anonymous;
             _privateAttributeNames = fromUser.PrivateAttributeNames == null ? null :
                 new HashSet<string>(fromUser.PrivateAttributeNames);
             _custom = fromUser.Custom == null ? null :
@@ -234,26 +234,8 @@ namespace LaunchDarkly.Client
 
         public User Build()
         {
-#pragma warning disable 618
-            return new User(_key)
-            {
-                SecondaryKey = _secondaryKey,
-#pragma warning disable 618
-                IpAddress = _ipAddress,
-#pragma warning restore 618
-                Country = _country,
-                FirstName = _firstName,
-                LastName = _lastName,
-                Name = _name,
-                Avatar = _avatar,
-                Email = _email,
-                Anonymous = _anonymous ? (bool?)true : null,
-                PrivateAttributeNames = _privateAttributeNames == null ? null :
-                    new HashSet<string>(_privateAttributeNames),
-                Custom = _custom == null ? new Dictionary<string, JToken>() :
-                    new Dictionary<string, JToken>(_custom)
-            };
-#pragma warning restore 618
+            return new User(_key, _secondaryKey, _ipAddress, _country, _firstName, _lastName, _name, _avatar, _email,
+                _anonymous, _custom ?? new Dictionary<string, JToken>(), _privateAttributeNames ?? new HashSet<string>());
         }
 
         public IUserBuilder SecondaryKey(string secondaryKey)

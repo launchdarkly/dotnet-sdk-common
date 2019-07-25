@@ -24,26 +24,30 @@ namespace LaunchDarkly.Client
     /// custom attribute such as "customer_ranking" can be used to launch a feature to the top 10% of users
     /// on a site.
     /// 
-    /// Note that the properties of <c>User</c> are mutable. In future versions of the SDK, this class may be
-    /// changed to be immutable. The preferred method of setting user properties is to obtain a builder with
-    /// <see cref="User.Builder(string)"/>; avoid using the <see cref="UserExtensions"/> methods or an object
-    /// initializer expression such as <c>new User("key") { Name = "name" }</c>, since these will no longer work
-    /// once <c>User</c> is immutable. Modifying properties after creating a <c>User</c> could result in
-    /// unexpected inconsistencies in your analytics events, since events that have not yet been delivered
-    /// retain a reference to the original <c>User</c>.
+    /// Instances of <c>User</c> are immutable once created. They can be created with the factory method
+    /// <see cref="User.WithKey(string)"/>, or using a builder pattern with <see cref="User.Builder(string)"/>
+    /// or <see cref="User.Builder(User)"/>.
     /// </remarks>
     public class User : IEquatable<User>
     {
+        private readonly string _key;
+        private readonly string _secondary;
+        private readonly string _ip;
+        private readonly string _country;
+        private readonly string _firstName;
+        private readonly string _lastName;
+        private readonly string _name;
+        private readonly string _avatar;
+        private readonly string _email;
+        private readonly bool _anonymous;
+        private readonly IDictionary<string, JToken> _custom;
+        private readonly ISet<string> _privateAttributeNames;
+
         /// <summary>
         /// The unique key for the user.
         /// </summary>
-        /// <remarks>
-        /// Although there is currently a public setter method for this property, you should avoid modifying
-        /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
-        /// and will be removed in a future version. See remarks on <c>User</c>.
-        /// </remarks>
         [JsonProperty(PropertyName = "key", NullValueHandling = NullValueHandling.Ignore)]
-        public string Key { get; set; }
+        public string Key => _key;
 
         /// <summary>
         /// The secondary key for a user. This affects
@@ -51,151 +55,74 @@ namespace LaunchDarkly.Client
         /// as follows: if you have chosen to bucket users by a specific attribute, the secondary key (if set)
         /// is used to further distinguish between users who are otherwise identical according to that attribute.
         /// </summary>
-        /// <remarks>
-        /// Although there is currently a public setter method for this property, you should avoid modifying
-        /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
-        /// and will be removed in a future version. See remarks on <c>User</c>.
-        /// </remarks>
         [JsonProperty(PropertyName = "secondary", NullValueHandling = NullValueHandling.Ignore)]
-        public string SecondaryKey { get; set; }
-
-        /// <summary>
-        /// The IP address of the user (deprecated property name; use <see cref="IPAddress"/>).
-        /// </summary>
-        /// <remarks>
-        /// Although there is currently a public setter method for this property, you should avoid modifying
-        /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
-        /// and will be removed in a future version. See remarks on <c>User</c>.
-        /// </remarks>
-        [Obsolete("use IPAddress")]
-        [JsonIgnore]
-        public string IpAddress
-        {
-            get
-            {
-                return IPAddress;
-            }
-            set
-            {
-                IPAddress = value;
-            }
-        }
+        public string SecondaryKey => _secondary;
 
         /// <summary>
         /// The IP address of the user.
         /// </summary>
-        /// <remarks>
-        /// Although there is currently a public setter method for this property, you should avoid modifying
-        /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
-        /// and will be removed in a future version. See remarks on <c>User</c>.
-        /// </remarks>
         [JsonProperty(PropertyName = "ip", NullValueHandling = NullValueHandling.Ignore)]
-        public string IPAddress { get; set; }
+        public string IPAddress => _ip;
 
         /// <summary>
         /// The country code for the user.
         /// </summary>
-        /// <remarks>
-        /// Although there is currently a public setter method for this property, you should avoid modifying
-        /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
-        /// and will be removed in a future version. See remarks on <c>User</c>.
-        /// </remarks>
         [JsonProperty(PropertyName = "country", NullValueHandling = NullValueHandling.Ignore)]
-        public string Country { get; set; }
+        public string Country => _country;
 
         /// <summary>
         /// The user's first name.
         /// </summary>
-        /// <remarks>
-        /// Although there is currently a public setter method for this property, you should avoid modifying
-        /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
-        /// and will be removed in a future version. See remarks on <c>User</c>.
-        /// </remarks>
         [JsonProperty(PropertyName = "firstName", NullValueHandling = NullValueHandling.Ignore)]
-        public string FirstName { get; set; }
+        public string FirstName => _firstName;
 
         /// <summary>
         /// The user's last name.
         /// </summary>
-        /// <remarks>
-        /// Although there is currently a public setter method for this property, you should avoid modifying
-        /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
-        /// and will be removed in a future version. See remarks on <c>User</c>.
-        /// </remarks>
         [JsonProperty(PropertyName = "lastName", NullValueHandling = NullValueHandling.Ignore)]
-        public string LastName { get; set; }
+        public string LastName => _lastName;
 
         /// <summary>
         /// The user's full name.
         /// </summary>
-        /// <remarks>
-        /// Although there is currently a public setter method for this property, you should avoid modifying
-        /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
-        /// and will be removed in a future version. See remarks on <c>User</c>.
-        /// </remarks>
         [JsonProperty(PropertyName = "name", NullValueHandling = NullValueHandling.Ignore)]
-        public string Name { get; set; }
+        public string Name => _name;
 
         /// <summary>
         /// The user's avatar.
         /// </summary>
-        /// <remarks>
-        /// Although there is currently a public setter method for this property, you should avoid modifying
-        /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
-        /// and will be removed in a future version. See remarks on <c>User</c>.
-        /// </remarks>
         [JsonProperty(PropertyName = "avatar", NullValueHandling = NullValueHandling.Ignore)]
-        public string Avatar { get; set; }
+        public string Avatar => _avatar;
 
         /// <summary>
         /// The user's email address.
         /// </summary>
-        /// <remarks>
-        /// Although there is currently a public setter method for this property, you should avoid modifying
-        /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
-        /// and will be removed in a future version. See remarks on <c>User</c>.
-        /// </remarks>
         [JsonProperty(PropertyName = "email", NullValueHandling = NullValueHandling.Ignore)]
-        public string Email { get; set; }
+        public string Email => _email;
 
         /// <summary>
         /// Whether or not the user is anonymous.
         /// </summary>
-        /// <remarks>
-        /// Although there is currently a public setter method for this property, you should avoid modifying
-        /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
-        /// and will be removed in a future version. See remarks on <c>User</c>.
-        /// </remarks>
         [JsonProperty(PropertyName = "anonymous", NullValueHandling = NullValueHandling.Ignore)]
-        public bool? Anonymous { get; set; }
+        public bool Anonymous => _anonymous;
 
         /// <summary>
-        /// Custom attributes for the user. These can be more conveniently set via the extension
-        /// methods <c>AndCustomAttribute</c> or <c>AndPrivateCustomAttribute</c>.
+        /// Custom attributes for the user.
         /// </summary>
         /// <remarks>
-        /// Although there is currently a public setter method for this property, you should avoid modifying
-        /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
-        /// and will be removed in a future version. See remarks on <c>User</c>.
-        /// 
-        /// Also, in a future version this will be changed to an immutable dictionary.
+        /// In a future version, this will be changed to an immutable dictionary.
         /// </remarks>
         [JsonProperty(PropertyName = "custom", NullValueHandling = NullValueHandling.Ignore)]
-        public Dictionary<string, JToken> Custom { get; set; }
+        public IDictionary<string, JToken> Custom => _custom;
 
         /// <summary>
-        /// Used internally to track which attributes are private. To set private attributes,
-        /// you should use extension methods such as <c>AndPrivateName</c>.
+        /// Used internally to track which attributes are private.
         /// </summary>
         /// <remarks>
-        /// Although there is currently a public setter method for this property, you should avoid modifying
-        /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
-        /// and will be removed in a future version. See remarks on <c>User</c>.
-        /// 
-        /// Also, in a future version this will be changed to an immutable set.
+        /// In a future version, this will be changed to an immutable set.
         /// </remarks>
         [JsonIgnore]
-        public ISet<string> PrivateAttributeNames { get; set; }
+        public ISet<string> PrivateAttributeNames => _privateAttributeNames;
 
         internal JToken GetValueForEvaluation(string attribute)
         {
@@ -232,15 +159,10 @@ namespace LaunchDarkly.Client
         /// Creates a <see cref="UserBuilder"/> for constructing a user object using a fluent syntax.
         /// </summary>
         /// <remarks>
-        /// This is the preferred method for building a <c>User</c> if you are setting properties
+        /// This is the only method for building a <c>User</c> if you are setting properties
         /// besides the <c>Key</c>. The <c>UserBuilder</c> has methods for setting any number of
         /// properties, after which you call <see cref="UserBuilder.Build"/> to get the resulting
         /// <c>User</c> instance.
-        /// 
-        /// This is different from using the extension methods such as
-        /// <see cref="UserExtensions.AndName(User, string)"/>, which modify the properties of an
-        /// existing <c>User</c> instance. Those methods are now deprecated, because in a future
-        /// version of the SDK, <c>User</c> will be an immutable object.
         /// </remarks>
         /// <example>
         /// <code>
@@ -277,48 +199,12 @@ namespace LaunchDarkly.Client
             return new UserBuilder(fromUser);
         }
 
-        /// <summary>
-        /// Creates a user with the given key.
-        /// </summary>
-        /// <remarks>
-        /// In a future version, the <c>User</c> constructors will not be used directly; use a factory method like
-        /// <see cref="WithKey(string)"/>, or the builder pattern with <see cref="Builder(string)"/>.
-        /// </remarks>
-        /// <param name="key">a <c>string</c> that uniquely identifies a user</param>
-        [Obsolete("use User.WithKey")]
-        public User(string key)
+        private User(string key)
         {
-            Key = key;
-            Custom = new Dictionary<string, JToken>();
+            _key = key;
+            _custom = new Dictionary<string, JToken>();
         }
-
-        /// <summary>
-        /// Creates a user by copying all properties from another user.
-        /// </summary>
-        /// <remarks>
-        /// In a future version, <c>User</c> will be immutable, so there will be no reason to make an exact copy
-        /// of an instance. If you want to make a copy but then change some properties, use <see cref="User.Builder(User)"/>.
-        /// </remarks>
-        /// <param name="from">the user to copy</param>
-        [Obsolete("use User.Builder(User)")]
-        public User(User from)
-        {
-            Key = from.Key;
-            SecondaryKey = from.SecondaryKey;
-#pragma warning disable 618
-            IpAddress = from.IPAddress;
-#pragma warning restore 618
-            Country = from.Country;
-            FirstName = from.FirstName;
-            LastName = from.LastName;
-            Name = from.Name;
-            Avatar = from.Avatar;
-            Email = from.Email;
-            Anonymous = from.Anonymous;
-            Custom = from.Custom == null ? new Dictionary<string, JToken>() : new Dictionary<string, JToken>(from.Custom);
-            PrivateAttributeNames = from.PrivateAttributeNames == null ? null : new HashSet<string>(from.PrivateAttributeNames);
-        }
-
+        
         /// <summary>
         /// Creates a user by specifying all properties.
         /// </summary>
@@ -327,20 +213,18 @@ namespace LaunchDarkly.Client
                     string lastName, string name, string avatar, string email, bool? anonymous,
                     IDictionary<string, JToken> custom, ISet<string> privateAttributeNames)
         {
-            Key = key;
-            SecondaryKey = secondaryKey;
-#pragma warning disable 618
-            IpAddress = ip;
-#pragma warning restore 618
-            Country = country;
-            FirstName = firstName;
-            LastName = lastName;
-            Name = name;
-            Avatar = avatar;
-            Email = email;
-            Anonymous = anonymous;
-            Custom = custom == null ? null : new Dictionary<string, JToken>(custom);
-            PrivateAttributeNames = privateAttributeNames == null ? null : new HashSet<string>(privateAttributeNames);
+            _key = key;
+            _secondary = secondaryKey;
+            _ip = ip;
+            _country = country;
+            _firstName = firstName;
+            _lastName = lastName;
+            _name = name;
+            _avatar = avatar;
+            _email = email;
+            _anonymous = anonymous.HasValue && anonymous.Value;
+            _custom = custom == null ? null : new Dictionary<string, JToken>(custom);
+            _privateAttributeNames = privateAttributeNames == null ? null : new HashSet<string>(privateAttributeNames);
         }
 
         /// <summary>
@@ -350,35 +234,9 @@ namespace LaunchDarkly.Client
         /// <returns>a <c>User</c> instance</returns>
         public static User WithKey(string key)
         {
-#pragma warning disable 618
             return new User(key);
-#pragma warning restore 618
         }
-
-        internal User AddCustom(string attribute, JToken value)
-        {
-            if (attribute == string.Empty)
-            {
-                throw new ArgumentException("Attribute Name cannot be empty");
-            }
-            if (Custom is null)
-            {
-                Custom = new Dictionary<string, JToken>();
-            }
-            Custom.Add(attribute, value);
-            return this;
-        }
-
-        internal User AddPrivate(string name)
-        {
-            if (PrivateAttributeNames is null)
-            {
-                PrivateAttributeNames = new HashSet<string>();
-            }
-            PrivateAttributeNames.Add(name);
-            return this;
-        }
-
+        
         /// <summary>
         /// Tests for equality with another object by comparing all fields of the User.
         /// </summary>
@@ -416,8 +274,7 @@ namespace LaunchDarkly.Client
                 Object.Equals(Anonymous, u.Anonymous) &&
                 Custom.Count == u.Custom.Count &&
                 Custom.Keys.All(k => u.Custom.ContainsKey(k) && Object.Equals(Custom[k], u.Custom[k])) &&
-                (PrivateAttributeNames ?? new HashSet<string>()).SetEquals(
-                    u.PrivateAttributeNames ?? new HashSet<string>());
+                PrivateAttributeNames.SetEquals(u.PrivateAttributeNames);
         }
 
         /// <summary>
@@ -439,19 +296,13 @@ namespace LaunchDarkly.Client
                 .With(Avatar)
                 .With(Email)
                 .With(Anonymous);
-            if (Custom != null)
+            foreach (var c in Custom)
             {
-                foreach (var c in Custom)
-                {
-                    hashBuilder.With(c.Key).With(c.Value);
-                }
+                hashBuilder.With(c.Key).With(c.Value);
             }
-            if (PrivateAttributeNames != null)
+            foreach (var p in PrivateAttributeNames)
             {
-                foreach (var p in PrivateAttributeNames)
-                {
-                    hashBuilder.With(p);
-                }
+                hashBuilder.With(p);
             }
             return hashBuilder.Value;
         }

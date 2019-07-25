@@ -102,7 +102,7 @@ namespace LaunchDarkly.Common.Tests
             var expectedValue = "x";
             var user = p.Setter(User.Builder(key))(expectedValue).Build();
             Assert.Equal(expectedValue, p.Getter(user));
-            Assert.Null(user.PrivateAttributeNames);
+            Assert.Empty(user.PrivateAttributeNames);
         }
 
         [Theory]
@@ -116,10 +116,10 @@ namespace LaunchDarkly.Common.Tests
         }
 
         [Fact]
-        public void AnonymousDefaultsToNull()
+        public void AnonymousDefaultsToFalse()
         {
             var user = User.Builder(key).Build();
-            Assert.Null(user.Anonymous);
+            Assert.False(user.Anonymous);
         }
 
         [Fact]
@@ -132,8 +132,8 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void BuilderCanSetAnonymousFalse()
         {
-            var user = User.Builder(key).Anonymous(false).Build();
-            Assert.Null(user.Anonymous); // it's null rather than false so the JSON property won't appear
+            var user = User.Builder(key).Anonymous(true).Anonymous(false).Build();
+            Assert.False(user.Anonymous);
         }
 
         [Fact]
@@ -149,7 +149,7 @@ namespace LaunchDarkly.Common.Tests
         {
             var user0 = setter(User.Builder(key), "foo", value).Build();
             Assert.Equal<object>(value, user0.Custom["foo"].Value<T>());
-            Assert.Null(user0.PrivateAttributeNames);
+            Assert.Empty(user0.PrivateAttributeNames);
 
             var user1 = setter(User.Builder(key), "bar", value).AsPrivateAttribute().Build();
             Assert.Equal<object>(value, user1.Custom["bar"].Value<T>());
