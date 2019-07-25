@@ -29,6 +29,13 @@ namespace LaunchDarkly.Client
         User Build();
 
         /// <summary>
+        /// Sets the unique key for a user.
+        /// </summary>
+        /// <param name="key">the key</param>
+        /// <returns>the same builder</returns>
+        IUserBuilder Key(string key);
+
+        /// <summary>
         /// Sets the secondary key for a user.
         /// </summary>
         /// <remarks>
@@ -202,7 +209,7 @@ namespace LaunchDarkly.Client
         private static readonly JValue TrueValue = new JValue(true);
         private static readonly JValue FalseValue = new JValue(false);
 
-        private readonly string _key;
+        private string _key;
         private string _secondaryKey;
         private string _ipAddress;
         private string _country;
@@ -241,8 +248,14 @@ namespace LaunchDarkly.Client
         {
             return new User(_key, _secondaryKey, _ipAddress, _country, _firstName, _lastName, _name, _avatar, _email,
                 _anonymous,
-                _custom == null ? ImmutableDictionary.Create<string, ImmutableJsonValue>() : _custom.ToImmutableDictionary(),
-                _privateAttributeNames == null ? ImmutableHashSet.Create<string>() : _privateAttributeNames.ToImmutableHashSet());
+                _custom is null ? ImmutableDictionary.Create<string, ImmutableJsonValue>() : _custom.ToImmutableDictionary(),
+                _privateAttributeNames is null ? ImmutableHashSet.Create<string>() : _privateAttributeNames.ToImmutableHashSet());
+        }
+
+        public IUserBuilder Key(string key)
+        {
+            _key = key;
+            return this;
         }
 
         public IUserBuilder SecondaryKey(string secondaryKey)
@@ -301,7 +314,7 @@ namespace LaunchDarkly.Client
 
         public IUserBuilderCanMakeAttributePrivate Custom(string name, JToken value)
         {
-            if (_custom == null)
+            if (_custom is null)
             {
                 _custom = ImmutableDictionary.CreateBuilder<string, ImmutableJsonValue>();
             }
@@ -336,7 +349,7 @@ namespace LaunchDarkly.Client
 
         internal IUserBuilder AddPrivateAttribute(string attrName)
         {
-            if (_privateAttributeNames == null)
+            if (_privateAttributeNames is null)
             {
                 _privateAttributeNames = ImmutableHashSet.CreateBuilder<string>();
             }
@@ -359,6 +372,11 @@ namespace LaunchDarkly.Client
         public User Build()
         {
             return _builder.Build();
+        }
+
+        public IUserBuilder Key(string key)
+        {
+            return _builder.Key(key);
         }
 
         public IUserBuilder SecondaryKey(string secondaryKey)
