@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using LaunchDarkly.Client;
 
 namespace LaunchDarkly.Common
@@ -52,13 +53,15 @@ namespace LaunchDarkly.Common
 
         /// <see cref="User.Custom"/>
         [JsonProperty(PropertyName = "custom", NullValueHandling = NullValueHandling.Ignore)]
-        public Dictionary<string, JToken> Custom { get; internal set; }
+        public IImmutableDictionary<string, JToken> Custom { get; internal set; }
 
         /// <summary>
         /// A list of attribute names that have been omitted from the event.
         /// </summary>
+        // Note that this is a sorted set - LaunchDarkly doesn't care about the ordering, but
+        // having a defined order makes our test logic much simpler.
         [JsonProperty(PropertyName = "privateAttrs", NullValueHandling = NullValueHandling.Ignore)]
-        public List<string> PrivateAttrs { get; set; }
+        public ImmutableSortedSet<string> PrivateAttrs { get; set; }
 
         internal static EventUser FromUser(User user, IBaseConfiguration config)
         {
@@ -71,13 +74,13 @@ namespace LaunchDarkly.Common
     {
         private IBaseConfiguration _config;
         private User _user;
-        private EventUser _result;
+        private EventUser _result = new EventUser();
+        private ImmutableSortedSet<string>.Builder _privateAttrs = null;
 
         internal EventUserBuilder(User user, IBaseConfiguration config)
         {
             _user = user;
             _config = config;
-            _result = new EventUser();
         }
 
         internal EventUser Build()
@@ -92,24 +95,51 @@ namespace LaunchDarkly.Common
             _result.Name = CheckPrivateAttr("name", _user.Name);
             _result.Avatar = CheckPrivateAttr("avatar", _user.Avatar);
             _result.Email = CheckPrivateAttr("email", _user.Email);
-            if (_user.Custom != null)
+
+            // With the custom attributes, for efficiency's sake we would like to reuse the same ImmutableDictionary
+            // whenever possible. So, we'll lazily create a new collection only if it turns out that there are any
+            // changes needed (i.e. if one of the custom attributes turns out to be private).
+            ImmutableDictionary<string, JToken>.Builder customAttrsBuilder = null;
+            foreach (KeyValuePair<string, JToken> kv in _user.Custom)
             {
-                foreach (KeyValuePair<string, JToken> kv in _user.Custom)
+                if (kv.Value != null)
                 {
                     JToken value = CheckPrivateAttr(kv.Key, kv.Value);
-                    if (value != null)
+                    if (value == null)
                     {
-                        if (_result.Custom == null)
+                        if (customAttrsBuilder is null)
                         {
-                            _result.Custom = new Dictionary<string, JToken>();
+                            // This is the first private custom attribute we've found. Lazily create the builder
+                            // by first copying all of the ones we've already iterated over. We can rely on the
+                            // iteration order being the same because it's immutable.
+                            customAttrsBuilder = ImmutableDictionary.CreateBuilder<string, JToken>();
+                            foreach (KeyValuePair<string, JToken> kv1 in _user.Custom)
+                            {
+                                if (kv1.Key == kv.Key)
+                                {
+                                    break;
+                                }
+                                customAttrsBuilder[kv1.Key] = kv1.Value;
+                            }
                         }
-                        _result.Custom[kv.Key] = kv.Value;
+                    }
+                    else
+                    {
+                        // It's not a private attribute.
+                        if (customAttrsBuilder != null)
+                        {
+                            customAttrsBuilder[kv.Key] = kv.Value;
+                        }
                     }
                 }
             }
+            var custom = customAttrsBuilder is null ? _user.Custom : customAttrsBuilder.ToImmutableDictionary();
+            _result.Custom = custom.Count == 0 ? null : custom;
+            _result.PrivateAttrs = _privateAttrs is null ? null : _privateAttrs.ToImmutableSortedSet();
+
             return _result;
         }
-
+        
         private T CheckPrivateAttr<T>(string name, T value) where T: class
         {
             if (value is null)
@@ -120,11 +150,11 @@ namespace LaunchDarkly.Common
                      (_config.PrivateAttributeNames != null &&_config.PrivateAttributeNames.Contains(name)) ||
                      (_user.PrivateAttributeNames != null && _user.PrivateAttributeNames.Contains(name)))
             {
-                if (_result.PrivateAttrs is null)
+                if (_privateAttrs is null)
                 {
-                    _result.PrivateAttrs = new List<string>();
+                    _privateAttrs = ImmutableSortedSet.CreateBuilder<string>();
                 }
-                _result.PrivateAttrs.Add(name);
+                _privateAttrs.Add(name);
                 return null;
             }
             else
