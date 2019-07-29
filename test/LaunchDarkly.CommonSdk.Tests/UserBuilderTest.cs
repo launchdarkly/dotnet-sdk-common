@@ -197,6 +197,28 @@ namespace LaunchDarkly.Common.Tests
         }
         
         [Fact]
+        public void CustomBoolAttributeUsesStaticInstancesForTrueAndFalse()
+        {
+            var attr = "ok";
+            var t0 = User.Builder(key).Custom(attr, true).Build();
+            var t1 = User.Builder(key).Custom(attr, true).Build();
+            var f0 = User.Builder(key).Custom(attr, false).Build();
+            var f1 = User.Builder(key).Custom(attr, false).Build();
+            Assert.Same(t0.Custom[attr].AsJToken(), t1.Custom[attr].AsJToken());
+            Assert.Same(f0.Custom[attr].AsJToken(), f1.Custom[attr].AsJToken());
+        }
+
+        [Fact]
+        public void ModifyingOriginalJsonValueDoesNotModifyAttributeOfExistingUser()
+        {
+            var mutableJson = new JArray() { new JValue("mauve") };
+            var u = User.Builder(key).Custom("colors", mutableJson).Build();
+            mutableJson.Add(new JValue("puce"));
+            TestUtil.AssertJsonEquals(new JArray() { new JValue("mauve") },
+                u.Custom["colors"].AsJArray());
+        }
+
+        [Fact]
         public void TestUserEqualityWithBuilderFromUser()
         {
             User copy = User.Builder(UserTest.UserToCopy).Build();

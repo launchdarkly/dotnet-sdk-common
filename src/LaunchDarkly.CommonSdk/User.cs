@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using LaunchDarkly.Common;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace LaunchDarkly.Client
 {
@@ -41,7 +39,7 @@ namespace LaunchDarkly.Client
         private readonly string _avatar;
         private readonly string _email;
         private readonly bool _anonymous;
-        internal readonly ImmutableDictionary<string, JToken> _custom;
+        internal readonly ImmutableDictionary<string, ImmutableJsonValue> _custom;
         internal readonly ImmutableHashSet<string> _privateAttributeNames;
 
         /// <summary>
@@ -111,45 +109,14 @@ namespace LaunchDarkly.Client
         /// Custom attributes for the user.
         /// </summary>
         [JsonProperty(PropertyName = "custom", NullValueHandling = NullValueHandling.Ignore)]
-        public IImmutableDictionary<string, JToken> Custom => _custom;
+        public IImmutableDictionary<string, ImmutableJsonValue> Custom => _custom;
 
         /// <summary>
         /// Used internally to track which attributes are private.
         /// </summary>
         [JsonIgnore]
         public IImmutableSet<string> PrivateAttributeNames => _privateAttributeNames;
-
-        internal JToken GetValueForEvaluation(string attribute)
-        {
-            switch (attribute)
-            {
-                case "key":
-                    return new JValue(Key);
-                case "secondary":
-                    return null;
-                case "ip":
-                    return new JValue(IPAddress);
-                case "email":
-                    return new JValue(Email);
-                case "avatar":
-                    return new JValue(Avatar);
-                case "firstName":
-                    return new JValue(FirstName);
-                case "lastName":
-                    return new JValue(LastName);
-                case "name":
-                    return new JValue(Name);
-                case "country":
-                    return new JValue(Country);
-                case "anonymous":
-                    return new JValue(Anonymous);
-                default:
-                    JToken customValue;
-                    Custom.TryGetValue(attribute, out customValue);
-                    return customValue;
-            }
-        }
-
+        
         /// <summary>
         /// Creates a <see cref="UserBuilder"/> for constructing a user object using a fluent syntax.
         /// </summary>
@@ -197,7 +164,7 @@ namespace LaunchDarkly.Client
         private User(string key)
         {
             _key = key;
-            _custom = ImmutableDictionary.Create<string, JToken>();
+            _custom = ImmutableDictionary.Create<string, ImmutableJsonValue>();
             _privateAttributeNames = ImmutableHashSet.Create<string>();
         }
         
@@ -207,7 +174,7 @@ namespace LaunchDarkly.Client
         [JsonConstructor]
         public User(string key, string secondaryKey, string ip, string country, string firstName,
                     string lastName, string name, string avatar, string email, bool? anonymous,
-                    ImmutableDictionary<string, JToken> custom, ImmutableHashSet<string> privateAttributeNames)
+                    ImmutableDictionary<string, ImmutableJsonValue> custom, ImmutableHashSet<string> privateAttributeNames)
         {
             _key = key;
             _secondary = secondaryKey;
@@ -219,7 +186,7 @@ namespace LaunchDarkly.Client
             _avatar = avatar;
             _email = email;
             _anonymous = anonymous.HasValue && anonymous.Value;
-            _custom = custom ?? ImmutableDictionary.Create<string, JToken>();
+            _custom = custom ?? ImmutableDictionary.Create<string, ImmutableJsonValue>();
             _privateAttributeNames = privateAttributeNames ?? ImmutableHashSet.Create<string>();
         }
 
