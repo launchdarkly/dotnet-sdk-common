@@ -14,8 +14,10 @@ namespace LaunchDarkly.Common.Tests
         public bool Offline { get; set; }
         public TimeSpan ReadTimeout { get; set; }
         public TimeSpan ReconnectTime { get; set;  }
-        public int EventQueueCapacity { get; set; } = 1000;
-        public TimeSpan EventQueueFrequency { get; set; }
+        public int EventCapacity { get; set; } = 1000;
+        public int EventQueueCapacity => EventCapacity;
+        public TimeSpan EventFlushInterval { get; set; }
+        public TimeSpan EventQueueFrequency => EventFlushInterval;
         public int EventSamplingInterval { get; set; }
         public bool AllAttributesPrivate { get; set; }
         public ISet<string> PrivateAttributeNames { get; set; } = new HashSet<string>();
