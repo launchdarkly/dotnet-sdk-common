@@ -116,12 +116,31 @@ namespace LaunchDarkly.Common.Tests
         }
 
         [Fact]
+        public void TestJsonSerializationOfNull()
+        {
+            Assert.Equal("null", JsonConvert.SerializeObject(ImmutableJsonValue.Null));
+        }
+
+        [Fact]
         public void TestJsonDeserialization()
         {
             var json = "{\"a\":\"b\"}";
             var v = JsonConvert.DeserializeObject<ImmutableJsonValue>(json);
             var o = new JObject() { { "a", new JValue("b") } };
             TestUtil.AssertJsonEquals(o, v.AsJToken());
+        }
+
+        [Fact]
+        public void TestJsonDeserializationOfNull()
+        {
+            var v = JsonConvert.DeserializeObject<ImmutableJsonValue>("null");
+            Assert.Null(v.AsJToken());
+        }
+
+        [Fact]
+        public void TestNullConstructorIsEquivalentToNullInstance()
+        {
+            Assert.Equal(ImmutableJsonValue.Null, ImmutableJsonValue.FromJToken(null));
         }
     }
 }
