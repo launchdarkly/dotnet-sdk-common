@@ -9,14 +9,14 @@ namespace LaunchDarkly.Common.Tests
 {
     public class EventUserTest
     {
-        static readonly IBaseConfiguration _baseConfig = new SimpleConfiguration();
+        static readonly SimpleConfiguration _baseConfig = new SimpleConfiguration();
 
-        static readonly IBaseConfiguration _configWithAllAttrsPrivate = new SimpleConfiguration
+        static readonly SimpleConfiguration _configWithAllAttrsPrivate = new SimpleConfiguration
         {
             AllAttributesPrivate = true
         };
 
-        static readonly IBaseConfiguration _configWithSomeAttrsPrivate = new SimpleConfiguration
+        static readonly SimpleConfiguration _configWithSomeAttrsPrivate = new SimpleConfiguration
         {
             PrivateAttributeNames = new HashSet<string>(new string[] { "firstName", "bizzle" })
         };

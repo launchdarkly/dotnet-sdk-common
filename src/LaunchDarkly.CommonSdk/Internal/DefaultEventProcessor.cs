@@ -24,7 +24,7 @@ namespace LaunchDarkly.Common
         private AtomicBoolean _stopped;
         private AtomicBoolean _inputCapacityExceeded;
 
-        internal DefaultEventProcessor(IBaseConfiguration config,
+        internal DefaultEventProcessor(IEventProcessorConfiguration config,
             IUserDeduplicator userDeduplicator, HttpClient httpClient, string eventsUriPath)
         {
             _messageQueue = new BlockingCollection<IEventMessage>(config.EventCapacity);
@@ -187,7 +187,7 @@ namespace LaunchDarkly.Common
     {
         private static readonly int MaxFlushWorkers = 5;
 
-        private readonly IBaseConfiguration _config;
+        private readonly IEventProcessorConfiguration _config;
         private readonly IUserDeduplicator _userDeduplicator;
         private readonly CountdownEvent _flushWorkersCounter;
         private readonly HttpClient _httpClient;
@@ -196,7 +196,7 @@ namespace LaunchDarkly.Common
         private long _lastKnownPastTime;
         private volatile bool _disabled;
 
-        internal EventDispatcher(IBaseConfiguration config,
+        internal EventDispatcher(IEventProcessorConfiguration config,
             BlockingCollection<IEventMessage> messageQueue,
             IUserDeduplicator userDeduplicator,
             HttpClient httpClient,
