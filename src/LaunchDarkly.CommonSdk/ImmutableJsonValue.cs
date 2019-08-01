@@ -19,9 +19,41 @@ namespace LaunchDarkly.Client
     {
         private readonly JToken _value;
 
-        internal ImmutableJsonValue(JToken value)
+        /// <summary>
+        /// Convenience property for an <c>ImmutableJsonValue</c> that wraps a null value.
+        /// </summary>
+        public static ImmutableJsonValue Null => new ImmutableJsonValue(null);
+
+        private ImmutableJsonValue(JToken value)
         {
-            _value = value;
+            if (!(value is null) && value.Type == JTokenType.Null)
+            {
+                // Newtonsoft.Json sometimes gives us real nulls and sometimes gives us "nully" objects.
+                // Normalize these to null.
+                _value = null;
+            }
+            else
+            { 
+                _value = value;
+            }
+        }
+
+        /// <summary>
+        /// For internal use only. Initializes an <c>ImmutableJsonValue</c> from an arbitrary JSON
+        /// value that we know will not be modified.
+        /// </summary>
+        /// <remarks>
+        /// This method is to be used internally when the SDK has a JToken instance that has not been
+        /// exposed to any application code, and the SDK code is never going to call any mutative
+        /// methods on that value. In that case, we do not need to perform a deep copy on the value
+        /// just to wrap it in an <c>ImmutableJsonValue</c>; a deep copy will be performed anyway
+        /// if the application tries to access the JToken.
+        /// </remarks>
+        /// <param name="value">the initial value</param>
+        /// <returns>a struct that wraps the value</returns>
+        internal static ImmutableJsonValue FromSafeValue(JToken value)
+        {
+            return new ImmutableJsonValue(value);
         }
 
         /// <summary>
@@ -29,37 +61,78 @@ namespace LaunchDarkly.Client
         /// </summary>
         /// <remarks>
         /// If the value is of a mutable type (object or array), it is copied.
+        /// 
+        /// Since <c>JToken</c> has implicit conversion operators for primitive types, you can simplify
+        /// expressions like <c>ImmutableJsonValue.Of(new JValue(3))</c> to just
+        /// <c>ImmutableJsonValue.Of(3)</c>.
         /// </remarks>
         /// <param name="value">the initial value</param>
         /// <returns>a struct that wraps the value</returns>
-        public static ImmutableJsonValue FromJToken(JToken value)
+        public static ImmutableJsonValue Of(JToken value)
         {
             return new ImmutableJsonValue(CloneIfNonPrimitive(value));
         }
 
         /// <summary>
+        /// True if the wrapped value is null.
+        /// </summary>
+        public bool IsNull => _value is null;
+
+        /// <summary>
         /// Converts the value to a boolean.
         /// </summary>
-        public bool AsBool => _value.Value<bool>();
+        /// <remarks>
+        /// If the value is null or is not a boolean, this returns false. It will never throw an exception.
+        /// </remarks>
+        public bool AsBool => (_value is null || _value.Type != JTokenType.Boolean) ? false : _value.Value<bool>();
 
         /// <summary>
         /// Converts the value to a string.
         /// </summary>
-        public string AsString => _value.Value<string>();
+        /// <remarks>
+        /// If the value is null, this returns null. If the value is of a non-string type, it is
+        /// converted to a string. It will never throw an exception.
+        /// </remarks>
+        public string AsString
+        {
+            get
+            {
+                if (_value is null)
+                {
+                    return null;
+                }
+                if (_value.Type == JTokenType.Array || _value.Type == JTokenType.Object)
+                {
+                    return JsonConvert.SerializeObject(_value);
+                }
+                return _value.Value<string>();
+            }
+        }
 
         /// <summary>
         /// Converts the value to an integer.
         /// </summary>
-        public int AsInt => _value.Value<int>();
+        /// <remarks>
+        /// If the value is null or is not numeric, this returns zero. It will never throw an exception.
+        /// </remarks>
+        public int AsInt => IsNumeric(_value) ? _value.Value<int>() : 0;
 
         /// <summary>
         /// Converts the value to a float.
         /// </summary>
-        public float AsFloat => _value.Value<float>();
+        /// <remarks>
+        /// If the value is null or is not numeric, this returns zero. It will never throw an exception.
+        /// </remarks>
+        public float AsFloat => IsNumeric(_value) ? _value.Value<float>() : 0;
 
-        // This internal method is used only during flag evaluation or JSON serialization,
-        // where we know we will not be modifying any mutable objects or arrays and we will
-        // not be exposing the value to any external code.
+        /// <summary>
+        /// For internal use only. Directly accesses the wrapped value.
+        /// </summary>
+        /// <remarks>
+        /// This internal method is used for efficiency only during flag evaluation or JSON serialization,
+        /// where we know we will not be modifying any mutable objects or arrays and we will not be
+        /// exposing the value to any external code.
+        /// </remarks>
         internal JToken InnerValue => _value;
 
         /// <summary>
@@ -108,10 +181,14 @@ namespace LaunchDarkly.Client
         /// <returns>the value</returns>
         public T Value<T>() => AsJToken().Value<T>();
 
-        /// <see cref="Object.Equals(object)"/>
+        /// <summary>
+        /// Performs a deep-equality comparison using <c>JToken.DeepEquals</c>.
+        /// </summary>
         public override bool Equals(object o) => (o is ImmutableJsonValue v) && Equals(v);
 
-        /// <see cref="IEquatable{T}.Equals(T)"/>
+        /// <summary>
+        /// Performs a deep-equality comparison using <c>JToken.DeepEquals</c>.
+        /// </summary>
         public bool Equals(ImmutableJsonValue o)
         {
             return JToken.DeepEquals(_value, o._value);
@@ -131,20 +208,35 @@ namespace LaunchDarkly.Client
             }
             return t;
         }
+
+        private static bool IsNumeric(JToken t)
+        {
+            return !(t is null) && (t.Type == JTokenType.Integer || t.Type == JTokenType.Float);
+        }
     }
 
     internal class ImmutableJsonValueSerializer : JsonConverter
     {
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
-            ((ImmutableJsonValue)value).InnerValue.WriteTo(writer);
+            if (value is ImmutableJsonValue jv)
+            {
+                if (jv.InnerValue is null)
+                {
+                    writer.WriteNull();
+                }
+                else
+                {
+                    jv.InnerValue.WriteTo(writer);
+                }
+            }
         }
 
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
             // Note that we use the constructor directly here instead of calling FromJToken,
             // because we do not need to do a deep copy of the newly-parsed value.
-            return new ImmutableJsonValue(JToken.Load(reader));
+            return ImmutableJsonValue.FromSafeValue(JToken.Load(reader));
         }
 
         public override bool CanConvert(Type objectType)

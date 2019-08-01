@@ -318,7 +318,7 @@ namespace LaunchDarkly.Client
             {
                 _custom = ImmutableDictionary.CreateBuilder<string, ImmutableJsonValue>();
             }
-            _custom[name] = ImmutableJsonValue.FromJToken(value);
+            _custom[name] = ImmutableJsonValue.Of(value);
             return CanMakeAttributePrivate(name);
         }
         
