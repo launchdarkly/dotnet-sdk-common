@@ -27,6 +27,8 @@ namespace LaunchDarkly.Common
         internal DefaultEventProcessor(IBaseConfiguration config,
             IUserDeduplicator userDeduplicator, HttpClient httpClient, string eventsUriPath)
         {
+            _stopped = new AtomicBoolean(false);
+            _inputCapacityExceeded = new AtomicBoolean(false);
             _messageQueue = new BlockingCollection<IEventMessage>(config.EventCapacity);
             _dispatcher = new EventDispatcher(config, _messageQueue, userDeduplicator, httpClient, eventsUriPath);
             _flushTimer = new Timer(DoBackgroundFlush, null, config.EventFlushInterval,
@@ -40,8 +42,6 @@ namespace LaunchDarkly.Common
             {
                 _flushUsersTimer = null;
             }
-            _stopped = new AtomicBoolean(false);
-            _inputCapacityExceeded = new AtomicBoolean(false);
         }
 
         void IEventProcessor.SendEvent(Event eventToLog)
