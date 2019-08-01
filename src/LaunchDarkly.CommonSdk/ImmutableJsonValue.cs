@@ -33,7 +33,7 @@ namespace LaunchDarkly.Client
                 _value = null;
             }
             else
-            {
+            { 
                 _value = value;
             }
         }
@@ -61,33 +61,69 @@ namespace LaunchDarkly.Client
         /// </summary>
         /// <remarks>
         /// If the value is of a mutable type (object or array), it is copied.
+        /// 
+        /// Since <c>JToken</c> has implicit conversion operators for primitive types, you can simplify
+        /// expressions like <c>ImmutableJsonValue.Of(new JValue(3))</c> to just
+        /// <c>ImmutableJsonValue.Of(3)</c>.
         /// </remarks>
         /// <param name="value">the initial value</param>
         /// <returns>a struct that wraps the value</returns>
-        public static ImmutableJsonValue FromJToken(JToken value)
+        public static ImmutableJsonValue Of(JToken value)
         {
             return new ImmutableJsonValue(CloneIfNonPrimitive(value));
         }
 
         /// <summary>
+        /// True if the wrapped value is null.
+        /// </summary>
+        public bool IsNull => _value is null;
+
+        /// <summary>
         /// Converts the value to a boolean.
         /// </summary>
-        public bool AsBool => _value.Value<bool>();
+        /// <remarks>
+        /// If the value is null or is not a boolean, this returns false. It will never throw an exception.
+        /// </remarks>
+        public bool AsBool => (_value is null || _value.Type != JTokenType.Boolean) ? false : _value.Value<bool>();
 
         /// <summary>
         /// Converts the value to a string.
         /// </summary>
-        public string AsString => _value.Value<string>();
+        /// <remarks>
+        /// If the value is null, this returns null. If the value is of a non-string type, it is
+        /// converted to a string. It will never throw an exception.
+        /// </remarks>
+        public string AsString
+        {
+            get
+            {
+                if (_value is null)
+                {
+                    return null;
+                }
+                if (_value.Type == JTokenType.Array || _value.Type == JTokenType.Object)
+                {
+                    return JsonConvert.SerializeObject(_value);
+                }
+                return _value.Value<string>();
+            }
+        }
 
         /// <summary>
         /// Converts the value to an integer.
         /// </summary>
-        public int AsInt => _value.Value<int>();
+        /// <remarks>
+        /// If the value is null or is not numeric, this returns zero. It will never throw an exception.
+        /// </remarks>
+        public int AsInt => IsNumeric(_value) ? _value.Value<int>() : 0;
 
         /// <summary>
         /// Converts the value to a float.
         /// </summary>
-        public float AsFloat => _value.Value<float>();
+        /// <remarks>
+        /// If the value is null or is not numeric, this returns zero. It will never throw an exception.
+        /// </remarks>
+        public float AsFloat => IsNumeric(_value) ? _value.Value<float>() : 0;
 
         /// <summary>
         /// For internal use only. Directly accesses the wrapped value.
@@ -171,6 +207,11 @@ namespace LaunchDarkly.Client
                 return t.DeepClone();
             }
             return t;
+        }
+
+        private static bool IsNumeric(JToken t)
+        {
+            return !(t is null) && (t.Type == JTokenType.Integer || t.Type == JTokenType.Float);
         }
     }
 
