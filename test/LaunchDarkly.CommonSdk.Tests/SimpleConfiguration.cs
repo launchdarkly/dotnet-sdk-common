@@ -18,7 +18,6 @@ namespace LaunchDarkly.Common.Tests
         public int EventQueueCapacity => EventCapacity;
         public TimeSpan EventFlushInterval { get; set; }
         public TimeSpan EventQueueFrequency => EventFlushInterval;
-        public int EventSamplingInterval { get; set; }
         public bool AllAttributesPrivate { get; set; }
         public ISet<string> PrivateAttributeNames { get; set; } = new HashSet<string>();
         public int UserKeysCapacity { get; set; } = 1000;
