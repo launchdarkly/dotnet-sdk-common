@@ -78,17 +78,6 @@ namespace LaunchDarkly.Common
         TimeSpan EventQueueFrequency { get; }
         
         /// <summary>
-        /// Deprecated. Enables event sampling if non-zero.
-        /// </summary>
-        /// <remarks>
-        /// When set to the default of zero, all analytics events are sent back to LaunchDarkly. When greater
-        /// than zero, there is a 1 in <c>EventSamplingInterval</c> chance that events will be sent (example:
-        /// if the interval is 20, on average 5% of events will be sent).
-        /// </remarks>
-        [Obsolete("This feature will be removed in a future version of the SDK")]
-        int EventSamplingInterval { get; }
-
-        /// <summary>
         /// Whether or not user attributes (other than the key) should be private (not sent to
         /// the LaunchDarkly server). If this is true, all of the user attributes will be private,
         /// not just the attributes specified with the <c>AndPrivate...</c> methods on the

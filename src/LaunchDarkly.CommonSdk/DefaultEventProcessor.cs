@@ -27,6 +27,8 @@ namespace LaunchDarkly.Common
         internal DefaultEventProcessor(IBaseConfiguration config,
             IUserDeduplicator userDeduplicator, HttpClient httpClient, string eventsUriPath)
         {
+            _stopped = new AtomicBoolean(false);
+            _inputCapacityExceeded = new AtomicBoolean(false);
             _messageQueue = new BlockingCollection<IEventMessage>(config.EventCapacity);
             _dispatcher = new EventDispatcher(config, _messageQueue, userDeduplicator, httpClient, eventsUriPath);
             _flushTimer = new Timer(DoBackgroundFlush, null, config.EventFlushInterval,
@@ -40,8 +42,6 @@ namespace LaunchDarkly.Common
             {
                 _flushUsersTimer = null;
             }
-            _stopped = new AtomicBoolean(false);
-            _inputCapacityExceeded = new AtomicBoolean(false);
         }
 
         void IEventProcessor.SendEvent(Event eventToLog)
@@ -292,22 +292,19 @@ namespace LaunchDarkly.Common
 
             // Decide whether to add the event to the payload. Feature events may be added twice, once for
             // the event (if tracked) and once for debugging.
-            bool willAddFullEvent = false;
+            bool willAddFullEvent;
             Event debugEvent = null;
             if (e is FeatureRequestEvent fe)
             {
-                if (ShouldSampleEvent())
+                willAddFullEvent = fe.TrackEvents;
+                if (ShouldDebugEvent(fe))
                 {
-                    willAddFullEvent = fe.TrackEvents;
-                    if (ShouldDebugEvent(fe))
-                    {
-                        debugEvent = EventFactory.Default.NewDebugEvent(fe);
-                    }
+                    debugEvent = EventFactory.Default.NewDebugEvent(fe);
                 }
             }
             else
             {
-                willAddFullEvent = ShouldSampleEvent();
+                willAddFullEvent = true;
             }
 
             // Tell the user deduplicator, if any, about this user; this may produce an index event.
@@ -349,17 +346,7 @@ namespace LaunchDarkly.Common
             }
             return false;
         }
-
-        private bool ShouldSampleEvent()
-        {
-            // Sampling interval applies only to fully-tracked events. Note that we don't have to
-            // worry about thread-safety of Random here because this method is only executed on a
-            // single thread.
-#pragma warning disable 0618
-            return _config.EventSamplingInterval <= 0 || _random.Next(_config.EventSamplingInterval) == 0;
-#pragma warning restore 0618
-        }
-
+        
         private bool ShouldTrackFullEvent(Event e)
         {
             if (e is FeatureRequestEvent fe)
