@@ -4,10 +4,12 @@ using System.Net.Http;
 
 namespace LaunchDarkly.Common.Tests
 {
-    // Used in unit tests of common code - a minimal implementation of IBaseConfiguration.
-    class SimpleConfiguration : IBaseConfiguration
+    // Used in unit tests of common code - a minimal implementation of our configuration interfaces.
+    public class SimpleConfiguration :
+        IEventProcessorConfiguration, IHttpRequestConfiguration, IStreamManagerConfiguration
     {
         public string SdkKey { get; set; } = "SDK_KEY";
+        public string HttpAuthorizationKey => SdkKey;
         public Uri BaseUri { get; set; }
         public Uri EventsUri { get; set; }
         public Uri StreamUri { get; set; }

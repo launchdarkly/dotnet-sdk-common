@@ -119,9 +119,9 @@ namespace LaunchDarkly.Common
 
     internal sealed class EventOutputFormatter
     {
-        private readonly IBaseConfiguration _config;
+        private readonly IEventProcessorConfiguration _config;
 
-        internal EventOutputFormatter(IBaseConfiguration config)
+        internal EventOutputFormatter(IEventProcessorConfiguration config)
         {
             _config = config;
         }
@@ -159,7 +159,7 @@ namespace LaunchDarkly.Common
             {
                 return null;
             }
-            return user == null ? null : user.Key;
+            return user?.Key;
         }
 
         private EventOutput MakeOutputEvent(Event e)
@@ -187,7 +187,7 @@ namespace LaunchDarkly.Common
                     {
                         Kind = "identify",
                         CreationDate = e.CreationDate,
-                        Key = e.User == null ? null : e.User.Key,
+                        Key = e.User?.Key,
                         User = e.User == null ? null : EventUser.FromUser(e.User, _config)
                     };
                 case CustomEvent ce:

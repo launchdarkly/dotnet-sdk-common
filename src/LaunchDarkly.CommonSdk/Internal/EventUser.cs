@@ -60,7 +60,7 @@ namespace LaunchDarkly.Common
         [JsonProperty(PropertyName = "privateAttrs", NullValueHandling = NullValueHandling.Ignore)]
         public List<string> PrivateAttrs { get; set; }
 
-        internal static EventUser FromUser(User user, IBaseConfiguration config)
+        internal static EventUser FromUser(User user, IEventProcessorConfiguration config)
         {
             EventUserBuilder eub = new EventUserBuilder(user, config);
             return eub.Build();
@@ -69,11 +69,11 @@ namespace LaunchDarkly.Common
 
     internal class EventUserBuilder
     {
-        private IBaseConfiguration _config;
+        private IEventProcessorConfiguration _config;
         private User _user;
         private EventUser _result;
 
-        internal EventUserBuilder(User user, IBaseConfiguration config)
+        internal EventUserBuilder(User user, IEventProcessorConfiguration config)
         {
             _user = user;
             _config = config;
