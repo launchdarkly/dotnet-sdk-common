@@ -2,6 +2,16 @@
 
 For full release notes for the projects that depend on this project, see their respective changelogs. This file describes changes only to the common code. This project adheres to [Semantic Versioning](http://semver.org).
 
+## [2.4.0] - 2019-07-31
+### Added:
+- `IBaseConfiguration.EventCapacity` and `IBaseConfiguration.EventFlushInterval`.
+- `UserBuilder.Key` setter.
+
+### Deprecated:
+- `IBaseConfiguration.SamplingInterval`.
+- `IBaseConfiguration.EventQueueCapacity` (now a synonym for `EventCapacity`).
+- `IBaseConfiguration.EventQueueFrequency` (now a synonym for `EventFlushInterval`).
+
 ## [2.3.0] - 2019-07-23
 ### Deprecated:
 - `User` constructors.

@@ -47,24 +47,45 @@ namespace LaunchDarkly.Common
         TimeSpan ReconnectTime { get; }
         
         /// <summary>
-        /// The capacity of the events buffer. The client buffers up to this many events in
-        /// memory before flushing. If the capacity is exceeded before the buffer is flushed,
-        /// events will be discarded. Increasing the capacity means that events are less likely
-        /// to be discarded, at the cost of consuming more memory.
+        /// The capacity of the events buffer.
         /// </summary>
+        /// <remarks>
+        /// The client buffers up to this many events in memory before flushing. If the capacity is
+        /// exceeded before the buffer is flushed, events will be discarded. Increasing the capacity means
+        /// that events are less likely to be discarded, at the cost of consuming more memory.
+        /// </remarks>
+        int EventCapacity { get; }
+
+        /// <summary>
+        /// Deprecated name for <see cref="EventCapacity"/>.
+        /// </summary>
+        [Obsolete("Use EventCapacity")]
         int EventQueueCapacity { get; }
 
         /// <summary>
-        /// The time between flushes of the event buffer. Decreasing the flush interval means
-        /// that the event buffer is less likely to reach capacity. The default value is 5 seconds.
+        /// The time between flushes of the event buffer.
         /// </summary>
+        /// <remarks>
+        /// Decreasing the flush interval means that the event buffer is less likely to reach
+        /// capacity. The default value is 5 seconds.
+        /// </remarks>
+        TimeSpan EventFlushInterval { get; }
+
+        /// <summary>
+        /// Deprecated name for <see cref="EventFlushInterval"/>.
+        /// </summary>
+        [Obsolete("Use EventFlushInterval")]
         TimeSpan EventQueueFrequency { get; }
         
         /// <summary>
-        /// Enables event sampling if non-zero. When set to the default of zero, all analytics events are
-        /// sent back to LaunchDarkly. When greater than zero, there is a 1 in <c>EventSamplingInterval</c>
-        /// chance that events will be sent (example: if the interval is 20, on average 5% of events will be sent).
+        /// Deprecated. Enables event sampling if non-zero.
         /// </summary>
+        /// <remarks>
+        /// When set to the default of zero, all analytics events are sent back to LaunchDarkly. When greater
+        /// than zero, there is a 1 in <c>EventSamplingInterval</c> chance that events will be sent (example:
+        /// if the interval is 20, on average 5% of events will be sent).
+        /// </remarks>
+        [Obsolete("This feature will be removed in a future version of the SDK")]
         int EventSamplingInterval { get; }
 
         /// <summary>

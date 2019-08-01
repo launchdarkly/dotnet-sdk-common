@@ -27,10 +27,10 @@ namespace LaunchDarkly.Common
         internal DefaultEventProcessor(IBaseConfiguration config,
             IUserDeduplicator userDeduplicator, HttpClient httpClient, string eventsUriPath)
         {
-            _messageQueue = new BlockingCollection<IEventMessage>(config.EventQueueCapacity);
+            _messageQueue = new BlockingCollection<IEventMessage>(config.EventCapacity);
             _dispatcher = new EventDispatcher(config, _messageQueue, userDeduplicator, httpClient, eventsUriPath);
-            _flushTimer = new Timer(DoBackgroundFlush, null, config.EventQueueFrequency,
-                config.EventQueueFrequency);
+            _flushTimer = new Timer(DoBackgroundFlush, null, config.EventFlushInterval,
+                config.EventFlushInterval);
             if (userDeduplicator != null && userDeduplicator.FlushInterval.HasValue)
             {
                 _flushUsersTimer = new Timer(DoUserKeysFlush, null, userDeduplicator.FlushInterval.Value,
@@ -212,7 +212,7 @@ namespace LaunchDarkly.Common
             _httpClient.DefaultRequestHeaders.Add("X-LaunchDarkly-Event-Schema",
                 DefaultEventProcessor.CurrentSchemaVersion);
             
-            EventBuffer buffer = new EventBuffer(config.EventQueueCapacity);
+            EventBuffer buffer = new EventBuffer(config.EventCapacity);
 
             Task.Run(() => RunMainLoop(messageQueue, buffer));
         }
@@ -355,7 +355,9 @@ namespace LaunchDarkly.Common
             // Sampling interval applies only to fully-tracked events. Note that we don't have to
             // worry about thread-safety of Random here because this method is only executed on a
             // single thread.
+#pragma warning disable 0618
             return _config.EventSamplingInterval <= 0 || _random.Next(_config.EventSamplingInterval) == 0;
+#pragma warning restore 0618
         }
 
         private bool ShouldTrackFullEvent(Event e)
@@ -525,7 +527,7 @@ namespace LaunchDarkly.Common
     {
         private readonly List<Event> _events;
         private readonly EventSummarizer _summarizer;
-        private int _capacity;
+        private readonly int _capacity;
         private bool _exceededCapacity;
 
         internal EventBuffer(int capacity)
