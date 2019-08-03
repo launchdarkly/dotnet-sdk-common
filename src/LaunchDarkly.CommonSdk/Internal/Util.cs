@@ -70,14 +70,14 @@ namespace LaunchDarkly.Common
         }
     }
 
-    internal class HashCodeBuilder
+    internal struct HashCodeBuilder
     {
-        private int value = 0;
-        public int Value => value;
-
+        private int _value;
+        public int Value => _value;
+        
         public HashCodeBuilder With(object o)
         {
-            value = value * 17 + (o == null ? 0 : o.GetHashCode());
+            _value = _value * 17 + (o == null ? 0 : o.GetHashCode());
             return this;
         }
     }

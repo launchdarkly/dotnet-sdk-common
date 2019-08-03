@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using Xunit;
 using LaunchDarkly.Client;
@@ -59,6 +60,27 @@ namespace LaunchDarkly.Common.Tests
             Assert.Null(reason);
         }
         
+        [Fact]
+        public void TestEqualityAndHashCode()
+        {
+            // For parameterless (singleton) reasons, object.Equals and object.HashCode() already do what
+            // we want. Test our implementations for the parameterized reasons.
+            VerifyEqualityAndHashCode(() => new EvaluationReason.RuleMatch(0, "rule1"),
+                () => new EvaluationReason.RuleMatch(1, "rule2"));
+            VerifyEqualityAndHashCode(() => new EvaluationReason.PrerequisiteFailed("a"),
+                () => new EvaluationReason.PrerequisiteFailed("b"));
+            VerifyEqualityAndHashCode(() => new EvaluationReason.Error(EvaluationErrorKind.FLAG_NOT_FOUND),
+                () => new EvaluationReason.Error(EvaluationErrorKind.EXCEPTION));
+        }
+
+        private void VerifyEqualityAndHashCode(Func<EvaluationReason> createA, Func<EvaluationReason> createB)
+        {
+            Assert.Equal(createA(), createA());
+            Assert.NotEqual(createA(), createB());
+            Assert.Equal(createA().GetHashCode(), createA().GetHashCode());
+            Assert.NotEqual(createA().GetHashCode(), createB().GetHashCode());
+        }
+
         private void AssertJsonEqual(string expectedString, string actualString)
         {
             JToken expected = JsonConvert.DeserializeObject<JToken>(expectedString);
