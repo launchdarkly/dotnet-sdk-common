@@ -38,7 +38,7 @@ namespace LaunchDarkly.Common.Tests
             }
         }
 
-        private IEventProcessor MakeProcessor(IBaseConfiguration config)
+        private IEventProcessor MakeProcessor(SimpleConfiguration config)
         {
             return new DefaultEventProcessor(config, new TestUserDeduplicator(),
                 Util.MakeHttpClient(config, SimpleClientEnvironment.Instance), EventsUriPath);
