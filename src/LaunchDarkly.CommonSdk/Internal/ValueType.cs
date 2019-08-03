@@ -26,9 +26,12 @@ namespace LaunchDarkly.Common
     /// 
     /// 3. <c>String</c> and <c>Json</c> can be converted from either an actual <c>null</c> or a
     /// <c>JToken</c> of type <c>JTokenType.Null</c>.
+    /// 
+    /// This is a struct rather than a class so that in any context where we expect a <c>ValueType</c>,
+    /// we do not have to worry about it being null.
     /// </remarks>
     /// <typeparam name="T">the desired type</typeparam>
-    internal sealed class ValueType<T>
+    internal struct ValueType<T>
     {
         /// <summary>
         /// Function for converting a JSON value to the desired type.
@@ -36,6 +39,10 @@ namespace LaunchDarkly.Common
         /// <remarks>
         /// If the JSON value is not of a compatible type, this function will throw a
         /// <see cref="ValueTypeException"/>.
+        /// 
+        /// If we ever drop compatibility with older .NET frameworks that do not support <c>ValueTuple</c>,
+        /// then it would be preferable to use <c>ValueTuple</c> to avoid the overhead of exceptions.
+        /// However, these exceptions should not happen often.
         /// </remarks>
         public Func<JToken, T> ValueFromJson { get; }
 
@@ -51,7 +58,7 @@ namespace LaunchDarkly.Common
         }
     }
     
-    internal class ValueTypes
+    internal static class ValueTypes
     {
         // Slight optimization to avoid creating lots of JValue boolean instances
         private static readonly JToken JBoolFalse = new JValue(false);
