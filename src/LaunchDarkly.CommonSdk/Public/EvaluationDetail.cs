@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
+using LaunchDarkly.Common;
 
 namespace LaunchDarkly.Client
 {
@@ -11,6 +10,10 @@ namespace LaunchDarkly.Client
     /// An object returned by the "variation detail" methods of the client, combining the result
     /// of a flag evaluation with an explanation of how it was calculated.
     /// </summary>
+    /// <remarks>
+    /// In future versions of the SDK, this may change from a class to a struct; avoid relying on it
+    /// being a class.
+    /// </remarks>
     /// <typeparam name="T">the type of the flag value</typeparam>
     public class EvaluationDetail<T>
     {
@@ -67,9 +70,7 @@ namespace LaunchDarkly.Client
         /// <see cref="object.GetHashCode()"/>
         public override int GetHashCode()
         {
-            return ((Value == null ? 0 : Value.GetHashCode()) * 17 +
-                VariationIndex.GetHashCode()) * 17 +
-                (Reason == null ? 0 : Reason.GetHashCode());
+            return Util.Hash().With(Value).With(VariationIndex).With(Reason).Value;
         }
     }
 
@@ -190,7 +191,7 @@ namespace LaunchDarkly.Client
             /// <see cref="object.GetHashCode()"/>
             public override int GetHashCode()
             {
-                return RuleIndex * 17 + RuleId.GetHashCode();
+                return Util.Hash().With(RuleIndex).With(RuleId).Value;
             }
 
             /// <see cref="object.ToString()"/>
@@ -373,7 +374,7 @@ namespace LaunchDarkly.Client
     // Note that while the default serialization will work fine for the reason classes, we also need
     // to be able to deserialize from JSON. This is because the Xamarin client may receive JSONified
     // reason objects from LaunchDarkly.
-    internal class EvaluationReasonConverter : JsonConverter
+    internal sealed class EvaluationReasonConverter : JsonConverter
     {
         public override bool CanWrite => false;
 
