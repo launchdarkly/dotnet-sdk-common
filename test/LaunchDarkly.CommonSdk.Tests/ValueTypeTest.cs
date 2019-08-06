@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using LaunchDarkly.Client;
+using Newtonsoft.Json.Linq;
 using Xunit;
 
 namespace LaunchDarkly.Common.Tests
@@ -9,25 +10,24 @@ namespace LaunchDarkly.Common.Tests
         private const float jsonFloatValue = 3.25f;
         private const string jsonStringValue = "hi";
 
-        private static readonly JToken jsonNull = JValue.CreateNull();
-        private static readonly JToken jsonBoolTrue = new JValue(true);
-        private static readonly JToken jsonInt = new JValue(jsonIntValue);
-        private static readonly JToken jsonFloat = new JValue(jsonFloatValue);
-        private static readonly JToken jsonString = new JValue(jsonStringValue);
-        private static readonly JToken jsonArray = new JArray { new JValue("item") };
-        private static readonly JToken jsonObject = new JObject { { "a", new JValue("b") } };
+        private static readonly ImmutableJsonValue jsonBoolTrue = ImmutableJsonValue.Of(true);
+        private static readonly ImmutableJsonValue jsonInt = ImmutableJsonValue.Of(jsonIntValue);
+        private static readonly ImmutableJsonValue jsonFloat = ImmutableJsonValue.Of(jsonFloatValue);
+        private static readonly ImmutableJsonValue jsonString = ImmutableJsonValue.Of(jsonStringValue);
+        private static readonly ImmutableJsonValue jsonArray = ImmutableJsonValue.FromJToken(new JArray { new JValue("item") });
+        private static readonly ImmutableJsonValue jsonObject = ImmutableJsonValue.FromJToken(new JObject { { "a", new JValue("b") } });
 
         [Fact]
         public void BoolFromJson()
         {
-            Assert.True(ValueTypes.Bool.ValueFromJson(jsonBoolTrue));
+            Assert.True(ValueTypes.Bool.ValueFromJson(ImmutableJsonValue.Of(true)));
         }
 
         [Fact]
         public void BoolFromNonBoolValueIsError()
         {
-            VerifyConversionError(ValueTypes.Bool, new JToken[] {
-                null, jsonNull, jsonInt, jsonFloat, jsonString, jsonArray, jsonObject
+            VerifyConversionError(ValueTypes.Bool, new ImmutableJsonValue[] {
+                ImmutableJsonValue.Null, jsonInt, jsonFloat, jsonString, jsonArray, jsonObject
             });
         }
 
@@ -36,18 +36,7 @@ namespace LaunchDarkly.Common.Tests
         {
             Assert.Equal(jsonBoolTrue, ValueTypes.Bool.ValueToJson(true));
         }
-
-        [Fact]
-        public void BoolToJsonUsesSameInstances()
-        {
-            var jt0 = ValueTypes.Bool.ValueToJson(true);
-            var jt1 = ValueTypes.Bool.ValueToJson(true);
-            var jf0 = ValueTypes.Bool.ValueToJson(false);
-            var jf1 = ValueTypes.Bool.ValueToJson(false);
-            Assert.Same(jt0, jt1);
-            Assert.Same(jf0, jf1);
-        }
-
+        
         [Fact]
         public void IntFromJsonInt()
         {
@@ -59,15 +48,15 @@ namespace LaunchDarkly.Common.Tests
         {
             // This behavior is defined by the Newtonsoft.Json conversion operator that we have been
             // relying on in the .NET SDK, so we must preserve it until the next major version.
-            Assert.Equal(2, ValueTypes.Int.ValueFromJson(new JValue(2.25f)));
-            Assert.Equal(3, ValueTypes.Int.ValueFromJson(new JValue(2.75f)));
+            Assert.Equal(2, ValueTypes.Int.ValueFromJson(ImmutableJsonValue.Of(2.25f)));
+            Assert.Equal(3, ValueTypes.Int.ValueFromJson(ImmutableJsonValue.Of(2.75f)));
         }
 
         [Fact]
         public void IntFromNonNumericValueIsError()
         {
-            VerifyConversionError(ValueTypes.Int, new JToken[] {
-                null, jsonNull, jsonBoolTrue, jsonString, jsonArray, jsonObject
+            VerifyConversionError(ValueTypes.Int, new ImmutableJsonValue[] {
+                ImmutableJsonValue.Null, jsonBoolTrue, jsonString, jsonArray, jsonObject
             });
         }
 
@@ -92,8 +81,8 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void FloatFromNonNumericValueIsError()
         {
-            VerifyConversionError(ValueTypes.Float, new JToken[] {
-                null, jsonNull, jsonBoolTrue, jsonString, jsonArray, jsonObject
+            VerifyConversionError(ValueTypes.Float, new ImmutableJsonValue[] {
+                ImmutableJsonValue.Null, ImmutableJsonValue.Of(true), jsonString, jsonArray, jsonObject
             });
         }
 
@@ -112,19 +101,19 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void StringFromNull()
         {
-            Assert.Null(ValueTypes.String.ValueFromJson(null));
+            Assert.Null(ValueTypes.String.ValueFromJson(ImmutableJsonValue.Null));
         }
 
         [Fact]
         public void StringFromJsonNull()
         {
-            Assert.Null(ValueTypes.String.ValueFromJson(jsonNull));
+            Assert.Null(ValueTypes.String.ValueFromJson(ImmutableJsonValue.Null));
         }
 
         [Fact]
         public void StringFromNonStringValueIsError()
         {
-            VerifyConversionError(ValueTypes.String, new JToken[] {
+            VerifyConversionError(ValueTypes.String, new ImmutableJsonValue[] {
                 jsonBoolTrue, jsonInt, jsonFloat, jsonArray, jsonObject
             });
         }
@@ -138,29 +127,29 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void JsonFromJson()
         {
-            Assert.Same(jsonObject, ValueTypes.Json.ValueFromJson(jsonObject));
+            Assert.Same(jsonObject.InnerValue, ValueTypes.Json.ValueFromJson(jsonObject).InnerValue);
         }
 
         [Fact]
         public void JsonFromNull()
         {
-            Assert.Null(ValueTypes.Json.ValueFromJson(null));
+            Assert.Equal(ImmutableJsonValue.Null, ValueTypes.Json.ValueFromJson(ImmutableJsonValue.Null));
         }
 
         [Fact]
         public void JsonToJson()
         {
-            Assert.Same(jsonObject, ValueTypes.Json.ValueToJson(jsonObject));
+            Assert.Same(jsonObject.InnerValue, ValueTypes.Json.ValueToJson(jsonObject).InnerValue);
         }
 
-        private void VerifyConversionError<T>(ValueType<T> type, JToken[] badValues)
+        private void VerifyConversionError<T>(ValueType<T> type, ImmutableJsonValue[] badValues)
         {
             foreach (var v in badValues)
             {
                 try
                 {
                     type.ValueFromJson(v);
-                    Assert.True(false, "converting from " + (v is null ? "null" : v.Type.ToString()) +
+                    Assert.True(false, "converting from " + (v.IsNull ? "null" : v.AsJToken().Type.ToString()) +
                         " should throw exception");
                 }
                 catch (ValueTypeException) { }

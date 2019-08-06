@@ -17,6 +17,18 @@ namespace LaunchDarkly.Client
     [JsonConverter(typeof(ImmutableJsonValueSerializer))]
     public struct ImmutableJsonValue : IEquatable<ImmutableJsonValue>
     {
+        private static readonly JToken _jsonFalse = new JValue(false);
+        private static readonly JToken _jsonTrue = new JValue(true);
+        private static readonly JToken _jsonIntZero = new JValue(0);
+        private static readonly JToken _jsonFloatZero = new JValue(0);
+        private static readonly JToken _jsonStringEmpty = new JValue("");
+
+        private static readonly ImmutableJsonValue _falseInstance = new ImmutableJsonValue(new JValue(false));
+        private static readonly ImmutableJsonValue _trueInstance = new ImmutableJsonValue(new JValue(true));
+        private static readonly ImmutableJsonValue _intZeroInstance = new ImmutableJsonValue(new JValue(0));
+        private static readonly ImmutableJsonValue _floatZeroInstance = new ImmutableJsonValue(new JValue(0f));
+        private static readonly ImmutableJsonValue _stringEmptyInstance = new ImmutableJsonValue(new JValue(""));
+
         private readonly JToken _value;
 
         /// <summary>
@@ -26,16 +38,7 @@ namespace LaunchDarkly.Client
 
         private ImmutableJsonValue(JToken value)
         {
-            if (!(value is null) && value.Type == JTokenType.Null)
-            {
-                // Newtonsoft.Json sometimes gives us real nulls and sometimes gives us "nully" objects.
-                // Normalize these to null.
-                _value = null;
-            }
-            else
-            { 
-                _value = value;
-            }
+            _value = NormalizePrimitives(value);
         }
 
         /// <summary>
@@ -48,12 +51,34 @@ namespace LaunchDarkly.Client
         /// methods on that value. In that case, we do not need to perform a deep copy on the value
         /// just to wrap it in an <c>ImmutableJsonValue</c>; a deep copy will be performed anyway
         /// if the application tries to access the JToken.
+        /// 
+        /// It also performs minor optimizations by using our static JToken instances for true, 0, etc.
         /// </remarks>
         /// <param name="value">the initial value</param>
         /// <returns>a struct that wraps the value</returns>
-        internal static ImmutableJsonValue FromSafeValue(JToken value)
+        internal static ImmutableJsonValue FromSafeValue(JToken value) => new ImmutableJsonValue(value);
+
+        private static JToken NormalizePrimitives(JToken value)
         {
-            return new ImmutableJsonValue(value);
+            if (!(value is null))
+            {
+                switch (value.Type)
+                {
+                    case JTokenType.Boolean:
+                        return value.Value<bool>() ? _jsonTrue : _jsonFalse;
+                    case JTokenType.Integer when value.Value<int>() == 0:
+                        return _jsonIntZero;
+                    case JTokenType.Float when value.Value<float>() == 0f:
+                        return _jsonFloatZero;
+                    case JTokenType.String when value.Value<string>().Length == 0:
+                        return _jsonStringEmpty;
+                    case JTokenType.Null:
+                        // Newtonsoft.Json sometimes gives us real nulls and sometimes gives us "nully" objects.
+                        // Normalize these to null.
+                        return null;
+                }
+            }
+            return value;
         }
 
         /// <summary>
@@ -62,21 +87,70 @@ namespace LaunchDarkly.Client
         /// <remarks>
         /// If the value is of a mutable type (object or array), it is copied.
         /// 
-        /// Since <c>JToken</c> has implicit conversion operators for primitive types, you can simplify
-        /// expressions like <c>ImmutableJsonValue.Of(new JValue(3))</c> to just
-        /// <c>ImmutableJsonValue.Of(3)</c>.
+        /// For primitive value types, it is simpler to call the <c>Of</c> methods. This method is only
+        /// useful if you already have a <c>JToken</c>.
         /// </remarks>
         /// <param name="value">the initial value</param>
         /// <returns>a struct that wraps the value</returns>
-        public static ImmutableJsonValue Of(JToken value)
+        public static ImmutableJsonValue FromJToken(JToken value)
         {
-            return new ImmutableJsonValue(CloneIfNonPrimitive(value));
+            return new ImmutableJsonValue(value is JContainer ? value.DeepClone() :
+                NormalizePrimitives(value));
+        }
+
+        /// <summary>
+        /// Initializes an <c>ImmutableJsonValue</c> from a boolean value.
+        /// </summary>
+        /// <remarks>
+        /// This method reuses static instances for <c>true</c> and <c>false</c>, so it will never create new objects.
+        /// </remarks>
+        /// <param name="value">the initial value</param>
+        /// <returns>a struct that wraps the value</returns>
+        public static ImmutableJsonValue Of(bool value)
+        {
+            return new ImmutableJsonValue(value ? _jsonTrue : _jsonFalse);
+        }
+        
+        /// <summary>
+        /// Initializes an <c>ImmutableJsonValue</c> from an integer value.
+        /// </summary>
+        /// <param name="value">the initial value</param>
+        /// <returns>a struct that wraps the value</returns>
+        public static ImmutableJsonValue Of(int value)
+        {
+            return new ImmutableJsonValue(value == 0 ? _jsonIntZero : new JValue(value));
+        }
+
+        /// <summary>
+        /// Initializes an <c>ImmutableJsonValue</c> from a float value.
+        /// </summary>
+        /// <param name="value">the initial value</param>
+        /// <returns>a struct that wraps the value</returns>
+        public static ImmutableJsonValue Of(float value)
+        {
+            return new ImmutableJsonValue(value == 0 ? _jsonFloatZero : new JValue(value));
+        }
+
+        /// <summary>
+        /// Initializes an <c>ImmutableJsonValue</c> from a string value.
+        /// </summary>
+        /// <param name="value">the initial value</param>
+        /// <returns>a struct that wraps the value</returns>
+        public static ImmutableJsonValue Of(string value)
+        {
+            return new ImmutableJsonValue(value is null ? null :
+                (value.Length == 0 ? _jsonStringEmpty : new JValue(value)));
         }
 
         /// <summary>
         /// True if the wrapped value is null.
         /// </summary>
-        public bool IsNull => _value is null;
+        public bool IsNull => _value is null || _value.Type == JTokenType.Null;
+
+        /// <summary>
+        /// True if the wrapped value is numeric.
+        /// </summary>
+        public bool IsNumber => !(_value is null) && (_value.Type == JTokenType.Integer || _value.Type == JTokenType.Float);
 
         /// <summary>
         /// Converts the value to a boolean.
@@ -115,7 +189,7 @@ namespace LaunchDarkly.Client
         /// <remarks>
         /// If the value is null or is not numeric, this returns zero. It will never throw an exception.
         /// </remarks>
-        public int AsInt => IsNumeric(_value) ? _value.Value<int>() : 0;
+        public int AsInt => IsNumber ? _value.Value<int>() : 0;
 
         /// <summary>
         /// Converts the value to a float.
@@ -123,7 +197,7 @@ namespace LaunchDarkly.Client
         /// <remarks>
         /// If the value is null or is not numeric, this returns zero. It will never throw an exception.
         /// </remarks>
-        public float AsFloat => IsNumeric(_value) ? _value.Value<float>() : 0;
+        public float AsFloat => IsNumber ? _value.Value<float>() : 0;
 
         /// <summary>
         /// For internal use only. Directly accesses the wrapped value.
@@ -168,7 +242,7 @@ namespace LaunchDarkly.Client
         /// original value cannot be changed.
         /// </summary>
         /// <returns>the value</returns>
-        public JToken AsJToken() => CloneIfNonPrimitive(_value);
+        public JToken AsJToken() => _value is JContainer ? _value.DeepClone() : _value;
 
         /// <summary>
         /// Converts the value to the desired type, deep-copying any mutable values so the
@@ -197,21 +271,13 @@ namespace LaunchDarkly.Client
         /// <see cref="Object.GetHashCode"/>
         public override int GetHashCode()
         {
-            return _value is null ? 0 : _value.GetHashCode();
+            return IsNull ? 0 : _value.GetHashCode();
         }
 
-        private static JToken CloneIfNonPrimitive(JToken t)
+        /// <see cref="Object.ToString"/>
+        public override string ToString()
         {
-            if (t is JArray || t is JObject)
-            {
-                return t.DeepClone();
-            }
-            return t;
-        }
-
-        private static bool IsNumeric(JToken t)
-        {
-            return !(t is null) && (t.Type == JTokenType.Integer || t.Type == JTokenType.Float);
+            return IsNull ? "null" : JsonConvert.SerializeObject(_value);
         }
     }
 

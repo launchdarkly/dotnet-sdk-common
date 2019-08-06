@@ -1,4 +1,5 @@
 ﻿using System;
+using LaunchDarkly.Client;
 using Newtonsoft.Json.Linq;
 
 namespace LaunchDarkly.Common
@@ -44,14 +45,14 @@ namespace LaunchDarkly.Common
         /// then it would be preferable to use <c>ValueTuple</c> to avoid the overhead of exceptions.
         /// However, these exceptions should not happen often.
         /// </remarks>
-        public Func<JToken, T> ValueFromJson { get; }
+        public Func<ImmutableJsonValue, T> ValueFromJson { get; }
 
         /// <summary>
         /// Function for converting the desired type to a JSON value.
         /// </summary>
-        public Func<T, JToken> ValueToJson { get; }
+        public Func<T, ImmutableJsonValue> ValueToJson { get; }
 
-        internal ValueType(Func<JToken, T> valueFromJson, Func<T, JToken> valueToJson)
+        internal ValueType(Func<ImmutableJsonValue, T> valueFromJson, Func<T, ImmutableJsonValue> valueToJson)
         {
             ValueFromJson = valueFromJson;
             ValueToJson = valueToJson;
@@ -60,54 +61,47 @@ namespace LaunchDarkly.Common
     
     internal static class ValueTypes
     {
-        // Slight optimization to avoid creating lots of JValue boolean instances
-        private static readonly JToken JBoolFalse = new JValue(false);
-        private static readonly JToken JBoolTrue = new JValue(true);
-
         public static readonly ValueType<bool> Bool = new ValueType<bool>(
             json =>
             {
-                if (json is null || json.Type != JTokenType.Boolean)
+                if (json.InnerValue is null || json.InnerValue.Type != JTokenType.Boolean)
                 {
                     throw new ValueTypeException();
                 }
-                return json.Value<bool>();
+                return json.AsBool;
             },
-            value => value ? JBoolTrue : JBoolFalse
+            value => ImmutableJsonValue.Of(value)
         );
 
         public static readonly ValueType<int> Int = new ValueType<int>(
-            json => IsNumeric(json) ? json.Value<int>() : throw new ValueTypeException(),
-            value => new JValue(value)
+            json => json.IsNumber ? json.AsInt : throw new ValueTypeException(),
+            value => ImmutableJsonValue.Of(value)
         );
 
         public static readonly ValueType<float> Float = new ValueType<float>(
-            json => IsNumeric(json) ? json.Value<float>() : throw new ValueTypeException(),
-            value => new JValue(value)
+            json => json.IsNumber ? json.AsFloat : throw new ValueTypeException(),
+            value => ImmutableJsonValue.Of(value)
         );
 
         public static readonly ValueType<string> String = new ValueType<string>(
             json =>
             {
-                if (json == null || json.Type == JTokenType.Null)
+                if (json.IsNull || json.InnerValue.Type == JTokenType.Null)
                 {
                     return null; // strings are always nullable
                 }
-                if (json.Type != JTokenType.String)
+                if (json.InnerValue.Type != JTokenType.String)
                 {
                     throw new ValueTypeException();
                 }
-                return json.Value<string>();
+                return json.AsString;
             },
-            value => value == null ? null : new JValue(value)
+            value => ImmutableJsonValue.Of(value)
         );
 
-        internal static readonly ValueType<JToken> Json = new ValueType<JToken>(
+        internal static readonly ValueType<ImmutableJsonValue> Json = new ValueType<ImmutableJsonValue>(
             json => json,
             value => value
         );
-
-        internal static bool IsNumeric(JToken json) => !(json is null) &&
-            (json.Type == JTokenType.Integer || json.Type == JTokenType.Float);
     }
 }

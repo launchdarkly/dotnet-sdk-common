@@ -169,7 +169,7 @@ namespace LaunchDarkly.Common.Tests
         public void BuilderCanSetJsonCustomAttribute()
         {
             var value = new JArray(new List<JToken>() { new JValue(true), new JValue(1.5) });
-            TestCustomAttribute<JToken>(value, (b, n, v) => b.Custom(n, v));
+            TestCustomAttribute<JToken>(value, (b, n, v) => b.Custom(n, ImmutableJsonValue.FromJToken(v)));
         }
 
         [Fact]
@@ -212,7 +212,7 @@ namespace LaunchDarkly.Common.Tests
         public void ModifyingOriginalJsonValueDoesNotModifyAttributeOfExistingUser()
         {
             var mutableJson = new JArray() { new JValue("mauve") };
-            var u = User.Builder(key).Custom("colors", mutableJson).Build();
+            var u = User.Builder(key).Custom("colors", ImmutableJsonValue.FromJToken(mutableJson)).Build();
             mutableJson.Add(new JValue("puce"));
             TestUtil.AssertJsonEquals(new JArray() { new JValue("mauve") },
                 u.Custom["colors"].AsJArray());

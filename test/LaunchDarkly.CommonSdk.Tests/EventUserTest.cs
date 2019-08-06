@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections.Immutable;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Xunit;
@@ -18,7 +18,7 @@ namespace LaunchDarkly.Common.Tests
 
         static readonly SimpleConfiguration _configWithSomeAttrsPrivate = new SimpleConfiguration
         {
-            PrivateAttributeNames = new HashSet<string>(new string[] { "firstName", "bizzle" })
+            PrivateAttributeNames = ImmutableHashSet.Create<string>("firstName", "bizzle")
         };
 
         static readonly User _baseUser = User.Builder("abc")
