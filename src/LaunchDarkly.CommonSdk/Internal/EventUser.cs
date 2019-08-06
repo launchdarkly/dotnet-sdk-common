@@ -9,7 +9,7 @@ namespace LaunchDarkly.Common
     /// <summary>
     /// Used internally to represent user data that is being serialized in an <see cref="Event"/>.
     /// </summary>
-    internal class EventUser
+    internal sealed class EventUser
     {
         /// <see cref="User.Key"/>
         [JsonProperty(PropertyName = "key", NullValueHandling = NullValueHandling.Ignore)]
@@ -70,7 +70,7 @@ namespace LaunchDarkly.Common
         }
     }
 
-    internal class EventUserBuilder
+    internal sealed class EventUserBuilder
     {
         private IEventProcessorConfiguration _config;
         private User _user;

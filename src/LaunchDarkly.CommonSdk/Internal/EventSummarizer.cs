@@ -104,7 +104,7 @@ namespace LaunchDarkly.Common
         // Required because we use this class as a dictionary key
         public override int GetHashCode()
         {
-            return Key.GetHashCode() + 31 * (Variation.GetHashCode() + 31 * Version.GetHashCode());
+            return Util.Hash().With(Key).With(Variation).With(Version).Value;
         }
     }
 
@@ -139,8 +139,7 @@ namespace LaunchDarkly.Common
         // Used only in tests
         public override int GetHashCode()
         {
-            return Count + 31 * ((FlagValue == null ? 0 : FlagValue.GetHashCode()) + 31 *
-                (Default == null ? 0 : Default.GetHashCode()));
+            return Util.Hash().With(Count).With(FlagValue).With(Default).Value;
         }
 
         // Used only in tests

@@ -2,7 +2,7 @@
 
 namespace LaunchDarkly.Client
 {
-    internal class UnsuccessfulResponseException : Exception
+    internal sealed class UnsuccessfulResponseException : Exception
     {
         public int StatusCode
         {
