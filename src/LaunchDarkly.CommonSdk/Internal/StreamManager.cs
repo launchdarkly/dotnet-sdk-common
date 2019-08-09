@@ -15,8 +15,8 @@ namespace LaunchDarkly.Common
     internal sealed class StreamManager : IDisposable
     {
         private static readonly ILog Log = LogManager.GetLogger(typeof(StreamManager));
-        private static int UNINITIALIZED = 0;
-        private static int INITIALIZED = 1;
+        private const int UNINITIALIZED = 0;
+        private const int INITIALIZED = 1;
 
         internal delegate IEventSource EventSourceCreator(StreamProperties streamProperties, IDictionary<string, string> headers);
 
@@ -129,7 +129,7 @@ namespace LaunchDarkly.Common
             EventSource.Configuration config = EventSource.Configuration.Builder(streamProperties.StreamUri)
                 .Method(streamProperties.Method)
                 .RequestBodyFactory(() => streamProperties.RequestBody)
-                .MessageHandler(_config.HttpClientHandler)
+                .MessageHandler(_config.HttpMessageHandler)
                 .ConnectionTimeout(_config.HttpClientTimeout)
                 .DelayRetryDuration(_config.ReconnectTime)
                 .ReadTimeout(_config.ReadTimeout)

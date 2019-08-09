@@ -27,6 +27,6 @@ namespace LaunchDarkly.Common.Tests
         public TimeSpan UserKeysFlushInterval { get; set; }
         public bool InlineUsersInEvents { get; set; }
         public TimeSpan HttpClientTimeout { get; set; } = TimeSpan.FromSeconds(30);
-        public HttpClientHandler HttpClientHandler { get; set; } = new HttpClientHandler();
+        public HttpMessageHandler HttpMessageHandler { get; set; }
     }
 }
