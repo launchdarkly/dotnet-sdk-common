@@ -40,6 +40,8 @@ dotnet test test/LaunchDarkly.CommonSdk.Tests/LaunchDarkly.CommonSdk.Tests.cspro
 
 ## Miscellaneous
 
+This project is being developed with Visual Studio in Windows, so the source code uses Windows linefeeds. Please do not check in changes with Unix linefeeds or a mix of the two.
+
 This project imports the `dotnet-base` repository as a subtree. See the `README.md` file in that directory for more information.
 
 Releases are done using the release script in `dotnet-base`. Since the published package includes a .NET Framework 4.5 build, the release must be done from Windows.
