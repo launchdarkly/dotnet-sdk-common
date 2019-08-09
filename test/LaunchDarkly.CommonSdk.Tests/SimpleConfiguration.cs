@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Net.Http;
 
 namespace LaunchDarkly.Common.Tests
@@ -21,11 +22,11 @@ namespace LaunchDarkly.Common.Tests
         public TimeSpan EventFlushInterval { get; set; }
         public TimeSpan EventQueueFrequency => EventFlushInterval;
         public bool AllAttributesPrivate { get; set; }
-        public ISet<string> PrivateAttributeNames { get; set; } = new HashSet<string>();
+        public IImmutableSet<string> PrivateAttributeNames { get; set; } = ImmutableHashSet.Create<string>();
         public int UserKeysCapacity { get; set; } = 1000;
         public TimeSpan UserKeysFlushInterval { get; set; }
         public bool InlineUsersInEvents { get; set; }
         public TimeSpan HttpClientTimeout { get; set; } = TimeSpan.FromSeconds(30);
-        public HttpClientHandler HttpClientHandler { get; set; } = new HttpClientHandler();
+        public HttpMessageHandler HttpMessageHandler { get; set; }
     }
 }

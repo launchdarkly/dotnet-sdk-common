@@ -8,6 +8,6 @@ namespace LaunchDarkly.Common
     internal interface IHttpRequestConfiguration
     {
         string HttpAuthorizationKey { get; }
-        HttpClientHandler HttpClientHandler { get; }
+        HttpMessageHandler HttpMessageHandler { get; }
     }
 }

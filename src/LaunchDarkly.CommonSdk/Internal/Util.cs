@@ -19,7 +19,9 @@ namespace LaunchDarkly.Common
 
         internal static HttpClient MakeHttpClient(IHttpRequestConfiguration config, ClientEnvironment env)
         {
-            var httpClient = new HttpClient(handler: config.HttpClientHandler, disposeHandler: false);
+            var httpClient = config.HttpMessageHandler is null ?
+                new HttpClient() :
+                new HttpClient(config.HttpMessageHandler, false);
             foreach (var h in GetRequestHeaders(config, env))
             {
                 httpClient.DefaultRequestHeaders.Add(h.Key, h.Value);

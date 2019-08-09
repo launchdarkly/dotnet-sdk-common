@@ -12,7 +12,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Common.Logging" Version="3.4.1" />
-    <PackageReference Include="LaunchDarkly.EventSource" Version="3.3.0" />
+    <PackageReference Include="LaunchDarkly.EventSource" Version="3.3.1" />
     <PackageReference Include="Newtonsoft.Json" Version="9.0.1" Condition="'$(TargetFramework)' != 'net45'" />
     <PackageReference Include="Newtonsoft.Json" Version="6.0.1" Condition="'$(TargetFramework)' == 'net45'" />
     <PackageReference Include="System.Collections.Immutable" Version="1.5.0" />

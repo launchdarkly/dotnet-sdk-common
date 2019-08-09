@@ -18,8 +18,8 @@ namespace LaunchDarkly.Common.Tests
         static readonly ImmutableJsonValue aFloatValue = ImmutableJsonValue.Of(someFloat);
         static readonly ImmutableJsonValue aStringValue = ImmutableJsonValue.Of(someString);
         static readonly ImmutableJsonValue aNumericLookingStringValue = ImmutableJsonValue.Of("3");
-        static readonly ImmutableJsonValue anArrayValue = ImmutableJsonValue.Of(someArray);
-        static readonly ImmutableJsonValue anObjectValue = ImmutableJsonValue.Of(someObject);
+        static readonly ImmutableJsonValue anArrayValue = ImmutableJsonValue.FromJToken(someArray);
+        static readonly ImmutableJsonValue anObjectValue = ImmutableJsonValue.FromJToken(someObject);
 
         [Fact]
         public void CanGetValueAsBool()
@@ -38,6 +38,13 @@ namespace LaunchDarkly.Common.Tests
             Assert.False(anObjectValue.AsBool);
         }
         
+        [Fact]
+        public void BoolValuesUseSameInstances()
+        {
+            Assert.Same(ImmutableJsonValue.Of(true).InnerValue, ImmutableJsonValue.Of(true).InnerValue);
+            Assert.Same(ImmutableJsonValue.Of(false).InnerValue, ImmutableJsonValue.Of(false).InnerValue);
+        }
+
         [Fact]
         public void CanGetValueAsString()
         {
@@ -59,6 +66,12 @@ namespace LaunchDarkly.Common.Tests
             Assert.Equal("[3]", anArrayValue.AsString);
             Assert.Equal("{\"a\":\"b\"}", anObjectValue.AsString);
         }
+        
+        [Fact]
+        public void EmptyStringValuesUseSameInstance()
+        {
+            Assert.Same(ImmutableJsonValue.Of("").InnerValue, ImmutableJsonValue.Of("").InnerValue);
+        }
 
         [Fact]
         public void CanGetValueAsInt()
@@ -74,6 +87,12 @@ namespace LaunchDarkly.Common.Tests
             Assert.Equal(0, aStringValue.AsInt);
             Assert.Equal(0, aNumericLookingStringValue.AsInt);
             Assert.Equal(0, anArrayValue.AsInt);
+        }
+
+        [Fact]
+        public void ZeroIntValuesUseSameInstance()
+        {
+            Assert.Same(ImmutableJsonValue.Of(0).InnerValue, ImmutableJsonValue.Of(0).InnerValue);
         }
 
         [Fact]
@@ -105,6 +124,12 @@ namespace LaunchDarkly.Common.Tests
         }
 
         [Fact]
+        public void ZeroFloatValuesUseSameInstance()
+        {
+            Assert.Same(ImmutableJsonValue.Of(0f).InnerValue, ImmutableJsonValue.Of(0f).InnerValue);
+        }
+
+        [Fact]
         public void CanGetValueAsJArray()
         {
             var a1 = anArrayValue.AsJArray();
@@ -124,7 +149,7 @@ namespace LaunchDarkly.Common.Tests
         public void ValueAsJTokenUsesSameObjectForPrimitiveType()
         {
             var simpleValue0 = new JValue(3);
-            var v = ImmutableJsonValue.Of(simpleValue0);
+            var v = ImmutableJsonValue.FromJToken(simpleValue0);
             var simpleValue1 = v.AsJToken();
             Assert.Same(simpleValue0, simpleValue1);
         }
@@ -133,7 +158,7 @@ namespace LaunchDarkly.Common.Tests
         public void ValueAsJTokenCopiesValueForArray()
         {
             var a0 = new JArray() { new JValue(3) };
-            var v = ImmutableJsonValue.Of(a0);
+            var v = ImmutableJsonValue.FromJToken(a0);
             var a1 = v.AsJToken();
             TestUtil.AssertJsonEquals(a0, a1);
             Assert.NotSame(a0, a1);
@@ -143,7 +168,7 @@ namespace LaunchDarkly.Common.Tests
         public void ValueAsJTokenCopiesValueForObject()
         {
             var o0 = new JObject() { { "a", new JValue("b") } };
-            var v = ImmutableJsonValue.Of(o0);
+            var v = ImmutableJsonValue.FromJToken(o0);
             var o1 = v.AsJToken();
             TestUtil.AssertJsonEquals(o0, o1);
             Assert.NotSame(o0, o1);
@@ -154,14 +179,14 @@ namespace LaunchDarkly.Common.Tests
         {
             var o0 = new JObject() { { "a", new JValue("b") } };
             var o1 = new JObject() { { "a", new JValue("b") } };
-            Assert.Equal(ImmutableJsonValue.Of(o0), ImmutableJsonValue.Of(o1));
+            Assert.Equal(ImmutableJsonValue.FromJToken(o0), ImmutableJsonValue.FromJToken(o1));
         }
 
         [Fact]
         public void TestJsonSerialization()
         {
             var o = new JObject() { { "a", new JValue("b") } };
-            var v = ImmutableJsonValue.Of(o);
+            var v = ImmutableJsonValue.FromJToken(o);
             var json = JsonConvert.SerializeObject(v);
             Assert.Equal("{\"a\":\"b\"}", json);
         }

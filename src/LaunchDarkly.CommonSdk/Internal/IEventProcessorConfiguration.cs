@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections.Immutable;
 
 namespace LaunchDarkly.Common
 {
@@ -14,7 +14,7 @@ namespace LaunchDarkly.Common
         Uri EventsUri { get; }
         TimeSpan HttpClientTimeout { get; }
         bool InlineUsersInEvents { get; }
-        ISet<string> PrivateAttributeNames { get; }
+        IImmutableSet<string> PrivateAttributeNames { get; }
         TimeSpan ReadTimeout { get; }
         TimeSpan ReconnectTime { get; }
         int UserKeysCapacity { get; }
