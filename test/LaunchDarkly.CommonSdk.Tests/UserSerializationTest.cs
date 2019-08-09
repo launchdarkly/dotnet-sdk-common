@@ -24,7 +24,7 @@ namespace LaunchDarkly.Common.Tests
         {
             var json = $"{{\"key\":\"{key}\", \"custom\": {{\"a\":\"b\"}}}}";
             var user = JsonConvert.DeserializeObject<User>(json);
-            Assert.Equal("b", (string)user.Custom["a"]);
+            Assert.Equal("b", user.Custom["a"].AsString);
         }
 
         [Fact]
@@ -33,16 +33,16 @@ namespace LaunchDarkly.Common.Tests
             var user = User.Builder(key).Custom("a", "b").Build();
             var json = JsonConvert.SerializeObject(user);
             var newUser = JsonConvert.DeserializeObject<User>(json);
-            Assert.Equal("b", (string)user.Custom["a"]);
+            Assert.Equal("b", user.Custom["a"].AsString);
             Assert.Equal(key, user.Key);
         }
 
         [Fact]
-        public void SerializingAUserWithNoAnonymousSetYieldsNoAnonymous()
+        public void SerializingAUserWithNoAnonymousSetYieldsAnonymousFalse()
         {
             var user = User.WithKey(key);
             var json = JObject.FromObject(user);
-            Assert.Null(json["anonymous"]);
+            Assert.Equal(new JValue(false), json["anonymous"]);
         }
 
         [Fact]

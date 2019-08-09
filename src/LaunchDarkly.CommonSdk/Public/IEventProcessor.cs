@@ -10,7 +10,7 @@ namespace LaunchDarkly.Client
     {
         /// <summary>
         /// Processes an event. This method is asynchronous; the event may be sent later in the background
-        /// at an interval set by <see cref="IBaseConfiguration.EventQueueFrequency"/>, or due to a call to
+        /// at an interval set by the configuration property <c>EventFlushInterval</c>, or due to a call to
         /// <see cref="Flush"/>.
         /// </summary>
         /// <param name="evt">the event</param>
@@ -25,7 +25,7 @@ namespace LaunchDarkly.Client
         void Flush();
     }
 
-    internal class NullEventProcessor : IEventProcessor
+    internal sealed class NullEventProcessor : IEventProcessor
     {
         void IEventProcessor.SendEvent(Event eventToLog)
         { }

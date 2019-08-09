@@ -19,16 +19,7 @@ namespace LaunchDarkly.Common.Tests
                 .Custom("c1", "v1")
                 .Custom("c2", "v2").AsPrivateAttribute()
                 .Build();
-
-        [Fact]
-        public void ConstructorSetsKey()
-        {
-#pragma warning disable 618
-            var user = new User(key);
-#pragma warning restore 618
-            Assert.Equal(key, user.Key);
-        }
-
+        
         [Fact]
         public void UserWithKeySetsKey()
         {
@@ -50,47 +41,23 @@ namespace LaunchDarkly.Common.Tests
             Assert.Null(user.Email);
             Assert.NotNull(user.Custom);
             Assert.Equal(0, user.Custom.Count);
-            Assert.Null(user.PrivateAttributeNames);
+            Assert.NotNull(user.PrivateAttributeNames);
+            Assert.Equal(0, user.PrivateAttributeNames.Count);
         }
-
+        
         [Fact]
-        public void SettingDeprecatedIpSetsIP()
+        public void TestEmptyImmutableCollectionsAreReused()
         {
-            var ip = "1.2.3.4";
-            var user = User.WithKey(key);
-#pragma warning disable 618
-            user.IpAddress = ip;
-#pragma warning restore 618
-            Assert.Equal(ip, user.IPAddress);
-        }
-
-        [Fact]
-        public void GettingDeprecatedIpGetsIP()
-        {
-            var ip = "1.2.3.4";
-            var user = User.WithKey(key);
-            user.IPAddress = ip;
-#pragma warning disable 618
-            Assert.Equal(ip, user.IpAddress);
-#pragma warning restore 618
+            var user0 = User.WithKey("a");
+            var user1 = User.WithKey("b");
+            Assert.Same(user0.Custom, user1.Custom);
+            Assert.Same(user0.PrivateAttributeNames, user1.PrivateAttributeNames);
         }
 
         [Fact]
         public void TestUserSelfEquality()
         {
             Assert.True(UserToCopy.Equals(UserToCopy));
-        }
-        
-        [Fact]
-        public void TestUserEqualityWithCopyConstructor()
-        {
-#pragma warning disable 618
-            User copy = new User(UserToCopy);
-#pragma warning restore 618
-            Assert.NotSame(UserToCopy, copy);
-            Assert.True(copy.Equals(UserToCopy));
-            Assert.True(UserToCopy.Equals(copy));
-            Assert.Equal(UserToCopy.GetHashCode(), copy.GetHashCode());
         }
     }
 }

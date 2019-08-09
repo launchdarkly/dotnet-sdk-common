@@ -2,6 +2,28 @@
 
 For full release notes for the projects that depend on this project, see their respective changelogs. This file describes changes only to the common code. This project adheres to [Semantic Versioning](http://semver.org).
 
+## [3.0.0] - 2019-08-09
+### Added:
+- `User.Builder` provides a fluent builder pattern for constructing `User` objects. This is now the only method for building a user if you want to set any properties other than the `Key`.
+- The `ImmutableJsonValue` type provides a wrapper for the Newtonsoft.Json types that prevents accidentally modifying JSON object properties or array values that are shared by other objects.
+- Helper type `ValueType`/`ValueTypes` for use by the SDK `Variation` methods.
+- Internal interfaces for configuring specific components, like `IEventProcessorConfiguration`. These replace `IBaseConfiguration`.
+
+### Changed:
+- `User` objects are now immutable.
+- In `User`, `IpAddress` has been renamed to `IPAddress` (standard .NET capitalization for two-letter acronyms).
+- Custom attributes in `User.Custom` now use the type `ImmutableJsonValue` instead of `JToken`.
+- Uses of mutable `IDictionary` and `ISet` in the configuration and user objects have been changed to immutable types.
+
+### Removed:
+- `UserExtensions` (use `User.Builder`).
+- `User` constructors (use `User.WithKey` or `User.Builder`).
+- `User` property setters.
+- `IBaseConfiguration` and `ICommonLdClient` interfaces.
+
+### Fixed:
+- No longer assumes that we are overriding the `HttpMessageHandler` (if it is null in the configuration, just use the default `HttpClient` constructor). This is important for Xamarin.
+
 ## [2.4.0] - 2019-07-31
 ### Added:
 - `IBaseConfiguration.EventCapacity` and `IBaseConfiguration.EventFlushInterval`.

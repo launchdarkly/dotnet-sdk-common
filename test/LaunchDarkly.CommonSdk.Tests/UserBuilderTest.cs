@@ -111,7 +111,7 @@ namespace LaunchDarkly.Common.Tests
             var expectedValue = "x";
             var user = p.Setter(User.Builder(key))(expectedValue).Build();
             Assert.Equal(expectedValue, p.Getter(user));
-            Assert.Null(user.PrivateAttributeNames);
+            Assert.Empty(user.PrivateAttributeNames);
         }
 
         [Theory]
@@ -125,10 +125,10 @@ namespace LaunchDarkly.Common.Tests
         }
 
         [Fact]
-        public void AnonymousDefaultsToNull()
+        public void AnonymousDefaultsToFalse()
         {
             var user = User.Builder(key).Build();
-            Assert.Null(user.Anonymous);
+            Assert.False(user.Anonymous);
         }
 
         [Fact]
@@ -141,8 +141,8 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void BuilderCanSetAnonymousFalse()
         {
-            var user = User.Builder(key).Anonymous(false).Build();
-            Assert.Null(user.Anonymous); // it's null rather than false so the JSON property won't appear
+            var user = User.Builder(key).Anonymous(true).Anonymous(false).Build();
+            Assert.False(user.Anonymous);
         }
 
         [Fact]
@@ -158,7 +158,7 @@ namespace LaunchDarkly.Common.Tests
         {
             var user0 = setter(User.Builder(key), "foo", value).Build();
             Assert.Equal<object>(value, user0.Custom["foo"].Value<T>());
-            Assert.Null(user0.PrivateAttributeNames);
+            Assert.Empty(user0.PrivateAttributeNames);
 
             var user1 = setter(User.Builder(key), "bar", value).AsPrivateAttribute().Build();
             Assert.Equal<object>(value, user1.Custom["bar"].Value<T>());
@@ -169,7 +169,7 @@ namespace LaunchDarkly.Common.Tests
         public void BuilderCanSetJsonCustomAttribute()
         {
             var value = new JArray(new List<JToken>() { new JValue(true), new JValue(1.5) });
-            TestCustomAttribute<JToken>(value, (b, n, v) => b.Custom(n, v));
+            TestCustomAttribute<JToken>(value, (b, n, v) => b.Custom(n, ImmutableJsonValue.FromJToken(v)));
         }
 
         [Fact]
@@ -196,6 +196,28 @@ namespace LaunchDarkly.Common.Tests
             TestCustomAttribute<float>(1.5f, (b, n, v) => b.Custom(n, v));
         }
         
+        [Fact]
+        public void CustomBoolAttributeUsesStaticInstancesForTrueAndFalse()
+        {
+            var attr = "ok";
+            var t0 = User.Builder(key).Custom(attr, true).Build();
+            var t1 = User.Builder(key).Custom(attr, true).Build();
+            var f0 = User.Builder(key).Custom(attr, false).Build();
+            var f1 = User.Builder(key).Custom(attr, false).Build();
+            Assert.Same(t0.Custom[attr].AsJToken(), t1.Custom[attr].AsJToken());
+            Assert.Same(f0.Custom[attr].AsJToken(), f1.Custom[attr].AsJToken());
+        }
+
+        [Fact]
+        public void ModifyingOriginalJsonValueDoesNotModifyAttributeOfExistingUser()
+        {
+            var mutableJson = new JArray() { new JValue("mauve") };
+            var u = User.Builder(key).Custom("colors", ImmutableJsonValue.FromJToken(mutableJson)).Build();
+            mutableJson.Add(new JValue("puce"));
+            TestUtil.AssertJsonEquals(new JArray() { new JValue("mauve") },
+                u.Custom["colors"].AsJArray());
+        }
+
         [Fact]
         public void TestUserEqualityWithBuilderFromUser()
         {
@@ -241,6 +263,15 @@ namespace LaunchDarkly.Common.Tests
                     JsonConvert.SerializeObject(modUser) + " should not have same hashCode as " +
                     JsonConvert.SerializeObject(UserTest.UserToCopy));
             }
+        }
+
+        [Fact]
+        public void TestEmptyImmutableCollectionsAreReused()
+        {
+            var user0 = User.Builder("a").Build();
+            var user1 = User.Builder("b").Build();
+            Assert.Same(user0.Custom, user1.Custom);
+            Assert.Same(user0.PrivateAttributeNames, user1.PrivateAttributeNames);
         }
     }
 }

@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections.Immutable;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Xunit;
@@ -9,16 +9,16 @@ namespace LaunchDarkly.Common.Tests
 {
     public class EventUserTest
     {
-        static readonly IBaseConfiguration _baseConfig = new SimpleConfiguration();
+        static readonly SimpleConfiguration _baseConfig = new SimpleConfiguration();
 
-        static readonly IBaseConfiguration _configWithAllAttrsPrivate = new SimpleConfiguration
+        static readonly SimpleConfiguration _configWithAllAttrsPrivate = new SimpleConfiguration
         {
             AllAttributesPrivate = true
         };
 
-        static readonly IBaseConfiguration _configWithSomeAttrsPrivate = new SimpleConfiguration
+        static readonly SimpleConfiguration _configWithSomeAttrsPrivate = new SimpleConfiguration
         {
-            PrivateAttributeNames = new HashSet<string>(new string[] { "firstName", "bizzle" })
+            PrivateAttributeNames = ImmutableHashSet.Create<string>("firstName", "bizzle")
         };
 
         static readonly User _baseUser = User.Builder("abc")
@@ -69,8 +69,8 @@ namespace LaunchDarkly.Common.Tests
         static readonly JObject _userWithAllAttributesPrivateJson = JObject.Parse(@"
             { ""key"": ""abc"",
               ""secondary"": ""xyz"",
-              ""privateAttrs"": [ ""ip"", ""country"", ""firstName"", ""lastName"",
-                                  ""name"", ""avatar"", ""email"", ""bizzle"", ""dizzle"" ]
+              ""privateAttrs"": [ ""avatar"", ""bizzle"", ""country"", ""dizzle"", ""email"",
+              ""firstName"", ""ip"", ""lastName"", ""name"" ]
             } ");
 
         static readonly JObject _userWithSomeAttributesPrivateJson = JObject.Parse(@"
@@ -83,7 +83,7 @@ namespace LaunchDarkly.Common.Tests
               ""ip"": ""1.2.3.4"",
               ""email"": ""test@example.com"",
               ""custom"": { ""dizzle"": ""ghi"" },
-              ""privateAttrs"": [ ""firstName"", ""bizzle"" ]
+              ""privateAttrs"": [ ""bizzle"", ""firstName"" ]
             } ");
 
         static readonly JObject _anonUserWithAllAttributesPrivateJson = JObject.Parse(@"
@@ -136,16 +136,34 @@ namespace LaunchDarkly.Common.Tests
             CheckJsonSerialization(eu, _userWithSomeAttributesPrivateJson);
         }
 
+        [Fact]
+        public void CustomIsNullIfUserHasNoCustomAttributes()
+        {
+            var u = User.WithKey("key");
+            var eu = EventUser.FromUser(u, _baseConfig);
+            Assert.Null(eu.Custom);
+        }
+
+        [Fact]
+        public void PrivateAttrsIsNullIfUserHasNoPrivateAttributes()
+        {
+            var u = User.WithKey("key");
+            var eu = EventUser.FromUser(u, _baseConfig);
+            Assert.Null(eu.PrivateAttrs);
+        }
+
+        [Fact]
+        public void CustomAttributesDictionaryIsReusedIfNoneArePrivate()
+        {
+            EventUser eu = EventUser.FromUser(_baseUser, _baseConfig);
+            Assert.Same(_baseUser.Custom, eu.Custom);
+        }
+
         private void CheckJsonSerialization(object o, JObject shouldBe)
         {
             string json = JsonConvert.SerializeObject(o);
             JObject parsed = JObject.Parse(json);
-            if (!JToken.DeepEquals(shouldBe, parsed))
-            {
-                Console.Error.WriteLine("should be: " + shouldBe.ToString());
-                Console.Error.WriteLine("was: " + parsed.ToString());
-            }
-            Assert.True(JToken.DeepEquals(shouldBe, parsed));
+            TestUtil.AssertJsonEquals(shouldBe, parsed);
         }
     }
 }

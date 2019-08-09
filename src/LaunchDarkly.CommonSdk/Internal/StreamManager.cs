@@ -15,14 +15,14 @@ namespace LaunchDarkly.Common
     internal sealed class StreamManager : IDisposable
     {
         private static readonly ILog Log = LogManager.GetLogger(typeof(StreamManager));
-        private static int UNINITIALIZED = 0;
-        private static int INITIALIZED = 1;
+        private const int UNINITIALIZED = 0;
+        private const int INITIALIZED = 1;
 
         internal delegate IEventSource EventSourceCreator(StreamProperties streamProperties, IDictionary<string, string> headers);
 
         private readonly IStreamProcessor _streamProcessor;
         private readonly StreamProperties _streamProperties;
-        private readonly IBaseConfiguration _config;
+        private readonly IStreamManagerConfiguration _config;
         private readonly ClientEnvironment _clientEnvironment;
         private readonly TaskCompletionSource<bool> _initTask;
         private readonly EventSourceCreator _esCreator;
@@ -40,7 +40,7 @@ namespace LaunchDarkly.Common
         /// <param name="eventSourceCreator">Null in normal usage; pass a non-null delegate if you
         /// are in a unit test and want to mock out the event source.</param>
         public StreamManager(IStreamProcessor streamProcessor, StreamProperties streamProperties,
-            IBaseConfiguration config, ClientEnvironment clientEnvironment,
+            IStreamManagerConfiguration config, ClientEnvironment clientEnvironment,
             EventSourceCreator eventSourceCreator)
         {
             _streamProcessor = streamProcessor;
@@ -129,7 +129,7 @@ namespace LaunchDarkly.Common
             EventSource.Configuration config = EventSource.Configuration.Builder(streamProperties.StreamUri)
                 .Method(streamProperties.Method)
                 .RequestBodyFactory(() => streamProperties.RequestBody)
-                .MessageHandler(_config.HttpClientHandler)
+                .MessageHandler(_config.HttpMessageHandler)
                 .ConnectionTimeout(_config.HttpClientTimeout)
                 .DelayRetryDuration(_config.ReconnectTime)
                 .ReadTimeout(_config.ReadTimeout)
