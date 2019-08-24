@@ -214,6 +214,14 @@ namespace LaunchDarkly.Common.Tests
                 item => CheckSummaryEvent(item));
         }
 
+#if !NET46
+//
+// The following two tests are disabled in .NET 4.6 because something does not work correctly in WireMock.Net
+// (presumably the Owin-based implementation of the WireMock server, which is used only in .NET Framework) so
+// that when you try to set the Date header in a response, it comes out completely different. It doesn't seem
+// to be a time zone issue since the difference isn't a whole number of hours, so it's mysterious. But it is
+// definitely an issue with the test server, not with the SDK logic.
+//
         [Fact]
         public void DebugModeExpiresBasedOnClientTimeIfClientTimeIsLaterThanServerTime()
         {
@@ -267,6 +275,7 @@ namespace LaunchDarkly.Common.Tests
                 item => CheckIndexEvent(item, fe, _userJson),
                 item => CheckSummaryEvent(item));
         }
+#endif
 
         [Fact]
         public void TwoFeatureEventsForSameUserGenerateOnlyOneIndexEvent()
