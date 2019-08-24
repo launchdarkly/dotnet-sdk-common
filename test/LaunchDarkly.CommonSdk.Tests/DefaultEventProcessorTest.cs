@@ -7,7 +7,6 @@ using WireMock.Logging;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 using WireMock.Server;
-using WireMock.Settings;
 using Xunit;
 
 namespace LaunchDarkly.Common.Tests
@@ -26,10 +25,7 @@ namespace LaunchDarkly.Common.Tests
 
         public DefaultEventProcessorTest()
         {
-            _server = FluentMockServer.Start(new FluentMockServerSettings()
-            {
-                Logger = new WireMockNullLogger()
-            });
+            _server = FluentMockServer.Start();
             _config.EventsUri = new Uri(_server.Urls[0]);
         }
 
