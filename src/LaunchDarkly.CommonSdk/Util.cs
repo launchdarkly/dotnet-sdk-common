@@ -11,10 +11,20 @@ namespace LaunchDarkly.Common
         internal static Dictionary<string, string> GetRequestHeaders(IBaseConfiguration config,
             ClientEnvironment env)
         {
-            return new Dictionary<string, string> {
+            Dictionary<string, string> headers =  new Dictionary<string, string> {
                 { "Authorization", config.SdkKey },
                 { "User-Agent", env.UserAgentType + "/" + env.VersionString }
             };
+
+            if (config.WrapperName != null) {
+                string wrapperVersion = "";
+                if (config.WrapperVersion != null) {
+                    wrapperVersion = "/" + config.WrapperVersion;
+                }
+                headers.Add("X-LaunchDarkly-Wrapper", config.WrapperName + config.WrapperVersion);
+            }
+
+            return headers;
         }
 
         internal static HttpClient MakeHttpClient(IBaseConfiguration config, ClientEnvironment env)
