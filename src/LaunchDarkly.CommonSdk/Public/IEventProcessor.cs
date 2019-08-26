@@ -25,7 +25,7 @@ namespace LaunchDarkly.Client
         void Flush();
     }
 
-    internal class NullEventProcessor : IEventProcessor
+    internal sealed class NullEventProcessor : IEventProcessor
     {
         void IEventProcessor.SendEvent(Event eventToLog)
         { }

@@ -9,17 +9,25 @@ namespace LaunchDarkly.Common
     /// get fed into the EventProcessor, not the "output" events that are actually sent to
     /// LaunchDarkly.
     /// </summary>
-    internal abstract class EventFactory
+    internal struct EventFactory
     {
         // These two instances are the only ones we'll need in production use. The only difference
         // between them is that the "WithReasons" one always includes the evaluation reason in the
         // event, and the other one doesn't (except in the "experiment" case described in
         // IFlagEventProperties.IsExperiment).
-        internal static EventFactory Default { get; } = new DefaultEventFactory();
-        internal static EventFactory DefaultWithReasons { get; } = new DefaultEventFactoryWithReasons();
+        internal static EventFactory Default { get; } = new EventFactory(CurrentTime, false);
+        internal static EventFactory DefaultWithReasons { get; } = new EventFactory(CurrentTime, true);
 
-        internal abstract long GetTimestamp();
-        internal abstract bool IncludeReasons { get; }
+        internal readonly Func<long> GetTimestamp;
+        internal bool IncludeReasons { get; }
+
+        internal EventFactory(Func<long> getTimestamp, bool includeReasons)
+        {
+            GetTimestamp = getTimestamp;
+            IncludeReasons = includeReasons;
+        }
+
+        private static long CurrentTime() => Util.GetUnixTimestampMillis(DateTime.UtcNow);
 
         /// <summary>
         /// Creates a feature request event for a successful evaluation.
@@ -122,20 +130,5 @@ namespace LaunchDarkly.Common
         {
             return new IdentifyEvent(GetTimestamp(), user);
         }
-    }
-
-    internal class DefaultEventFactory : EventFactory
-    {
-        override internal long GetTimestamp()
-        {
-            return Util.GetUnixTimestampMillis(DateTime.UtcNow);
-        }
-
-        override internal bool IncludeReasons => false;
-    }
-
-    internal class DefaultEventFactoryWithReasons : DefaultEventFactory
-    {
-        override internal bool IncludeReasons => true;
     }
 }

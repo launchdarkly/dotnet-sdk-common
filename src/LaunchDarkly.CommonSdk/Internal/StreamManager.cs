@@ -22,7 +22,7 @@ namespace LaunchDarkly.Common
 
         private readonly IStreamProcessor _streamProcessor;
         private readonly StreamProperties _streamProperties;
-        private readonly IBaseConfiguration _config;
+        private readonly IStreamManagerConfiguration _config;
         private readonly ClientEnvironment _clientEnvironment;
         private readonly TaskCompletionSource<bool> _initTask;
         private readonly EventSourceCreator _esCreator;
@@ -40,7 +40,7 @@ namespace LaunchDarkly.Common
         /// <param name="eventSourceCreator">Null in normal usage; pass a non-null delegate if you
         /// are in a unit test and want to mock out the event source.</param>
         public StreamManager(IStreamProcessor streamProcessor, StreamProperties streamProperties,
-            IBaseConfiguration config, ClientEnvironment clientEnvironment,
+            IStreamManagerConfiguration config, ClientEnvironment clientEnvironment,
             EventSourceCreator eventSourceCreator)
         {
             _streamProcessor = streamProcessor;

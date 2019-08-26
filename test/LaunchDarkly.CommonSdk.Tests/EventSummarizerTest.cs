@@ -8,7 +8,7 @@ namespace LaunchDarkly.Common.Tests
     public class EventSummarizerTest
     {
         private static readonly User _user = User.WithKey("key");
-        private static readonly TestEventFactory _eventFactory = new TestEventFactory();
+        private static readonly EventFactory _eventFactory = new EventFactory(() => 1000, false);
 
         [Fact]
         public void SummarizeEventDoesNothingForIdentifyEvent()
@@ -39,12 +39,12 @@ namespace LaunchDarkly.Common.Tests
         {
             EventSummarizer es = new EventSummarizer();
             IFlagEventProperties flag = new FlagEventPropertiesBuilder("key").Build();
-            _eventFactory.Timestamp = 2000;
-            Event event1 = _eventFactory.NewFeatureRequestEvent(flag, _user, new EvaluationDetail<JToken>(null, null, null), null);
-            _eventFactory.Timestamp = 1000;
-            Event event2 = _eventFactory.NewFeatureRequestEvent(flag, _user, new EvaluationDetail<JToken>(null, null, null), null);
-            _eventFactory.Timestamp = 1500;
-            Event event3 = _eventFactory.NewFeatureRequestEvent(flag, _user, new EvaluationDetail<JToken>(null, null, null), null);
+            var factory1 = new EventFactory(() => 2000, false);
+            Event event1 = factory1.NewFeatureRequestEvent(flag, _user, new EvaluationDetail<JToken>(null, null, null), null);
+            var factory2 = new EventFactory(() => 1000, false);
+            Event event2 = factory2.NewFeatureRequestEvent(flag, _user, new EvaluationDetail<JToken>(null, null, null), null);
+            var factory3 = new EventFactory(() => 1500, false);
+            Event event3 = factory3.NewFeatureRequestEvent(flag, _user, new EvaluationDetail<JToken>(null, null, null), null);
             es.SummarizeEvent(event1);
             es.SummarizeEvent(event2);
             es.SummarizeEvent(event3);
@@ -90,17 +90,5 @@ namespace LaunchDarkly.Common.Tests
             Assert.Equal(new EventsCounterValue(1, default3, default3),
                 data.Counters[new EventsCounterKey(unknownFlagKey, null, null)]);
         }
-    }
-
-    internal class TestEventFactory : EventFactory
-    {
-        internal long Timestamp { get; set; }
-
-        internal override long GetTimestamp()
-        {
-            return Timestamp;
-        }
-
-        internal override bool IncludeReasons => false;
     }
 }

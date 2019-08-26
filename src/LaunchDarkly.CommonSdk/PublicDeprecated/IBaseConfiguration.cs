@@ -7,6 +7,7 @@ namespace LaunchDarkly.Common
     /// <summary>
     /// Configuration properties that are used by both server-side and client-side SDKs.
     /// </summary>
+    [Obsolete("This interface will be removed in a future version, since .NET and Xamarin may not always have equivalent APIs. Use the specific interfaces for each SDK instead.")]
     public interface IBaseConfiguration
     {
         /// <summary>
