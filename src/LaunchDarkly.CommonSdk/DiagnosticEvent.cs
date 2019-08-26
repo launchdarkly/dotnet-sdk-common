@@ -1,7 +1,7 @@
 using System;
 using Newtonsoft.Json.Linq;
 
-namespace LaunchDarkly.Client
+namespace LaunchDarkly.Common
 {
     abstract class DiagnosticEvent
     {
@@ -15,39 +15,40 @@ namespace LaunchDarkly.Client
             CreationDate = creationDate;
             Id = diagnosticId;
         }
-    }
 
-    class Statistics : DiagnosticEvent
-    {
-        internal readonly long DataSinceDate;
-        internal readonly long DroppedEvents;
-        internal readonly long DeduplicatedUsers;
-        internal readonly long EventsInQueue;
-
-        internal Statistics(long creationDate, DiagnosticId diagnosticId,
-                            long dataSinceDate, long droppedEvents,
-                            long deduplicatedUsers, long eventsInQueue)
-            : base("diagnostic", creationDate, diagnosticId)
+        internal class Statistics : DiagnosticEvent
         {
-            DataSinceDate = dataSinceDate;
-            DroppedEvents = droppedEvents;
-            DeduplicatedUsers = deduplicatedUsers;
-            EventsInQueue = eventsInQueue;
+            internal readonly long DataSinceDate;
+            internal readonly long DroppedEvents;
+            internal readonly long DeduplicatedUsers;
+            internal readonly long EventsInQueue;
+
+            internal Statistics(long creationDate, DiagnosticId diagnosticId,
+                                long dataSinceDate, long droppedEvents,
+                                long deduplicatedUsers, long eventsInQueue)
+                : base("diagnostic", creationDate, diagnosticId)
+            {
+                DataSinceDate = dataSinceDate;
+                DroppedEvents = droppedEvents;
+                DeduplicatedUsers = deduplicatedUsers;
+                EventsInQueue = eventsInQueue;
+            }
         }
-    }
 
-    class Init : DiagnosticEvent
-    {
-        internal readonly DiagnosticSdk Sdk;
-        internal readonly DiagnosticConfiguration Configuration;
-        internal readonly DiagnosticPlatform Platform = new DiagnosticPlatform();
-
-        internal Init(long creationDate, DiagnosticId diagnosticId)
-            : base("diagnostic-init", creationDate, diagnosticId)
+        internal class Init : DiagnosticEvent
         {
-            Sdk = new DiagnosticSdk();
-            Configuration = new DiagnosticConfiguration();
+            internal readonly DiagnosticSdk Sdk;
+            internal readonly DiagnosticConfiguration Configuration;
+            internal readonly DiagnosticPlatform Platform = new DiagnosticPlatform();
+
+            internal Init(long creationDate, DiagnosticId diagnosticId)
+                : base("diagnostic-init", creationDate, diagnosticId)
+            {
+                Sdk = new DiagnosticSdk();
+                Configuration = new DiagnosticConfiguration();
+            }
         }
+
     }
 
     class DiagnosticConfiguration {
@@ -74,7 +75,7 @@ namespace LaunchDarkly.Client
         internal readonly bool InlineUsersInEvents;
         internal readonly int DiagnosticRecordingIntervalMillis;
         internal readonly string FeatureStore;
-        
+
         internal DiagnosticConfiguration()
         {
 
@@ -90,7 +91,7 @@ namespace LaunchDarkly.Client
 
         }
     }
-    
+
     class DiagnosticPlatform
     {
         internal static readonly string Name = "DotNet";

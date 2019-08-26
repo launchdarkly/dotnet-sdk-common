@@ -1,7 +1,7 @@
 using System;
 using Newtonsoft.Json.Linq;
 
-namespace LaunchDarkly.Client
+namespace LaunchDarkly.Common
 {
     class DiagnosticId
     {

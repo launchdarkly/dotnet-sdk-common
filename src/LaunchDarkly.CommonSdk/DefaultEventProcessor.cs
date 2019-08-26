@@ -21,6 +21,7 @@ namespace LaunchDarkly.Common
         private readonly EventDispatcher _dispatcher;
         private readonly Timer _flushTimer;
         private readonly Timer _flushUsersTimer;
+        private readonly Timer _diagnosticTimer;
         private AtomicBoolean _stopped;
         private AtomicBoolean _inputCapacityExceeded;
 
@@ -39,6 +40,15 @@ namespace LaunchDarkly.Common
             else
             {
                 _flushUsersTimer = null;
+            }
+            if (!config.DiagnosticOptOut)
+            {
+                _diagnosticTimer = new Timer(DoDiagnosticSend, null, config.DiagnosticRecordingInterval,
+                                             config.DiagnosticRecordingInterval);
+            }
+            else
+            {
+                _diagnosticTimer = null;
             }
             _stopped = new AtomicBoolean(false);
             _inputCapacityExceeded = new AtomicBoolean(false);
@@ -125,6 +135,11 @@ namespace LaunchDarkly.Common
         {
             SubmitMessage(new FlushUsersMessage());
         }
+
+        private void DoDiagnosticSend(object StateInfo)
+        {
+            SubmitMessage(new DiagnosticMessage());
+        }
     }
 
     internal class AtomicBoolean
@@ -159,15 +174,17 @@ namespace LaunchDarkly.Common
 
     internal class FlushUsersMessage : IEventMessage { }
 
+    internal class DiagnosticMessage : IEventMessage { }
+
     internal class SynchronousMessage : IEventMessage
     {
         internal readonly Semaphore _reply;
-        
+
         internal SynchronousMessage()
         {
             _reply = new Semaphore(0, 1);
         }
-        
+
         internal void WaitForCompletion()
         {
             _reply.WaitOne();
@@ -182,7 +199,7 @@ namespace LaunchDarkly.Common
     internal class TestSyncMessage : SynchronousMessage { }
 
     internal class ShutdownMessage : SynchronousMessage { }
-    
+
     internal sealed class EventDispatcher : IDisposable
     {
         private static readonly int MaxFlushWorkers = 5;
@@ -253,6 +270,9 @@ namespace LaunchDarkly.Common
                                 _userDeduplicator.Flush();
                             }
                             break;
+                        case DiagnosticMessage dm:
+                            sendAndResetDiagnostics(buffer);
+                            break;
                         case TestSyncMessage tm:
                             WaitForFlushes();
                             tm.Completed();
@@ -270,6 +290,12 @@ namespace LaunchDarkly.Common
                         e, Util.ExceptionMessage(e));
                 }
             }
+        }
+
+        private void sendAndResetDiagnostics(EventBuffer buffer)
+        {
+            long droppedEvents = buffer.GetAndResetDroppedCount();
+            long eventsInQueue = buffer.GetEventsInQueueCount();
         }
 
         private void WaitForFlushes()
@@ -322,6 +348,9 @@ namespace LaunchDarkly.Common
                     {
                         IndexEvent ie = new IndexEvent(e.CreationDate, e.User);
                         buffer.AddEvent(ie);
+                    } else if (!(e is IdentifyEvent))
+                    {
+                        // Deduplicated
                     }
                 }
             }
@@ -529,6 +558,7 @@ namespace LaunchDarkly.Common
         private readonly EventSummarizer _summarizer;
         private readonly int _capacity;
         private bool _exceededCapacity;
+        private long _droppedEventCount = 0;
 
         internal EventBuffer(int capacity)
         {
@@ -541,6 +571,7 @@ namespace LaunchDarkly.Common
         {
             if (_events.Count >= _capacity)
             {
+                _droppedEventCount++;
                 if (!_exceededCapacity)
                 {
                     DefaultEventProcessor.Log.Warn("Exceeded event queue capacity. Increase capacity to avoid dropping events.");
@@ -568,6 +599,16 @@ namespace LaunchDarkly.Common
         {
             _events.Clear();
             _summarizer.Clear();
+        }
+
+        internal long GetAndResetDroppedCount() {
+            long res = _droppedEventCount;
+            _droppedEventCount = 0;
+            return res;
+        }
+
+        internal long GetEventsInQueueCount() {
+            return _events.Count;
         }
     }
 }
