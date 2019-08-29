@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using LaunchDarkly.Client;
 using Newtonsoft.Json.Linq;
 using WireMock;
@@ -401,6 +403,30 @@ namespace LaunchDarkly.Common.Tests
         }
 
         [Fact]
+        public void FlushDoesNothingWhenOffline()
+        {
+            using (var ep = MakeProcessor(_config))
+            {
+                ep.SetOffline(true);
+                IdentifyEvent e = EventFactory.Default.NewIdentifyEvent(_user);
+                ep.SendEvent(e);
+                ep.Flush();
+
+                // We can't prove a negative - there's no way to know when the event processor has definitely
+                // decided *not* to do a flush, it is asynchronous, so this is just a best-guess delay.
+                Thread.Sleep(TimeSpan.FromMilliseconds(500));
+
+                Assert.Equal(0, _server.LogEntries.Count());
+
+                // We should have still held on to that event, so if we go online again and flush, it is sent.
+                ep.SetOffline(false);
+                JArray output = FlushAndGetEvents(OkResponse(), ep);
+                Assert.Collection(output,
+                    item => CheckIdentifyEvent(item, e, _userJson));
+            }
+        }
+
+        [Fact]
         public void SdkKeyIsSent()
         {
             _ep = MakeProcessor(_config);
@@ -612,11 +638,15 @@ namespace LaunchDarkly.Common.Tests
             _server.ResetLogEntries();
         }
 
-        private RequestMessage FlushAndGetRequest(IResponseBuilder resp)
+        private RequestMessage FlushAndGetRequest(IResponseBuilder resp, IEventProcessor ep = null)
         {
+            if (ep is null)
+            {
+                ep = _ep;
+            }
             PrepareResponse(resp);
-            _ep.Flush();
-            ((DefaultEventProcessor)_ep).WaitUntilInactive();
+            ep.Flush();
+            ((DefaultEventProcessor)ep).WaitUntilInactive();
             return GetLastRequest();
         }
 
@@ -630,9 +660,9 @@ namespace LaunchDarkly.Common.Tests
             return null;
         }
 
-        private JArray FlushAndGetEvents(IResponseBuilder resp)
+        private JArray FlushAndGetEvents(IResponseBuilder resp, IEventProcessor ep = null)
         {
-            return FlushAndGetRequest(resp).BodyAsJson as JArray;
+            return FlushAndGetRequest(resp, ep).BodyAsJson as JArray;
         }
     }
 
