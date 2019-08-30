@@ -22,12 +22,14 @@ namespace LaunchDarkly.Common
         private readonly Timer _flushTimer;
         private readonly Timer _flushUsersTimer;
         private AtomicBoolean _stopped;
+        private AtomicBoolean _offline;
         private AtomicBoolean _inputCapacityExceeded;
 
         internal DefaultEventProcessor(IEventProcessorConfiguration config,
             IUserDeduplicator userDeduplicator, HttpClient httpClient, string eventsUriPath)
         {
             _stopped = new AtomicBoolean(false);
+            _offline = new AtomicBoolean(false);
             _inputCapacityExceeded = new AtomicBoolean(false);
             _messageQueue = new BlockingCollection<IEventMessage>(config.EventCapacity);
             _dispatcher = new EventDispatcher(config, _messageQueue, userDeduplicator, httpClient, eventsUriPath);
@@ -44,6 +46,14 @@ namespace LaunchDarkly.Common
             }
         }
 
+        void IEventProcessor.SetOffline(bool offline)
+        {
+            _offline.GetAndSet(offline);
+            // Note that the offline state is known only to DefaultEventProcessor, not to EventDispatcher. We will
+            // simply avoid sending any flush messages to EventDispatcher if we're offline. EventDispatcher will
+            // never initiate a flush on its own.
+        }
+
         void IEventProcessor.SendEvent(Event eventToLog)
         {
             SubmitMessage(new EventMessage(eventToLog));
@@ -51,7 +61,10 @@ namespace LaunchDarkly.Common
 
         void IEventProcessor.Flush()
         {
-            SubmitMessage(new FlushMessage());
+            if (!_offline.Get())
+            {
+                SubmitMessage(new FlushMessage());
+            }
         }
 
         void IDisposable.Dispose()
@@ -118,7 +131,10 @@ namespace LaunchDarkly.Common
 
         private void DoBackgroundFlush(object StateInfo)
         {
-            SubmitMessage(new FlushMessage());
+            if (!_offline.Get())
+            {
+                SubmitMessage(new FlushMessage());
+            }
         }
 
         private void DoUserKeysFlush(object StateInfo)
@@ -129,11 +145,16 @@ namespace LaunchDarkly.Common
 
     internal class AtomicBoolean
     {
-        internal int _value;
+        internal volatile int _value;
 
         internal AtomicBoolean(bool value)
         {
             _value = value ? 1 : 0;
+        }
+
+        internal bool Get()
+        {
+            return _value != 0;
         }
 
         internal bool GetAndSet(bool newValue)

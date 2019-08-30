@@ -1,6 +1,11 @@
 # Change log
 
-For full release notes for the projects that depend on this project, see their respective changelogs. This file describes changes only to the common code. This project adheres to [Semantic Versioning](http://semver.org).
+All notable changes to `LaunchDarkly.CommonSdk` will be documented in this file. For full release notes for the projects that depend on this project, see their respective changelogs. This file describes changes only to the common code. This project adheres to [Semantic Versioning](http://semver.org).
+
+## [3.1.0] - 2019-08-30
+### Added:
+- `SetOffline` method in `IEventProcessor`/`DefaultEventProcessor`.
+- XML documentation comments are now included in the package for all target frameworks. Previously they were only included for .NET Standard 1.4.
 
 ## [3.0.0] - 2019-08-09
 ### Added:
