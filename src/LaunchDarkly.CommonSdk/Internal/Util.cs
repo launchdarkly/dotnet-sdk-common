@@ -8,16 +8,16 @@ namespace LaunchDarkly.Common
     {
         internal static readonly DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         
-        internal static Dictionary<string, string> GetRequestHeaders(IBaseConfiguration config,
+        internal static Dictionary<string, string> GetRequestHeaders(IHttpRequestConfiguration config,
             ClientEnvironment env)
         {
             return new Dictionary<string, string> {
-                { "Authorization", config.SdkKey },
+                { "Authorization", config.HttpAuthorizationKey },
                 { "User-Agent", env.UserAgentType + "/" + env.VersionString }
             };
         }
 
-        internal static HttpClient MakeHttpClient(IBaseConfiguration config, ClientEnvironment env)
+        internal static HttpClient MakeHttpClient(IHttpRequestConfiguration config, ClientEnvironment env)
         {
             var httpClient = new HttpClient(handler: config.HttpClientHandler, disposeHandler: false);
             foreach (var h in GetRequestHeaders(config, env))
@@ -70,14 +70,14 @@ namespace LaunchDarkly.Common
         }
     }
 
-    internal class HashCodeBuilder
+    internal struct HashCodeBuilder
     {
-        private int value = 0;
-        public int Value => value;
-
+        private int _value;
+        public int Value => _value;
+        
         public HashCodeBuilder With(object o)
         {
-            value = value * 17 + (o == null ? 0 : o.GetHashCode());
+            _value = _value * 17 + (o == null ? 0 : o.GetHashCode());
             return this;
         }
     }

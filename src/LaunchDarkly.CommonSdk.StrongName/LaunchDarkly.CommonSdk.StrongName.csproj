@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Version>2.4.0</Version>
+    <Version>2.5.0-beta2</Version>
     <TargetFrameworks>netstandard1.4;netstandard1.6;netstandard2.0;net45</TargetFrameworks>
     <PackageLicenseUrl>https://raw.githubusercontent.com/launchdarkly/dotnet-sdk-common/master/LICENSE</PackageLicenseUrl>
     <DebugType>portable</DebugType>
@@ -24,6 +24,12 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Net.Http" />
   </ItemGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DocumentationFile>bin\Debug\$(TargetFramework)\LaunchDarkly.CommonSdk.xml</DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DocumentationFile>bin\Release\$(TargetFramework)\LaunchDarkly.CommonSdk.xml</DocumentationFile>
+  </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <AssemblyOriginatorKeyFile>../../LaunchDarkly.CommonSdk.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>
