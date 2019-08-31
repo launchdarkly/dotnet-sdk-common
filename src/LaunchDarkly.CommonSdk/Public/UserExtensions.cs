@@ -8,6 +8,7 @@ namespace LaunchDarkly.Client
 {
     /// <summary>
     /// Extension methods that can be called on a <see cref="User"/> to add to its properties.
+    /// The preferred method is to use <see cref="User.Builder(string)"/> instead.
     /// </summary>
     [Obsolete(ObsoleteMessage)]
     public static class UserExtensions
@@ -16,7 +17,7 @@ namespace LaunchDarkly.Client
             "Use User.Build() and the UserBuilder methods instead; UserExtensions modifies User properties, which will eventually become immutable";
         /// <summary>
         /// Sets the secondary key for a user. This affects
-        /// <a href="https://docs.launchdarkly.com/docs/targeting-users#section-targeting-rules-based-on-user-attributes">feature flag targeting</a>
+        /// <see href="https://docs.launchdarkly.com/docs/targeting-users#section-targeting-rules-based-on-user-attributes">feature flag targeting</see>
         /// as follows: if you have chosen to bucket users by a specific attribute, the secondary key (if set)
         /// is used to further distinguish between users who are otherwise identical according to that attribute.
         /// </summary>
@@ -248,7 +249,7 @@ namespace LaunchDarkly.Client
         }
 
         /// <summary>
-        /// Adds a <c>string</c>-valued custom attribute. When set to one of the
+        /// Adds a <see langword="string"/>-valued custom attribute. When set to one of the
         /// <a href="http://docs.launchdarkly.com/docs/targeting-users#targeting-based-on-user-attributes">built-in
         /// user attribute keys</a>, this custom attribute will be ignored.
         /// </summary>
@@ -263,7 +264,7 @@ namespace LaunchDarkly.Client
         }
 
         /// <summary>
-        /// Adds a <c>bool</c>-valued custom attribute. When set to one of the
+        /// Adds a <see langword="bool"/>-valued custom attribute. When set to one of the
         /// <a href="http://docs.launchdarkly.com/docs/targeting-users#targeting-based-on-user-attributes">built-in
         /// user attribute keys</a>, this custom attribute will be ignored.
         /// </summary>
@@ -278,7 +279,7 @@ namespace LaunchDarkly.Client
         }
 
         /// <summary>
-        /// Adds an <c>int</c>-valued custom attribute. When set to one of the
+        /// Adds an <see langword="int"/>-valued custom attribute. When set to one of the
         /// <a href="http://docs.launchdarkly.com/docs/targeting-users#targeting-based-on-user-attributes">built-in
         /// user attribute keys</a>, this custom attribute will be ignored.
         /// </summary>
@@ -293,7 +294,7 @@ namespace LaunchDarkly.Client
         }
 
         /// <summary>
-        /// Adds a <c>float</c>-valued custom attribute. When set to one of the
+        /// Adds a <see langword="float"/>-valued custom attribute. When set to one of the
         /// <a href="http://docs.launchdarkly.com/docs/targeting-users#targeting-based-on-user-attributes">built-in
         /// user attribute keys</a>, this custom attribute will be ignored.
         /// </summary>
@@ -308,7 +309,7 @@ namespace LaunchDarkly.Client
         }
 
         /// <summary>
-        /// Adds a <c>long</c>-valued custom attribute. When set to one of the
+        /// Adds a <see langword="long"/>-valued custom attribute. When set to one of the
         /// <a href="http://docs.launchdarkly.com/docs/targeting-users#targeting-based-on-user-attributes">built-in
         /// user attribute keys</a>, this custom attribute will be ignored.
         /// </summary>
@@ -368,7 +369,7 @@ namespace LaunchDarkly.Client
         }
 
         /// <summary>
-        /// Adds a <c>string</c>-valued custom attribute, and ensures that the attribute will not
+        /// Adds a <see langword="string"/>-valued custom attribute, and ensures that the attribute will not
         /// be sent back to LaunchDarkly. When set to one of the
         /// <a href="http://docs.launchdarkly.com/docs/targeting-users#targeting-based-on-user-attributes">built-in
         /// user attribute keys</a>, this custom attribute will be ignored.
@@ -384,7 +385,7 @@ namespace LaunchDarkly.Client
         }
 
         /// <summary>
-        /// Adds a <c>bool</c>-valued custom attribute, and ensures that the attribute will not
+        /// Adds a <see langword="bool"/>-valued custom attribute, and ensures that the attribute will not
         /// be sent back to LaunchDarkly. When set to one of the
         /// <a href="http://docs.launchdarkly.com/docs/targeting-users#targeting-based-on-user-attributes">built-in
         /// user attribute keys</a>, this custom attribute will be ignored.
@@ -400,7 +401,7 @@ namespace LaunchDarkly.Client
         }
 
         /// <summary>
-        /// Adds an <c>int</c>-valued custom attribute, and ensures that the attribute will not
+        /// Adds an <see langword="int"/>-valued custom attribute, and ensures that the attribute will not
         /// be sent back to LaunchDarkly. When set to one of the
         /// <a href="http://docs.launchdarkly.com/docs/targeting-users#targeting-based-on-user-attributes">built-in
         /// user attribute keys</a>, this custom attribute will be ignored.
@@ -416,7 +417,7 @@ namespace LaunchDarkly.Client
         }
 
         /// <summary>
-        /// Adds a <c>float</c>-valued custom attribute, and ensures that the attribute will not
+        /// Adds a <see langword="float"/>-valued custom attribute, and ensures that the attribute will not
         /// be sent back to LaunchDarkly. When set to one of the
         /// <a href="http://docs.launchdarkly.com/docs/targeting-users#targeting-based-on-user-attributes">built-in
         /// user attribute keys</a>, this custom attribute will be ignored.
@@ -432,7 +433,7 @@ namespace LaunchDarkly.Client
         }
 
         /// <summary>
-        /// Adds a <c>long</c>-valued custom attribute, and ensures that the attribute will not
+        /// Adds a <see langword="long"/>-valued custom attribute, and ensures that the attribute will not
         /// be sent back to LaunchDarkly. When set to one of the
         /// <a href="http://docs.launchdarkly.com/docs/targeting-users#targeting-based-on-user-attributes">built-in
         /// user attribute keys</a>, this custom attribute will be ignored.

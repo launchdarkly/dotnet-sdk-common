@@ -3,9 +3,12 @@
 namespace LaunchDarkly.Common
 {
     /// <summary>
-    /// Common interface for the Launchdarkly .NET and Xamarin clients. Most client methods are defined
-    /// in the platform-specific client classes.
+    /// Common interface for the Launchdarkly .NET and Xamarin clients.
     /// </summary>
+    /// <remarks>
+    /// This interface will be removed in a future version, since .NET and Xamarin may
+    /// not always have equivalent APIs. Use the specific interfaces for each SDK instead.
+    /// </remarks>
     [Obsolete("This interface will be removed in a future version, since .NET and Xamarin may not always have equivalent APIs. Use the specific interfaces for each SDK instead.")]
     public interface ILdCommonClient : IDisposable
     {
