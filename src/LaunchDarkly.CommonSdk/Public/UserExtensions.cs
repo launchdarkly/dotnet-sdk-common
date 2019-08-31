@@ -14,7 +14,7 @@ namespace LaunchDarkly.Client
     public static class UserExtensions
     {
         private const string ObsoleteMessage =
-            "Use User.Build() and the UserBuilder methods instead; UserExtensions modifies User properties, which will eventually become immutable";
+            "Use User.Builder() and the IUserBuilder methods instead; UserExtensions modifies User properties, which will eventually become immutable";
         /// <summary>
         /// Sets the secondary key for a user. This affects
         /// <see href="https://docs.launchdarkly.com/docs/targeting-users#section-targeting-rules-based-on-user-attributes">feature flag targeting</see>

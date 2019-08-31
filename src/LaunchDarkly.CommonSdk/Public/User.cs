@@ -251,13 +251,13 @@ namespace LaunchDarkly.Client
         }
 
         /// <summary>
-        /// Creates a <see cref="UserBuilder"/> for constructing a user object using a fluent syntax.
+        /// Creates an <see cref="IUserBuilder"/> for constructing a user object using a fluent syntax.
         /// </summary>
         /// <remarks>
         /// <para>
         /// This is the preferred method for building a <see cref="User"/> if you are setting properties
-        /// besides the <see cref="User.Key"/>. The <see cref="UserBuilder"/> has methods for setting
-        /// any number of properties, after which you call <see cref="UserBuilder.Build"/> to get the
+        /// besides the <see cref="User.Key"/>. The <see cref="IUserBuilder"/> has methods for setting
+        /// any number of properties, after which you call <see cref="IUserBuilder.Build"/> to get the
         /// resulting <see cref="User"/> instance.
         /// </para>
         /// <para>
@@ -280,12 +280,12 @@ namespace LaunchDarkly.Client
         }
 
         /// <summary>
-        /// Creates a <see cref="UserBuilder"/> for constructing a user object, with its initial
+        /// Creates an <see cref="IUserBuilder"/> for constructing a user object, with its initial
         /// properties copied from an existeing user.
         /// </summary>
         /// <remarks>
-        /// This is the same as calling <c>User.Build(fromUser.Key)</c> and then calling the
-        /// <see cref="UserBuilder"/> methods to set each of the individual properties from their current
+        /// This is the same as calling <c>User.Builder(fromUser.Key)</c> and then calling the
+        /// <see cref="IUserBuilder"/> methods to set each of the individual properties from their current
         /// values in <c>fromUser</c>. Modifying the builder does not affect the original <see cref="User"/>.
         /// </remarks>
         /// <example>
@@ -405,11 +405,7 @@ namespace LaunchDarkly.Client
             return this;
         }
 
-        /// <summary>
-        /// Tests for equality with another object by comparing all fields of the User.
-        /// </summary>
-        /// <param name="obj"></param>
-        /// <returns>true if the object is a User and all fields are equal</returns>
+        /// <inheritdoc/>
         public override bool Equals(object obj)
         {
             if (obj is User u)
@@ -419,11 +415,7 @@ namespace LaunchDarkly.Client
             return false;
         }
 
-        /// <summary>
-        /// Tests for equality with another User by comparing all fields of the User.
-        /// </summary>
-        /// <param name="u"></param>
-        /// <returns>true if all fields are equal</returns>
+        /// <inheritdoc/>
         public bool Equals(User u)
         {
             if (u == null)
@@ -446,12 +438,7 @@ namespace LaunchDarkly.Client
                     u.PrivateAttributeNames ?? new HashSet<string>());
         }
 
-        /// <summary>
-        /// Computes a hash code for a User. Note that for performance reasons, the Custom and
-        /// PrivateAttributeNames properties are not used in this computation, even though they
-        /// are used in Equals.
-        /// </summary>
-        /// <returns>a hash code</returns>
+        /// <inheritdoc/>
         public override int GetHashCode()
         {
             var hashBuilder = Util.Hash()
