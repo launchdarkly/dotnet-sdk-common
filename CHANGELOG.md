@@ -29,6 +29,10 @@ All notable changes to `LaunchDarkly.CommonSdk` will be documented in this file.
 ### Fixed:
 - No longer assumes that we are overriding the `HttpMessageHandler` (if it is null in the configuration, just use the default `HttpClient` constructor). This is important for Xamarin.
 
+## [2.5.1] - 2019-08-30
+### Fixed:
+- Many improvements to XML documentation comments.
+
 ## [2.5.0] - 2019-08-30
 ### Added:
 - Internal helper types `ValueType` and `ValueTypes`.
