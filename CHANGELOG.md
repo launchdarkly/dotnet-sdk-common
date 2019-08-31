@@ -2,6 +2,10 @@
 
 For full release notes for the projects that depend on this project, see their respective changelogs. This file describes changes only to the common code. This project adheres to [Semantic Versioning](http://semver.org).
 
+## [2.5.1] - 2019-08-30
+### Fixed:
+- Many improvements to XML documentation comments.
+
 ## [2.5.0] - 2019-08-30
 ### Added:
 - Internal helper types `ValueType` and `ValueTypes`.

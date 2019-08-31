@@ -6,6 +6,11 @@ namespace LaunchDarkly.Client
     /// <summary>
     /// Interface for an object that can send or store analytics events.
     /// </summary>
+    /// <remarks>
+    /// By default, the SDK uses its own default implementation that sends events to LaunchDarkly.
+    /// You should not need to implement this interface except for testing purposes, or if you are
+    /// implementing a custom mechanism for event processing.
+    /// </remarks>
     public interface IEventProcessor : IDisposable
     {
         /// <summary>
