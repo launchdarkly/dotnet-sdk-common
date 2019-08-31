@@ -29,6 +29,18 @@ All notable changes to `LaunchDarkly.CommonSdk` will be documented in this file.
 ### Fixed:
 - No longer assumes that we are overriding the `HttpMessageHandler` (if it is null in the configuration, just use the default `HttpClient` constructor). This is important for Xamarin.
 
+## [2.5.0] - 2019-08-30
+### Added:
+- Internal helper types `ValueType` and `ValueTypes`.
+- XML documentation comments are now included in the package for all target frameworks. Previously they were only included for .NET Standard 1.4.
+
+### Changed:
+- Internal types are now sealed.
+- Changed some internal classes to structs for efficiency.
+
+### Deprecated:
+- `IBaseConfiguration` and `ICommonLdClient` interfaces.
+
 ## [2.4.0] - 2019-07-31
 ### Added:
 - `IBaseConfiguration.EventCapacity` and `IBaseConfiguration.EventFlushInterval`.
