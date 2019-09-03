@@ -32,5 +32,7 @@ namespace LaunchDarkly.Common.Tests
         public bool DiagnosticOptOut { get; set; }
         public string WrapperName { get; set; }
         public string WrapperVersion { get; set; }
+        public Dictionary<String, Object> DiagnosticConfigPayload { get; set; } = new Dictionary<String, Object>();
+        public IDiagnosticStore DiagnosticStore { get; set; }
    }
 }

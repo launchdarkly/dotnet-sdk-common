@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 
 namespace LaunchDarkly.Common
@@ -38,48 +39,17 @@ namespace LaunchDarkly.Common
         internal class Init : DiagnosticEvent
         {
             internal readonly DiagnosticSdk Sdk;
-            internal readonly DiagnosticConfiguration Configuration;
+            internal readonly Dictionary<String, Object> Configuration;
             internal readonly DiagnosticPlatform Platform = new DiagnosticPlatform();
 
-            internal Init(long creationDate, DiagnosticId diagnosticId)
+            internal Init(long creationDate, DiagnosticId diagnosticId, Dictionary<String, Object> Configuration)
                 : base("diagnostic-init", creationDate, diagnosticId)
             {
                 Sdk = new DiagnosticSdk();
-                Configuration = new DiagnosticConfiguration();
+                this.Configuration = Configuration;
             }
         }
 
-    }
-
-    class DiagnosticConfiguration {
-        internal readonly Uri BaseURI;
-        internal readonly Uri EventsURI;
-        internal readonly Uri StreamURI;
-        internal readonly int EventsCapacity;
-        internal readonly int ConnectTimeoutMillis;
-        internal readonly int SocketTimeoutMillis;
-        internal readonly long EventsFlushIntervalMillis;
-        internal readonly bool UsingProxy;
-        internal readonly bool UsingProxyAuthenticator;
-        internal readonly bool StreamingDisabled;
-        internal readonly bool UsingRelayDaemon;
-        internal readonly bool offline;
-        internal readonly bool AllAttributesPrivate;
-        internal readonly bool EventReportingDisabled;
-        internal readonly long PollingIntervalMillis;
-        internal readonly long StartWaitMillis;
-        internal readonly int SamplingInterval;
-        internal readonly long ReconnectTimeMillis;
-        internal readonly int UserKeysCapacity;
-        internal readonly long UserKeysFlushIntervalMillis;
-        internal readonly bool InlineUsersInEvents;
-        internal readonly int DiagnosticRecordingIntervalMillis;
-        internal readonly string FeatureStore;
-
-        internal DiagnosticConfiguration()
-        {
-
-        }
     }
 
     class DiagnosticSdk

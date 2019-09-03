@@ -43,10 +43,26 @@ namespace LaunchDarkly.Common
             {
                 _flushUsersTimer = null;
             }
-            if (!config.DiagnosticOptOut)
+            if (!config.DiagnosticOptOut && config.DiagnosticStore != null)
             {
-                _diagnosticTimer = new Timer(DoDiagnosticSend, null, config.DiagnosticRecordingInterval,
-                                             config.DiagnosticRecordingInterval);
+                IDiagnosticStore _diagnosticStore = config.DiagnosticStore;
+
+                DiagnosticEvent _lastStats = _diagnosticStore.LastStats;
+                if (_lastStats != null) {
+                    //SendDiagnosticEvent(_lastStats);
+                }
+
+                if (_diagnosticStore.SendInitEvent) {
+                    DiagnosticEvent _initEvent = new DiagnosticEvent.Init(DateTime.Now.Millisecond, _diagnosticStore.DiagnosticId, config.DiagnosticConfigPayload);
+                    //SendDiagnosticEvent(_initEvent);
+                }
+
+                DateTime _dataSince = _diagnosticStore.DataSince;
+                TimeSpan _initialDelay = config.DiagnosticRecordingInterval.Subtract(DateTime.Now.Subtract(_dataSince));
+                TimeSpan _safeDelay = _initialDelay >= TimeSpan.Zero && _initialDelay <= config.DiagnosticRecordingInterval ? _initialDelay :
+                                      _initialDelay < TimeSpan.Zero ? TimeSpan.Zero :
+                                      config.DiagnosticRecordingInterval;
+                _diagnosticTimer = new Timer(DoDiagnosticSend, null, _safeDelay, config.DiagnosticRecordingInterval);
             }
             else
             {

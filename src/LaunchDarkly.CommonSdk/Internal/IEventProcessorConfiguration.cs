@@ -22,5 +22,7 @@ namespace LaunchDarkly.Common
         TimeSpan UserKeysFlushInterval { get; }
         TimeSpan DiagnosticRecordingInterval { get; }
         bool DiagnosticOptOut { get; }
+        Dictionary<String, Object> DiagnosticConfigPayload { get; }
+        IDiagnosticStore DiagnosticStore { get; }
     }
 }
