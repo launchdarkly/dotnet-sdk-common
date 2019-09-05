@@ -8,11 +8,14 @@ namespace LaunchDarkly.Client
     /// A mutable object that uses the Builder pattern to specify properties for a <see cref="User"/> object.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// Obtain an instance of this class by calling <see cref="User.Builder(string)"/>.
-    /// 
+    /// </para>
+    /// <para>
     /// All of the builder methods for setting a user attribute return a reference to the same builder, so they can be
     /// chained together (see example). Some of them have the return type <see cref="IUserBuilderCanMakeAttributePrivate"/>
-    /// rather than <c>IUserBuilder</c>; those are the user attributes that can be designated as private.
+    /// rather than <see cref="IUserBuilder"/>; those are the user attributes that can be designated as private.
+    /// </para>
     /// </remarks>
     /// <example>
     /// <code>
@@ -26,9 +29,9 @@ namespace LaunchDarkly.Client
     {
         /// <summary>
         /// Creates a <see cref="User"/> based on the properties that have been set on the builder.
-        /// Modifying the builder after this point does not affect the returned <c>User</c>.
+        /// Modifying the builder after this point does not affect the returned <see cref="User"/>.
         /// </summary>
-        /// <returns>the configured <c>User</c> object</returns>
+        /// <returns>the configured <see cref="User"/> object</returns>
         User Build();
 
         /// <summary>
@@ -42,7 +45,7 @@ namespace LaunchDarkly.Client
         /// Sets the secondary key for a user.
         /// </summary>
         /// <remarks>
-        /// This affects <a href="https://docs.launchdarkly.com/docs/targeting-users#section-targeting-rules-based-on-user-attributes">feature flag targeting</a>
+        /// This affects <see href="https://docs.launchdarkly.com/docs/targeting-users#section-targeting-rules-based-on-user-attributes">feature flag targeting</see>
         /// as follows: if you have chosen to bucket users by a specific attribute, the secondary key (if set)
         /// is used to further distinguish between users who are otherwise identical according to that attribute.
         /// </remarks>
@@ -114,8 +117,8 @@ namespace LaunchDarkly.Client
         /// Adds a custom attribute whose value is a JSON value of any kind.
         /// </summary>
         /// <remarks>
-        /// When set to one of the <a href="http://docs.launchdarkly.com/docs/targeting-users#targeting-based-on-user-attributes">built-in
-        /// user attribute keys</a>, this custom attribute will be ignored.
+        /// When set to one of the <see href="http://docs.launchdarkly.com/docs/targeting-users#targeting-based-on-user-attributes">built-in
+        /// user attribute keys</see>, this custom attribute will be ignored.
         /// </remarks>
         /// <param name="name">the key for the custom attribute</param>
         /// <param name="value">the value for the custom attribute</param>
@@ -126,8 +129,8 @@ namespace LaunchDarkly.Client
         /// Adds a custom attribute with a boolean value.
         /// </summary>
         /// <remarks>
-        /// When set to one of the <a href="http://docs.launchdarkly.com/docs/targeting-users#targeting-based-on-user-attributes">built-in
-        /// user attribute keys</a>, this custom attribute will be ignored.
+        /// When set to one of the <see href="http://docs.launchdarkly.com/docs/targeting-users#targeting-based-on-user-attributes">built-in
+        /// user attribute keys</see>, this custom attribute will be ignored.
         /// </remarks>
         /// <param name="name">the key for the custom attribute</param>
         /// <param name="value">the value for the custom attribute</param>
@@ -138,8 +141,8 @@ namespace LaunchDarkly.Client
         /// Adds a custom attribute with a string value.
         /// </summary>
         /// <remarks>
-        /// When set to one of the <a href="http://docs.launchdarkly.com/docs/targeting-users#targeting-based-on-user-attributes">built-in
-        /// user attribute keys</a>, this custom attribute will be ignored.
+        /// When set to one of the <see href="http://docs.launchdarkly.com/docs/targeting-users#targeting-based-on-user-attributes">built-in
+        /// user attribute keys</see>, this custom attribute will be ignored.
         /// </remarks>
         /// <param name="name">the key for the custom attribute</param>
         /// <param name="value">the value for the custom attribute</param>
@@ -150,8 +153,8 @@ namespace LaunchDarkly.Client
         /// Adds a custom attribute with an integer value.
         /// </summary>
         /// <remarks>
-        /// When set to one of the <a href="http://docs.launchdarkly.com/docs/targeting-users#targeting-based-on-user-attributes">built-in
-        /// user attribute keys</a>, this custom attribute will be ignored.
+        /// When set to one of the <see href="http://docs.launchdarkly.com/docs/targeting-users#targeting-based-on-user-attributes">built-in
+        /// user attribute keys</see>, this custom attribute will be ignored.
         /// </remarks>
         /// <param name="name">the key for the custom attribute</param>
         /// <param name="value">the value for the custom attribute</param>
@@ -162,8 +165,8 @@ namespace LaunchDarkly.Client
         /// Adds a custom attribute with a floating-point value.
         /// </summary>
         /// <remarks>
-        /// When set to one of the <a href="http://docs.launchdarkly.com/docs/targeting-users#targeting-based-on-user-attributes">built-in
-        /// user attribute keys</a>, this custom attribute will be ignored.
+        /// When set to one of the <see href="http://docs.launchdarkly.com/docs/targeting-users#targeting-based-on-user-attributes">built-in
+        /// user attribute keys</see>, this custom attribute will be ignored.
         /// </remarks>
         /// <param name="name">the key for the custom attribute</param>
         /// <param name="value">the value for the custom attribute</param>
@@ -201,8 +204,9 @@ namespace LaunchDarkly.Client
         /// </para>
         /// </remarks>
         /// <example>
+        /// <para>
         /// In this example, <c>FirstName</c> and <c>LastName</c> are marked as private, but <c>Country</c> is not.
-        /// 
+        /// </para>
         /// <code>
         ///     var user = User.Builder("user-key")
         ///         .FirstName("Pierre").AsPrivateAttribute()
