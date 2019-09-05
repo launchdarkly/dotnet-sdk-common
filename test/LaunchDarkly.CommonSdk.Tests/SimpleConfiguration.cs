@@ -33,6 +33,6 @@ namespace LaunchDarkly.Common.Tests
         public string WrapperName { get; set; }
         public string WrapperVersion { get; set; }
         public Dictionary<String, Object> DiagnosticConfigPayload { get; set; } = new Dictionary<String, Object>();
-        public IDiagnosticStore DiagnosticStore { get; set; }
+        public IDiagnosticStore DiagnosticStore { get; internal set; }
    }
 }
