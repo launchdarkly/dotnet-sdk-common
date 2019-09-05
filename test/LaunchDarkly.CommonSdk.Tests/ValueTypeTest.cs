@@ -61,6 +61,8 @@ namespace LaunchDarkly.Common.Tests
             // relying on in the .NET SDK, so we must preserve it until the next major version.
             Assert.Equal(2, ValueTypes.Int.ValueFromJson(new JValue(2.25f)));
             Assert.Equal(3, ValueTypes.Int.ValueFromJson(new JValue(2.75f)));
+            Assert.Equal(-2, ValueTypes.Int.ValueFromJson(new JValue(-2.25f)));
+            Assert.Equal(-3, ValueTypes.Int.ValueFromJson(new JValue(-2.75f)));
         }
 
         [Fact]

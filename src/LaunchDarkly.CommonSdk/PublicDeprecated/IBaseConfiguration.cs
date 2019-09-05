@@ -7,6 +7,10 @@ namespace LaunchDarkly.Common
     /// <summary>
     /// Configuration properties that are used by both server-side and client-side SDKs.
     /// </summary>
+    /// <remarks>
+    /// This interface will be removed in a future version, since .NET and Xamarin may
+    /// not always have equivalent APIs. Use the specific interfaces for each SDK instead.
+    /// </remarks>
     [Obsolete("This interface will be removed in a future version, since .NET and Xamarin may not always have equivalent APIs. Use the specific interfaces for each SDK instead.")]
     public interface IBaseConfiguration
     {
@@ -131,25 +135,5 @@ namespace LaunchDarkly.Common
         /// The object to be used for sending HTTP requests. This is exposed for testing purposes.
         /// </summary>
         HttpClientHandler HttpClientHandler { get; }
-
-        /// <summary>
-        /// The time between sending periodic diagnostic events.
-        /// </summary>
-        TimeSpan DiagnosticRecordingInterval { get; }
-
-        /// <summary>
-        /// True if diagnostic events have been disabled
-        /// </summary>
-        bool DiagnosticOptOut { get; }
-
-        /// <summary>
-        /// Name specifying a wrapper library, to be included in request headers.
-        /// </summary>
-        string WrapperName { get; }
-
-        /// <summary>
-        /// Version of a wrapper library, to be included in request headers.
-        /// </summary>
-        string WrapperVersion { get; }
     }
 }

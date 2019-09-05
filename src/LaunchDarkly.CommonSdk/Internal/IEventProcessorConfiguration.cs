@@ -9,6 +9,10 @@ namespace LaunchDarkly.Common
     internal interface IEventProcessorConfiguration
     {
         bool AllAttributesPrivate { get; }
+        Dictionary<String, Object> DiagnosticConfigPayload { get; }
+        bool DiagnosticOptOut { get; }
+        TimeSpan DiagnosticRecordingInterval { get; }
+        IDiagnosticStore DiagnosticStore { get; }
         int EventCapacity { get; }
         TimeSpan EventFlushInterval { get; }
         int EventSamplingInterval { get; }
@@ -20,9 +24,5 @@ namespace LaunchDarkly.Common
         TimeSpan ReconnectTime { get; }
         int UserKeysCapacity { get; }
         TimeSpan UserKeysFlushInterval { get; }
-        TimeSpan DiagnosticRecordingInterval { get; }
-        bool DiagnosticOptOut { get; }
-        Dictionary<String, Object> DiagnosticConfigPayload { get; }
-        IDiagnosticStore DiagnosticStore { get; }
     }
 }

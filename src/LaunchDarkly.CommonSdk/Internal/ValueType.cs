@@ -24,8 +24,8 @@ namespace LaunchDarkly.Common
     /// the behavior defined by Newtonsoft.Json, which rounds to the nearest integer rather than
     /// rounding down. This behavior is preserved for backward compatibility with the .NET SDK.
     /// 
-    /// 3. <c>String</c> and <c>Json</c> can be converted from either an actual <c>null</c> or a
-    /// <c>JToken</c> of type <c>JTokenType.Null</c>.
+    /// 3. <c>String</c> and <c>Json</c> can be converted from either an actual <see langword="null"/> or a
+    /// <see cref="JToken"/> of type <see cref="JTokenType.Null"/>.
     /// 
     /// This is a struct rather than a class so that in any context where we expect a <c>ValueType</c>,
     /// we do not have to worry about it being null.
@@ -76,6 +76,9 @@ namespace LaunchDarkly.Common
             value => value ? JBoolTrue : JBoolFalse
         );
 
+        // Note that Int currently rounds floating-point values to the *nearest* integer,
+        // because that is Newtonsoft.Json's default behavior. That is inconsistent with
+        // most or all of our other strongly-typed SDKs.
         public static readonly ValueType<int> Int = new ValueType<int>(
             json => IsNumeric(json) ? json.Value<int>() : throw new ValueTypeException(),
             value => new JValue(value)

@@ -8,29 +8,40 @@ using Newtonsoft.Json.Linq;
 namespace LaunchDarkly.Client
 {
     /// <summary>
-    /// A <c>User</c> object contains specific attributes of a user browsing your site. These attributes may
-    /// affect the values of feature flags evaluated for that user.
+    /// Attributes of a user for whom you are evaluating feature flags.
     /// </summary>
     /// <remarks>
-    /// The only mandatory property is the <c>Key</c>, which must uniquely identify each user. For authenticated
-    /// users, this may be a username or e-mail address. For anonymous users, this could be an IP address or session ID.
-    ///
-    /// Besides the mandatory <c>Key</c>, <c>User</c> supports two kinds of optional attributes: interpreted
-    /// attributes (e.g. <c>IpAddress</c> and <c>Country</c>) and custom attributes. LaunchDarkly can parse
-    /// interpreted attributes and attach meaning to them. For example, from an <c>IpAddress</c>,
-    /// LaunchDarkly can do a geo IP lookup and determine the user's country.
-    ///
+    /// <para>
+    /// <see cref="User"/> contains any user-specific properties that may be used in feature flag
+    /// configurations to produce different flag variations for different users. You may define
+    /// these properties however you wish.
+    /// </para>
+    /// <para>
+    /// The only mandatory property is the <see cref="Key"/>, which must uniquely identify each user.
+    /// For authenticated users, this may be a username or e-mail address. For anonymous users,
+    /// this could be an IP address or session ID.
+    /// </para>
+    /// <para>
+    /// Besides the mandatory key, <see cref="User"/> supports two kinds of optional attributes:
+    /// interpreted attributes (e.g. <see cref="IPAddress"/> and <see cref="Country"/>) and custom
+    /// attributes. LaunchDarkly can parse interpreted attributes and attach meaning to them. For
+    /// example, from an <see cref="IPAddress"/>, LaunchDarkly can do a geo IP lookup and determine
+    /// the user's country.
+    /// </para>
+    /// <para>
     /// Custom attributes are not parsed by LaunchDarkly. They can be used in custom rules-- for example, a
     /// custom attribute such as "customer_ranking" can be used to launch a feature to the top 10% of users
-    /// on a site.
-    /// 
-    /// Note that the properties of <c>User</c> are mutable. In future versions of the SDK, this class may be
-    /// changed to be immutable. The preferred method of setting user properties is to obtain a builder with
+    /// on a site. Custom attributes can have values of any type supported by JSON.
+    /// </para>
+    /// <para>
+    /// Note that the properties of <see cref="User"/> are mutable. In future versions of the SDK, this
+    /// class will be immutable. The preferred method of setting user properties is to obtain a builder with
     /// <see cref="User.Builder(string)"/>; avoid using the <see cref="UserExtensions"/> methods or an object
     /// initializer expression such as <c>new User("key") { Name = "name" }</c>, since these will no longer work
-    /// once <c>User</c> is immutable. Modifying properties after creating a <c>User</c> could result in
-    /// unexpected inconsistencies in your analytics events, since events that have not yet been delivered
-    /// retain a reference to the original <c>User</c>.
+    /// once <see cref="User"/> is immutable. Modifying properties after creating a <see cref="User"/> could
+    /// result in unexpected inconsistencies in your analytics events, since events that have not yet been
+    /// delivered retain a reference to the original <see cref="User"/>.
+    /// </para>
     /// </remarks>
     public class User : IEquatable<User>
     {
@@ -39,22 +50,27 @@ namespace LaunchDarkly.Client
         /// </summary>
         /// <remarks>
         /// Although there is currently a public setter method for this property, you should avoid modifying
-        /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
-        /// and will be removed in a future version. See remarks on <c>User</c>.
+        /// any properties after the <see cref="User"/> has been created. All of the property setters are deprecated
+        /// and will be removed in a future version. See remarks on <see cref="User"/>.
         /// </remarks>
         [JsonProperty(PropertyName = "key", NullValueHandling = NullValueHandling.Ignore)]
         public string Key { get; set; }
 
         /// <summary>
-        /// The secondary key for a user. This affects
-        /// <a href="https://docs.launchdarkly.com/docs/targeting-users#section-targeting-rules-based-on-user-attributes">feature flag targeting</a>
-        /// as follows: if you have chosen to bucket users by a specific attribute, the secondary key (if set)
-        /// is used to further distinguish between users who are otherwise identical according to that attribute.
+        /// The secondary key for a user, which can be used in
+        /// <see href="https://docs.launchdarkly.com/docs/targeting-users#section-targeting-rules-based-on-user-attributes">feature flag targeting</see>.
         /// </summary>
         /// <remarks>
+        /// <para>
+        /// The use of the secondary key in targeting is as follows: if you have chosen to bucket users by a
+        /// specific attribute, the secondary key (if set) is used to further distinguish between users who are
+        /// otherwise identical according to that attribute.
+        /// </para>
+        /// <para>
         /// Although there is currently a public setter method for this property, you should avoid modifying
-        /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
-        /// and will be removed in a future version. See remarks on <c>User</c>.
+        /// any properties after the <see cref="User"/> has been created. All of the property setters are deprecated
+        /// and will be removed in a future version. See remarks on <see cref="User"/>.
+        /// </para>
         /// </remarks>
         [JsonProperty(PropertyName = "secondary", NullValueHandling = NullValueHandling.Ignore)]
         public string SecondaryKey { get; set; }
@@ -64,8 +80,8 @@ namespace LaunchDarkly.Client
         /// </summary>
         /// <remarks>
         /// Although there is currently a public setter method for this property, you should avoid modifying
-        /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
-        /// and will be removed in a future version. See remarks on <c>User</c>.
+        /// any properties after the <see cref="User"/> has been created. All of the property setters are deprecated
+        /// and will be removed in a future version. See remarks on <see cref="User"/>.
         /// </remarks>
         [Obsolete("use IPAddress")]
         [JsonIgnore]
@@ -86,8 +102,8 @@ namespace LaunchDarkly.Client
         /// </summary>
         /// <remarks>
         /// Although there is currently a public setter method for this property, you should avoid modifying
-        /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
-        /// and will be removed in a future version. See remarks on <c>User</c>.
+        /// any properties after the <see cref="User"/> has been created. All of the property setters are deprecated
+        /// and will be removed in a future version. See remarks on <see cref="User"/>.
         /// </remarks>
         [JsonProperty(PropertyName = "ip", NullValueHandling = NullValueHandling.Ignore)]
         public string IPAddress { get; set; }
@@ -97,8 +113,8 @@ namespace LaunchDarkly.Client
         /// </summary>
         /// <remarks>
         /// Although there is currently a public setter method for this property, you should avoid modifying
-        /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
-        /// and will be removed in a future version. See remarks on <c>User</c>.
+        /// any properties after the <see cref="User"/> has been created. All of the property setters are deprecated
+        /// and will be removed in a future version. See remarks on <see cref="User"/>.
         /// </remarks>
         [JsonProperty(PropertyName = "country", NullValueHandling = NullValueHandling.Ignore)]
         public string Country { get; set; }
@@ -108,8 +124,8 @@ namespace LaunchDarkly.Client
         /// </summary>
         /// <remarks>
         /// Although there is currently a public setter method for this property, you should avoid modifying
-        /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
-        /// and will be removed in a future version. See remarks on <c>User</c>.
+        /// any properties after the <see cref="User"/> has been created. All of the property setters are deprecated
+        /// and will be removed in a future version. See remarks on <see cref="User"/>.
         /// </remarks>
         [JsonProperty(PropertyName = "firstName", NullValueHandling = NullValueHandling.Ignore)]
         public string FirstName { get; set; }
@@ -119,8 +135,8 @@ namespace LaunchDarkly.Client
         /// </summary>
         /// <remarks>
         /// Although there is currently a public setter method for this property, you should avoid modifying
-        /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
-        /// and will be removed in a future version. See remarks on <c>User</c>.
+        /// any properties after the <see cref="User"/> has been created. All of the property setters are deprecated
+        /// and will be removed in a future version. See remarks on <see cref="User"/>.
         /// </remarks>
         [JsonProperty(PropertyName = "lastName", NullValueHandling = NullValueHandling.Ignore)]
         public string LastName { get; set; }
@@ -130,8 +146,8 @@ namespace LaunchDarkly.Client
         /// </summary>
         /// <remarks>
         /// Although there is currently a public setter method for this property, you should avoid modifying
-        /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
-        /// and will be removed in a future version. See remarks on <c>User</c>.
+        /// any properties after the <see cref="User"/> has been created. All of the property setters are deprecated
+        /// and will be removed in a future version. See remarks on <see cref="User"/>.
         /// </remarks>
         [JsonProperty(PropertyName = "name", NullValueHandling = NullValueHandling.Ignore)]
         public string Name { get; set; }
@@ -141,8 +157,8 @@ namespace LaunchDarkly.Client
         /// </summary>
         /// <remarks>
         /// Although there is currently a public setter method for this property, you should avoid modifying
-        /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
-        /// and will be removed in a future version. See remarks on <c>User</c>.
+        /// any properties after the <see cref="User"/> has been created. All of the property setters are deprecated
+        /// and will be removed in a future version. See remarks on <see cref="User"/>.
         /// </remarks>
         [JsonProperty(PropertyName = "avatar", NullValueHandling = NullValueHandling.Ignore)]
         public string Avatar { get; set; }
@@ -152,8 +168,8 @@ namespace LaunchDarkly.Client
         /// </summary>
         /// <remarks>
         /// Although there is currently a public setter method for this property, you should avoid modifying
-        /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
-        /// and will be removed in a future version. See remarks on <c>User</c>.
+        /// any properties after the <see cref="User"/> has been created. All of the property setters are deprecated
+        /// and will be removed in a future version. See remarks on <see cref="User"/>.
         /// </remarks>
         [JsonProperty(PropertyName = "email", NullValueHandling = NullValueHandling.Ignore)]
         public string Email { get; set; }
@@ -163,8 +179,8 @@ namespace LaunchDarkly.Client
         /// </summary>
         /// <remarks>
         /// Although there is currently a public setter method for this property, you should avoid modifying
-        /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
-        /// and will be removed in a future version. See remarks on <c>User</c>.
+        /// any properties after the <see cref="User"/> has been created. All of the property setters are deprecated
+        /// and will be removed in a future version. See remarks on <see cref="User"/>.
         /// </remarks>
         [JsonProperty(PropertyName = "anonymous", NullValueHandling = NullValueHandling.Ignore)]
         public bool? Anonymous { get; set; }
@@ -174,11 +190,14 @@ namespace LaunchDarkly.Client
         /// methods <c>AndCustomAttribute</c> or <c>AndPrivateCustomAttribute</c>.
         /// </summary>
         /// <remarks>
+        /// <para>
         /// Although there is currently a public setter method for this property, you should avoid modifying
-        /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
-        /// and will be removed in a future version. See remarks on <c>User</c>.
-        /// 
+        /// any properties after the <see cref="User"/> has been created. All of the property setters are deprecated
+        /// and will be removed in a future version. See remarks on <see cref="User"/>.
+        /// </para>
+        /// <para>
         /// Also, in a future version this will be changed to an immutable dictionary.
+        /// </para>
         /// </remarks>
         [JsonProperty(PropertyName = "custom", NullValueHandling = NullValueHandling.Ignore)]
         public Dictionary<string, JToken> Custom { get; set; }
@@ -188,11 +207,14 @@ namespace LaunchDarkly.Client
         /// you should use extension methods such as <c>AndPrivateName</c>.
         /// </summary>
         /// <remarks>
+        /// <para>
         /// Although there is currently a public setter method for this property, you should avoid modifying
-        /// any properties after the <c>User</c> has been created. All of the property setters are deprecated
-        /// and will be removed in a future version. See remarks on <c>User</c>.
-        /// 
+        /// any properties after the <see cref="User"/> has been created. All of the property setters are deprecated
+        /// and will be removed in a future version. See remarks on <see cref="User"/>.
+        /// </para>
+        /// <para>
         /// Also, in a future version this will be changed to an immutable set.
+        /// </para>
         /// </remarks>
         [JsonIgnore]
         public ISet<string> PrivateAttributeNames { get; set; }
@@ -229,25 +251,28 @@ namespace LaunchDarkly.Client
         }
 
         /// <summary>
-        /// Creates a <see cref="UserBuilder"/> for constructing a user object using a fluent syntax.
+        /// Creates an <see cref="IUserBuilder"/> for constructing a user object using a fluent syntax.
         /// </summary>
         /// <remarks>
-        /// This is the preferred method for building a <c>User</c> if you are setting properties
-        /// besides the <c>Key</c>. The <c>UserBuilder</c> has methods for setting any number of
-        /// properties, after which you call <see cref="UserBuilder.Build"/> to get the resulting
-        /// <c>User</c> instance.
-        /// 
+        /// <para>
+        /// This is the preferred method for building a <see cref="User"/> if you are setting properties
+        /// besides the <see cref="User.Key"/>. The <see cref="IUserBuilder"/> has methods for setting
+        /// any number of properties, after which you call <see cref="IUserBuilder.Build"/> to get the
+        /// resulting <see cref="User"/> instance.
+        /// </para>
+        /// <para>
         /// This is different from using the extension methods such as
         /// <see cref="UserExtensions.AndName(User, string)"/>, which modify the properties of an
-        /// existing <c>User</c> instance. Those methods are now deprecated, because in a future
-        /// version of the SDK, <c>User</c> will be an immutable object.
+        /// existing <see cref="User"/> instance. Those methods are now deprecated, because in a future
+        /// version of the SDK, <see cref="User"/> will be an immutable object.
+        /// </para>
         /// </remarks>
         /// <example>
         /// <code>
         ///     var user = User.Builder("my-key").Name("Bob").Email("test@example.com").Build();
         /// </code>
         /// </example>
-        /// <param name="key">a <c>string</c> that uniquely identifies a user</param>
+        /// <param name="key">a <see langword="string"/> that uniquely identifies a user</param>
         /// <returns>a builder object</returns>
         public static IUserBuilder Builder(string key)
         {
@@ -255,13 +280,13 @@ namespace LaunchDarkly.Client
         }
 
         /// <summary>
-        /// Creates a <see cref="UserBuilder"/> for constructing a user object, with its initial
+        /// Creates an <see cref="IUserBuilder"/> for constructing a user object, with its initial
         /// properties copied from an existeing user.
         /// </summary>
         /// <remarks>
-        /// This is the same as calling <c>User.Build(fromUser.Key)</c> and then calling the
-        /// <c>UserBuilder</c> methods to set each of the individual properties from their current
-        /// values in <c>fromUser</c>. Modifying the builder does not affect the original <c>User</c>.
+        /// This is the same as calling <c>User.Builder(fromUser.Key)</c> and then calling the
+        /// <see cref="IUserBuilder"/> methods to set each of the individual properties from their current
+        /// values in <c>fromUser</c>. Modifying the builder does not affect the original <see cref="User"/>.
         /// </remarks>
         /// <example>
         /// <code>
@@ -281,10 +306,10 @@ namespace LaunchDarkly.Client
         /// Creates a user with the given key.
         /// </summary>
         /// <remarks>
-        /// In a future version, the <c>User</c> constructors will not be used directly; use a factory method like
-        /// <see cref="WithKey(string)"/>, or the builder pattern with <see cref="Builder(string)"/>.
+        /// In a future version, the <see cref="User"/> constructors will not be used directly; use a
+        /// factory method like <see cref="WithKey(string)"/>, or the builder pattern with <see cref="Builder(string)"/>.
         /// </remarks>
-        /// <param name="key">a <c>string</c> that uniquely identifies a user</param>
+        /// <param name="key">a <see langword="string"/> that uniquely identifies a user</param>
         [Obsolete("use User.WithKey")]
         public User(string key)
         {
@@ -296,8 +321,9 @@ namespace LaunchDarkly.Client
         /// Creates a user by copying all properties from another user.
         /// </summary>
         /// <remarks>
-        /// In a future version, <c>User</c> will be immutable, so there will be no reason to make an exact copy
-        /// of an instance. If you want to make a copy but then change some properties, use <see cref="User.Builder(User)"/>.
+        /// In a future version, <see cref="User"/> will be immutable, so there will be no reason to
+        /// make an exact copy of an instance. If you want to make a copy but then change some properties,
+        /// use <see cref="User.Builder(User)"/>.
         /// </remarks>
         /// <param name="from">the user to copy</param>
         [Obsolete("use User.Builder(User)")]
@@ -346,8 +372,8 @@ namespace LaunchDarkly.Client
         /// <summary>
         /// Creates a user with the given key.
         /// </summary>
-        /// <param name="key">a <c>string</c> that uniquely identifies a user</param>
-        /// <returns>a <c>User</c> instance</returns>
+        /// <param name="key">a <see langword="string"/> that uniquely identifies a user</param>
+        /// <returns>a <see cref="User"/> instance</returns>
         public static User WithKey(string key)
         {
 #pragma warning disable 618
@@ -379,11 +405,7 @@ namespace LaunchDarkly.Client
             return this;
         }
 
-        /// <summary>
-        /// Tests for equality with another object by comparing all fields of the User.
-        /// </summary>
-        /// <param name="obj"></param>
-        /// <returns>true if the object is a User and all fields are equal</returns>
+        /// <inheritdoc/>
         public override bool Equals(object obj)
         {
             if (obj is User u)
@@ -393,11 +415,7 @@ namespace LaunchDarkly.Client
             return false;
         }
 
-        /// <summary>
-        /// Tests for equality with another User by comparing all fields of the User.
-        /// </summary>
-        /// <param name="u"></param>
-        /// <returns>true if all fields are equal</returns>
+        /// <inheritdoc/>
         public bool Equals(User u)
         {
             if (u == null)
@@ -420,12 +438,7 @@ namespace LaunchDarkly.Client
                     u.PrivateAttributeNames ?? new HashSet<string>());
         }
 
-        /// <summary>
-        /// Computes a hash code for a User. Note that for performance reasons, the Custom and
-        /// PrivateAttributeNames properties are not used in this computation, even though they
-        /// are used in Equals.
-        /// </summary>
-        /// <returns>a hash code</returns>
+        /// <inheritdoc/>
         public override int GetHashCode()
         {
             var hashBuilder = Util.Hash()
