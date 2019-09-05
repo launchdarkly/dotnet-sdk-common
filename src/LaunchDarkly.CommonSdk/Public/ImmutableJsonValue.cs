@@ -201,9 +201,35 @@ namespace LaunchDarkly.Client
         /// Converts the value to an integer.
         /// </summary>
         /// <remarks>
-        /// If the value is <see langword="null"/> or is not numeric, this returns zero. It will never throw an exception.
+        /// <para>
+        /// If the value is <see langword="null"/> or is not numeric, this returns zero. It will
+        /// never throw an exception.
+        /// </para>
+        /// <para>
+        /// If the value is a number but not an integer, it will be rounded toward zero (truncated).
+        /// This is consistent with C# casting behavior, and with other LaunchDarkly SDKs that have
+        /// strong typing, but it is different from the default behavior of <see cref="Newtonsoft.Json"/>
+        /// which is to round to the nearest integer.
+        /// </para>
         /// </remarks>
-        public int AsInt => IsNumber ? _value.Value<int>() : 0;
+        public int AsInt
+        {
+            get
+            {
+                if (!(_value is null))
+                {
+                    if (_value.Type == JTokenType.Integer)
+                    {
+                        return _value.Value<int>();
+                    }
+                    if (_value.Type == JTokenType.Float)
+                    {
+                        return (int)_value.Value<float>();
+                    }
+                }
+                return 0;
+            }
+        }
 
         /// <summary>
         /// Converts the value to a float.
@@ -265,11 +291,20 @@ namespace LaunchDarkly.Client
         /// original value cannot be changed.
         /// </summary>
         /// <remarks>
-        /// This is identical to <c>AsJToken().Value&lt;T&gt;()</c>.
+        /// This is identical to <c>AsJToken().Value&lt;T&gt;()</c>, except that if you are
+        /// converting a float to an int the behavior is consistent with <see cref="AsInt"/>
+        /// rather than with the <see cref="JToken"/> conversion behavior.
         /// </remarks>
         /// <typeparam name="T">the desired type</typeparam>
         /// <returns>the value</returns>
-        public T Value<T>() => AsJToken().Value<T>();
+        public T Value<T>()
+        {
+            if (typeof(T) == typeof(int))
+            {
+                return (T)(object)AsInt; // odd double cast is necessary due to C# generics
+            }
+            return AsJToken().Value<T>();
+        }
 
         /// <summary>
         /// Performs a deep-equality comparison using <see cref="JToken.DeepEquals(JToken)"/>.

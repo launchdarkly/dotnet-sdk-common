@@ -73,9 +73,9 @@ namespace LaunchDarkly.Common
             value => ImmutableJsonValue.Of(value)
         );
 
-        // Note that Int currently rounds floating-point values to the *nearest* integer,
-        // because that is Newtonsoft.Json's default behavior. That is inconsistent with
-        // most or all of our other strongly-typed SDKs.
+        // Note that Int rounds floating-point values toward zero (truncate), rather than
+        // using Newtonsoft.Json's default behavior (round to nearest). That is inconsistent
+        // with .NET SDK 2.x, but consistent with most or all of our other strongly-typed SDKs.
         public static readonly ValueType<int> Int = new ValueType<int>(
             json => json.IsNumber ? json.AsInt : throw new ValueTypeException(),
             value => ImmutableJsonValue.Of(value)

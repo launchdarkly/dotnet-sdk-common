@@ -124,6 +124,19 @@ namespace LaunchDarkly.Common.Tests
         }
 
         [Fact]
+        public void FloatValueAsIntRoundsTowardZero()
+        {
+            Assert.Equal(2, ImmutableJsonValue.Of(2.25f).AsInt);
+            Assert.Equal(2, ImmutableJsonValue.Of(2.75f).AsInt);
+            Assert.Equal(-2, ImmutableJsonValue.Of(-2.25f).AsInt);
+            Assert.Equal(-2, ImmutableJsonValue.Of(-2.75f).AsInt);
+            Assert.Equal(2, ImmutableJsonValue.Of(2.25f).Value<int>());
+            Assert.Equal(2, ImmutableJsonValue.Of(2.75f).Value<int>());
+            Assert.Equal(-2, ImmutableJsonValue.Of(-2.25f).Value<int>());
+            Assert.Equal(-2, ImmutableJsonValue.Of(-2.75f).Value<int>());
+        }
+
+        [Fact]
         public void ZeroFloatValuesUseSameInstance()
         {
             Assert.Same(ImmutableJsonValue.Of(0f).InnerValue, ImmutableJsonValue.Of(0f).InnerValue);
