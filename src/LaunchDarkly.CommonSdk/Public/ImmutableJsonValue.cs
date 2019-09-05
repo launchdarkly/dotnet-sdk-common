@@ -125,7 +125,7 @@ namespace LaunchDarkly.Client
         }
 
         /// <summary>
-        /// Initializes an <see cref="ImmutableJsonValue"/ from an integer value.
+        /// Initializes an <see cref="ImmutableJsonValue"/> from an integer value.
         /// </summary>
         /// <param name="value">the initial value</param>
         /// <returns>a struct that wraps the value</returns>
@@ -135,7 +135,7 @@ namespace LaunchDarkly.Client
         }
 
         /// <summary>
-        /// Initializes an <see cref="ImmutableJsonValue"/ from a float value.
+        /// Initializes an <see cref="ImmutableJsonValue"/> from a float value.
         /// </summary>
         /// <param name="value">the initial value</param>
         /// <returns>a struct that wraps the value</returns>
@@ -145,7 +145,7 @@ namespace LaunchDarkly.Client
         }
 
         /// <summary>
-        /// Initializes an <see cref="ImmutableJsonValue"/ from a string value.
+        /// Initializes an <see cref="ImmutableJsonValue"/> from a string value.
         /// </summary>
         /// <param name="value">the initial value</param>
         /// <returns>a struct that wraps the value</returns>
