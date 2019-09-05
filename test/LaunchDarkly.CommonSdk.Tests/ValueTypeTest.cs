@@ -46,8 +46,6 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void IntFromJsonFloatRoundsTowardZero()
         {
-            // This behavior is defined by the Newtonsoft.Json conversion operator that we have been
-            // relying on in the .NET SDK, so we must preserve it until the next major version.
             Assert.Equal(2, ValueTypes.Int.ValueFromJson(ImmutableJsonValue.Of(2.25f)));
             Assert.Equal(2, ValueTypes.Int.ValueFromJson(ImmutableJsonValue.Of(2.75f)));
             Assert.Equal(-2, ValueTypes.Int.ValueFromJson(ImmutableJsonValue.Of(-2.25f)));

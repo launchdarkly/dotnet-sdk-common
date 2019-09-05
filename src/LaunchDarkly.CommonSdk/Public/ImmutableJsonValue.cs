@@ -253,21 +253,40 @@ namespace LaunchDarkly.Client
         /// Returns the value as a <see cref="JArray"/>, deep-copying it so the original value
         /// cannot be changed.
         /// </summary>
+        /// <remarks>
+        /// <para>
+        /// If the value is <see langword="null"/> or is not an array, this returns an empty array.
+        /// It will never throw an exception.
+        /// </para>
+        /// <para>
+        /// This is a method rather than a property to emphasize that it may be an expensive
+        /// operation and will always return a different instanc.
+        /// </para>
+        /// </remarks>
         /// <returns>the array</returns>
-        /// <exception cref="ArgumentException">if the value is not a <see cref="JArray"/></exception>
         public JArray AsJArray()
         {
             if (_value is JArray)
             {
                 return _value.DeepClone() as JArray;
             }
-            throw new ArgumentException();
+            return new JArray();
         }
 
         /// <summary>
         /// Returns the value as a <see cref="JObject"/>, deep-copying it so the original value
         /// cannot be changed.
         /// </summary>
+        /// <remarks>
+        /// <para>
+        /// If the value is <see langword="null"/> or is not a <see cref="JObject"/>, this returns an
+        /// empty object. It will never throw an exception.
+        /// </para>
+        /// <para>
+        /// This is a method rather than a property to emphasize that it may be an expensive
+        /// operation and will always return a different instanc.
+        /// </para>
+        /// </remarks>
         /// <returns>the object</returns>
         /// <exception cref="ArgumentException">if the value is not a <see cref="JObject"/></exception>
         public JObject AsJObject()
@@ -276,13 +295,17 @@ namespace LaunchDarkly.Client
             {
                 return _value.DeepClone() as JObject;
             }
-            throw new ArgumentException();
+            return new JObject();
         }
 
         /// <summary>
         /// Returns the value as a <see cref="JToken"/>, deep-copying any mutable values so the
         /// original value cannot be changed.
         /// </summary>
+        /// <remarks>
+        /// This is a method rather than a property to emphasize that it may be an expensive
+        /// operation.
+        /// </remarks>
         /// <returns>the value</returns>
         public JToken AsJToken() => _value is JContainer ? _value.DeepClone() : _value;
 
@@ -291,19 +314,52 @@ namespace LaunchDarkly.Client
         /// original value cannot be changed.
         /// </summary>
         /// <remarks>
-        /// This is identical to <c>AsJToken().Value&lt;T&gt;()</c>, except that if you are
-        /// converting a float to an int the behavior is consistent with <see cref="AsInt"/>
-        /// rather than with the <see cref="JToken"/> conversion behavior.
+        /// <para>
+        /// This is similar to <c>AsJToken().Value&lt;T&gt;()</c>, but its conversion behavior
+        /// is consistent with the <see cref="ImmutableJsonValue"/> properties like
+        /// <see cref="AsBool"/>, <see cref="AsInt"/>, etc., rather than with the
+        /// <see cref="JToken"/> conversion behavior: specifically, unconvertible values
+        /// will return a default value rather than throwing an exception, and floats are
+        /// rounded toward zero when converted to ints.
+        /// </para>
+        /// <para>
+        /// If you specify a type that this class has no conversion property for, it will
+        /// return the default value of that type (i.e. <see langword="null"/> for classes).
+        /// </para>
         /// </remarks>
         /// <typeparam name="T">the desired type</typeparam>
         /// <returns>the value</returns>
         public T Value<T>()
         {
-            if (typeof(T) == typeof(int))
+            if (typeof(T) == typeof(bool))
             {
-                return (T)(object)AsInt; // odd double cast is necessary due to C# generics
+                return (T)(object)AsBool; // odd double cast is necessary due to C# generics
             }
-            return AsJToken().Value<T>();
+            else if (typeof(T) == typeof(int))
+            {
+                return (T)(object)AsInt;
+            }
+            else if (typeof(T) == typeof(float))
+            {
+                return (T)(object)AsFloat;
+            }
+            else if (typeof(T) == typeof(string))
+            {
+                return (T)(object)AsString;
+            }
+            else if (typeof(T) == typeof(JToken))
+            {
+                return (T)(object)AsJToken();
+            }
+            else if (typeof(T) == typeof(JObject))
+            {
+                return (T)(object)AsJObject();
+            }
+            else if (typeof(T) == typeof(JArray))
+            {
+                return (T)(object)AsJArray();
+            }
+            return default(T);
         }
 
         /// <summary>

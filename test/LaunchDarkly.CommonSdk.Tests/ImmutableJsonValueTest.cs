@@ -25,17 +25,26 @@ namespace LaunchDarkly.Common.Tests
         public void CanGetValueAsBool()
         {
             Assert.True(aTrueBoolValue.AsBool);
+            Assert.True(aTrueBoolValue.Value<bool>());
         }
 
         [Fact]
         public void NonBooleanValueAsBoolIsFalse()
         {
-            Assert.False(ImmutableJsonValue.Null.AsBool);
-            Assert.False(aStringValue.AsBool);
-            Assert.False(anIntValue.AsBool);
-            Assert.False(aFloatValue.AsBool);
-            Assert.False(anArrayValue.AsBool);
-            Assert.False(anObjectValue.AsBool);
+            var values = new ImmutableJsonValue[]
+            {
+                ImmutableJsonValue.Null,
+                aStringValue,
+                anIntValue,
+                aFloatValue,
+                anArrayValue,
+                anObjectValue
+            };
+            foreach (var value in values)
+            {
+                Assert.False(value.AsBool);
+                Assert.False(value.Value<bool>());
+            }
         }
         
         [Fact]
@@ -49,22 +58,29 @@ namespace LaunchDarkly.Common.Tests
         public void CanGetValueAsString()
         {
             Assert.Equal(someString, aStringValue.AsString);
+            Assert.Equal(someString, aStringValue.Value<string>());
         }
 
         [Fact]
         public void NullValueAsStringIsNull()
         {
             Assert.Null(ImmutableJsonValue.Null.AsString);
+            Assert.Null(ImmutableJsonValue.Null.Value<string>());
         }
 
         [Fact]
         public void NonStringValuesAreStringified()
         {
             Assert.Equal(true.ToString(), aTrueBoolValue.AsString);
+            Assert.Equal(true.ToString(), aTrueBoolValue.Value<string>());
             Assert.Equal(someInt.ToString(), anIntValue.AsString);
+            Assert.Equal(someInt.ToString(), anIntValue.Value<string>());
             Assert.Equal(someFloat.ToString(), aFloatValue.AsString);
+            Assert.Equal(someFloat.ToString(), aFloatValue.Value<string>());
             Assert.Equal("[3]", anArrayValue.AsString);
+            Assert.Equal("[3]", anArrayValue.Value<string>());
             Assert.Equal("{\"a\":\"b\"}", anObjectValue.AsString);
+            Assert.Equal("{\"a\":\"b\"}", anObjectValue.Value<string>());
         }
         
         [Fact]
@@ -77,16 +93,26 @@ namespace LaunchDarkly.Common.Tests
         public void CanGetValueAsInt()
         {
             Assert.Equal(someInt, anIntValue.AsInt);
+            Assert.Equal(someInt, anIntValue.Value<int>());
         }
         
         [Fact]
         public void NonNumericValueAsIntIsZero()
         {
-            Assert.Equal(0, ImmutableJsonValue.Null.AsInt);
-            Assert.Equal(0, aTrueBoolValue.AsInt);
-            Assert.Equal(0, aStringValue.AsInt);
-            Assert.Equal(0, aNumericLookingStringValue.AsInt);
-            Assert.Equal(0, anArrayValue.AsInt);
+            var values = new ImmutableJsonValue[]
+            {
+                ImmutableJsonValue.Null,
+                aTrueBoolValue,
+                aStringValue,
+                aNumericLookingStringValue,
+                anArrayValue,
+                anObjectValue
+            };
+            foreach (var value in values)
+            {
+                Assert.Equal(0, value.AsInt);
+                Assert.Equal(0, value.Value<int>());
+            }
         }
 
         [Fact]
@@ -99,28 +125,53 @@ namespace LaunchDarkly.Common.Tests
         public void CanGetValueAsFloat()
         {
             Assert.Equal(someFloat, aFloatValue.AsFloat);
+            Assert.Equal(someFloat, aFloatValue.Value<float>());
         }
 
         [Fact]
         public void CanGetIntValueAsFloat()
         {
             Assert.Equal((float)someInt, anIntValue.AsFloat);
+            Assert.Equal((float)someInt, anIntValue.Value<float>());
         }
 
         [Fact]
         public void NonNumericValueAsFloatIsZero()
         {
-            Assert.Equal(0.0f, ImmutableJsonValue.Null.AsFloat);
-            Assert.Equal(0.0f, aTrueBoolValue.AsFloat);
-            Assert.Equal(0.0f, aStringValue.AsFloat);
-            Assert.Equal(0.0f, aNumericLookingStringValue.AsFloat);
-            Assert.Equal(0.0f, anArrayValue.AsFloat);
+            var values = new ImmutableJsonValue[]
+            {
+                ImmutableJsonValue.Null,
+                aTrueBoolValue,
+                aStringValue,
+                aNumericLookingStringValue,
+                anArrayValue,
+                anObjectValue
+            };
+            foreach (var value in values)
+            {
+                Assert.Equal(0, value.AsFloat);
+                Assert.Equal(0, value.Value<float>());
+            }
         }
         
         [Fact]
         public void CanGetFloatValueAsInt()
         {
             Assert.Equal((int)someFloat, aFloatValue.AsInt);
+            Assert.Equal((int)someFloat, aFloatValue.Value<int>());
+        }
+
+        [Fact]
+        public void IntFromFloatRoundsToNearest()
+        {
+            Assert.Equal(2, ImmutableJsonValue.Of(2.25f).AsInt);
+            Assert.Equal(2, ImmutableJsonValue.Of(2.25f).Value<int>());
+            Assert.Equal(2, ImmutableJsonValue.Of(2.75f).AsInt);
+            Assert.Equal(2, ImmutableJsonValue.Of(2.75f).Value<int>());
+            Assert.Equal(-2, ImmutableJsonValue.Of(-2.25f).AsInt);
+            Assert.Equal(-2, ImmutableJsonValue.Of(-2.25f).Value<int>());
+            Assert.Equal(-2, ImmutableJsonValue.Of(-2.75f).AsInt);
+            Assert.Equal(-2, ImmutableJsonValue.Of(-2.75f).Value<int>());
         }
 
         [Fact]
@@ -151,11 +202,51 @@ namespace LaunchDarkly.Common.Tests
         }
 
         [Fact]
+        public void NonArrayValuesReturnEmptyJArray()
+        {
+            var values = new ImmutableJsonValue[]
+            {
+                ImmutableJsonValue.Null,
+                aTrueBoolValue,
+                anIntValue,
+                aFloatValue,
+                aStringValue,
+                anObjectValue
+            };
+            var emptyArray = new JArray();
+            foreach (var value in values)
+            {
+                TestUtil.AssertJsonEquals(emptyArray, value.AsJArray());
+                TestUtil.AssertJsonEquals(emptyArray, value.Value<JArray>());
+            }
+        }
+
+        [Fact]
         public void CanGetValueAsJObject()
         {
             var o1 = anObjectValue.AsJObject();
             TestUtil.AssertJsonEquals(someObject, o1);
             Assert.NotSame(someObject, o1);
+        }
+
+        [Fact]
+        public void NonObjectValuesReturnEmptyJObject()
+        {
+            var values = new ImmutableJsonValue[]
+            {
+                ImmutableJsonValue.Null,
+                aTrueBoolValue,
+                anIntValue,
+                aFloatValue,
+                aStringValue,
+                anArrayValue
+            };
+            var emptyObject = new JObject();
+            foreach (var value in values)
+            {
+                TestUtil.AssertJsonEquals(emptyObject, value.AsJObject());
+                TestUtil.AssertJsonEquals(emptyObject, value.Value<JObject>());
+            }
         }
 
         [Fact]
