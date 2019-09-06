@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Newtonsoft.Json.Linq;
 using LaunchDarkly.Client;
 
 namespace LaunchDarkly.Common
@@ -52,7 +51,7 @@ namespace LaunchDarkly.Common
             }
         }
 
-        internal void IncrementCounter(string key, int? variation, int? version, JToken flagValue, JToken defaultVal)
+        internal void IncrementCounter(string key, int? variation, int? version, ImmutableJsonValue flagValue, ImmutableJsonValue defaultVal)
         {
             EventsCounterKey counterKey = new EventsCounterKey(key, version, variation);
             if (Counters.TryGetValue(counterKey, out EventsCounterValue value))
@@ -111,10 +110,10 @@ namespace LaunchDarkly.Common
     internal sealed class EventsCounterValue
     {
         internal int Count;
-        internal readonly JToken FlagValue;
-        internal readonly JToken Default;
+        internal readonly ImmutableJsonValue FlagValue;
+        internal readonly ImmutableJsonValue Default;
 
-        internal EventsCounterValue(int count, JToken flagValue, JToken defaultVal)
+        internal EventsCounterValue(int count, ImmutableJsonValue flagValue, ImmutableJsonValue defaultVal)
         {
             Count = count;
             FlagValue = flagValue;

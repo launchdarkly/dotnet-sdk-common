@@ -197,15 +197,7 @@ namespace LaunchDarkly.Common.Tests
         {
             Assert.Same(ImmutableJsonValue.Of(0f).InnerValue, ImmutableJsonValue.Of(0f).InnerValue);
         }
-
-        [Fact]
-        public void CanGetValueAsJArray()
-        {
-            var a1 = anArrayValue.AsJArray();
-            TestUtil.AssertJsonEquals(someArray, a1);
-            Assert.NotSame(someArray, a1); // it's been deep-copied
-        }
-
+        
         [Fact]
         public void CanGetValuesAsList()
         {
@@ -248,7 +240,7 @@ namespace LaunchDarkly.Common.Tests
         }
 
         [Fact]
-        public void NonArrayValuesReturnEmptyJArrayOrList()
+        public void NonArrayValuesReturnEmptyOrList()
         {
             var values = new ImmutableJsonValue[]
             {
@@ -262,9 +254,6 @@ namespace LaunchDarkly.Common.Tests
             var emptyArray = new JArray();
             foreach (var value in values)
             {
-                TestUtil.AssertJsonEquals(emptyArray, value.AsJArray());
-                TestUtil.AssertJsonEquals(emptyArray, value.Value<JArray>());
-
                 var emptyList = value.AsList<bool>();
                 Assert.Equal(0, emptyList.Count);
                 Assert.Throws<IndexOutOfRangeException>(() => emptyList[0]);
@@ -274,15 +263,7 @@ namespace LaunchDarkly.Common.Tests
                 }
             }
         }
-
-        [Fact]
-        public void CanGetValueAsJObject()
-        {
-            var o1 = anObjectValue.AsJObject();
-            TestUtil.AssertJsonEquals(someObject, o1);
-            Assert.NotSame(someObject, o1);
-        }
-
+        
         [Fact]
         public void CanGetValueAsDictionary()
         {
@@ -327,7 +308,7 @@ namespace LaunchDarkly.Common.Tests
         }
 
         [Fact]
-        public void NonObjectValuesReturnEmptyJObjectOrDictionary()
+        public void NonObjectValuesReturnEmptyDictionary()
         {
             var values = new ImmutableJsonValue[]
             {
@@ -341,9 +322,6 @@ namespace LaunchDarkly.Common.Tests
             var emptyObject = new JObject();
             foreach (var value in values)
             {
-                TestUtil.AssertJsonEquals(emptyObject, value.AsJObject());
-                TestUtil.AssertJsonEquals(emptyObject, value.Value<JObject>());
-
                 var emptyDict = value.AsDictionary<bool>();
                 Assert.Equal(0, emptyDict.Count);
                 Assert.False(emptyDict.ContainsKey("1"));
@@ -357,49 +335,19 @@ namespace LaunchDarkly.Common.Tests
                 Assert.Equal(new bool[0], emptyDict.Values);
             }
         }
-
-        [Fact]
-        public void ValueAsJTokenUsesSameObjectForPrimitiveType()
-        {
-            var simpleValue0 = new JValue(3);
-            var v = ImmutableJsonValue.FromJToken(simpleValue0);
-            var simpleValue1 = v.AsJToken();
-            Assert.Same(simpleValue0, simpleValue1);
-        }
-
-        [Fact]
-        public void ValueAsJTokenCopiesValueForArray()
-        {
-            var a0 = new JArray() { new JValue(3) };
-            var v = ImmutableJsonValue.FromJToken(a0);
-            var a1 = v.AsJToken();
-            TestUtil.AssertJsonEquals(a0, a1);
-            Assert.NotSame(a0, a1);
-        }
-
-        [Fact]
-        public void ValueAsJTokenCopiesValueForObject()
-        {
-            var o0 = new JObject() { { "a", new JValue("b") } };
-            var v = ImmutableJsonValue.FromJToken(o0);
-            var o1 = v.AsJToken();
-            TestUtil.AssertJsonEquals(o0, o1);
-            Assert.NotSame(o0, o1);
-        }
-
+        
         [Fact]
         public void EqualityUsesDeepEqual()
         {
-            var o0 = new JObject() { { "a", new JValue("b") } };
-            var o1 = new JObject() { { "a", new JValue("b") } };
-            Assert.Equal(ImmutableJsonValue.FromJToken(o0), ImmutableJsonValue.FromJToken(o1));
+            var o0 = ImmutableJsonValue.FromDictionary(new Dictionary<string, string> { { "a", "b" } });
+            var o1 = ImmutableJsonValue.FromDictionary(new Dictionary<string, string> { { "a", "b" } });
+            Assert.Equal(o0, o1);
         }
 
         [Fact]
         public void TestJsonSerialization()
         {
-            var o = new JObject() { { "a", new JValue("b") } };
-            var v = ImmutableJsonValue.FromJToken(o);
+            var v = ImmutableJsonValue.FromDictionary(new Dictionary<string, string> { { "a", "b" } });
             var json = JsonConvert.SerializeObject(v);
             Assert.Equal("{\"a\":\"b\"}", json);
         }
@@ -416,14 +364,14 @@ namespace LaunchDarkly.Common.Tests
             var json = "{\"a\":\"b\"}";
             var v = JsonConvert.DeserializeObject<ImmutableJsonValue>(json);
             var o = new JObject() { { "a", new JValue("b") } };
-            TestUtil.AssertJsonEquals(o, v.AsJToken());
+            TestUtil.AssertJsonEquals(o, v.InnerValue);
         }
 
         [Fact]
         public void TestJsonDeserializationOfNull()
         {
             var v = JsonConvert.DeserializeObject<ImmutableJsonValue>("null");
-            Assert.Null(v.AsJToken());
+            Assert.Null(v.InnerValue);
         }
 
         [Fact]
