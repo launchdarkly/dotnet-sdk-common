@@ -5,34 +5,55 @@ using System.Net.Http;
 namespace LaunchDarkly.Common.Tests
 {
     // Used in unit tests of common code - a minimal implementation of our configuration interfaces.
-    public class SimpleConfiguration :
+    class SimpleConfiguration :
         IEventProcessorConfiguration, IHttpRequestConfiguration, IStreamManagerConfiguration
     {
-        public string SdkKey { get; set; } = "SDK_KEY";
-        public string HttpAuthorizationKey => SdkKey;
-        public Uri BaseUri { get; set; }
-        public Uri EventsUri { get; set; }
-        public Uri StreamUri { get; set; }
-        public bool Offline { get; set; }
-        public TimeSpan ReadTimeout { get; set; }
-        public TimeSpan ReconnectTime { get; set;  }
-        public int EventCapacity { get; set; } = 1000;
-        public int EventQueueCapacity => EventCapacity;
-        public TimeSpan EventFlushInterval { get; set; }
-        public TimeSpan EventQueueFrequency => EventFlushInterval;
-        public int EventSamplingInterval { get; set; }
-        public bool AllAttributesPrivate { get; set; }
-        public ISet<string> PrivateAttributeNames { get; set; } = new HashSet<string>();
-        public int UserKeysCapacity { get; set; } = 1000;
-        public TimeSpan UserKeysFlushInterval { get; set; }
-        public bool InlineUsersInEvents { get; set; }
-        public TimeSpan HttpClientTimeout { get; set; } = TimeSpan.FromSeconds(30);
-        public HttpClientHandler HttpClientHandler { get; set; } = new HttpClientHandler();
-        public TimeSpan DiagnosticRecordingInterval { get; set; }
-        public bool DiagnosticOptOut { get; set; }
-        public string WrapperName { get; set; }
-        public string WrapperVersion { get; set; }
-        public Dictionary<String, Object> DiagnosticConfigPayload { get; set; } = new Dictionary<String, Object>();
-        public IDiagnosticStore DiagnosticStore { get; internal set; }
+        internal string SdkKey { get; set; } = "SDK_KEY";
+        internal Uri BaseUri { get; set; }
+        internal Uri EventsUri { get; set; }
+        internal Uri StreamUri { get; set; }
+        internal bool Offline { get; set; }
+        internal TimeSpan ReadTimeout { get; set; }
+        internal TimeSpan ReconnectTime { get; set;  }
+        internal int EventCapacity { get; set; } = 1000;
+        internal TimeSpan EventFlushInterval { get; set; }
+        internal int EventSamplingInterval { get; set; }
+        internal bool AllAttributesPrivate { get; set; }
+        internal ISet<string> PrivateAttributeNames { get; set; } = new HashSet<string>();
+        internal int UserKeysCapacity { get; set; } = 1000;
+        internal TimeSpan UserKeysFlushInterval { get; set; }
+        internal bool InlineUsersInEvents { get; set; }
+        internal TimeSpan HttpClientTimeout { get; set; } = TimeSpan.FromSeconds(30);
+        internal HttpClientHandler HttpClientHandler { get; set; } = new HttpClientHandler();
+        internal TimeSpan DiagnosticRecordingInterval { get; set; }
+        internal bool DiagnosticOptOut { get; set; }
+        internal string WrapperName { get; set; }
+        internal string WrapperVersion { get; set; }
+        internal Dictionary<String, Object> DiagnosticConfigPayload { get; set; } = new Dictionary<String, Object>();
+        internal IDiagnosticStore DiagnosticStore { get; set; }
+        
+        string IHttpRequestConfiguration.HttpAuthorizationKey => SdkKey;
+        Uri IEventProcessorConfiguration.EventsUri => EventsUri;
+        TimeSpan IStreamManagerConfiguration.ReadTimeout => ReadTimeout;
+        TimeSpan IStreamManagerConfiguration.ReconnectTime => ReconnectTime;
+        TimeSpan IEventProcessorConfiguration.ReadTimeout => ReadTimeout;
+        TimeSpan IEventProcessorConfiguration.ReconnectTime => ReconnectTime;
+        int IEventProcessorConfiguration.EventCapacity => EventCapacity;
+        TimeSpan IEventProcessorConfiguration.EventFlushInterval => EventFlushInterval;
+        int IEventProcessorConfiguration.EventSamplingInterval => EventSamplingInterval;
+        bool IEventProcessorConfiguration.AllAttributesPrivate => AllAttributesPrivate;
+        ISet<string> IEventProcessorConfiguration.PrivateAttributeNames => PrivateAttributeNames;
+        int IEventProcessorConfiguration.UserKeysCapacity => UserKeysCapacity;
+        TimeSpan IEventProcessorConfiguration.UserKeysFlushInterval => UserKeysFlushInterval;
+        bool IEventProcessorConfiguration.InlineUsersInEvents => InlineUsersInEvents;
+        TimeSpan IStreamManagerConfiguration.HttpClientTimeout => HttpClientTimeout;
+        TimeSpan IEventProcessorConfiguration.HttpClientTimeout => HttpClientTimeout;
+        HttpClientHandler IHttpRequestConfiguration.HttpClientHandler => HttpClientHandler;
+        TimeSpan IEventProcessorConfiguration.DiagnosticRecordingInterval => DiagnosticRecordingInterval;
+        bool IEventProcessorConfiguration.DiagnosticOptOut => DiagnosticOptOut;
+        string IHttpRequestConfiguration.WrapperName => WrapperName;
+        string IHttpRequestConfiguration.WrapperVersion => WrapperVersion;
+        Dictionary<String, Object> IEventProcessorConfiguration.DiagnosticConfigPayload => DiagnosticConfigPayload;
+        IDiagnosticStore IEventProcessorConfiguration.DiagnosticStore => DiagnosticStore;
    }
 }
