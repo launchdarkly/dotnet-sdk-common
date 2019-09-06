@@ -53,7 +53,7 @@ namespace LaunchDarkly.Client
     /// some of those types (object and array) are mutable. In contexts where it is
     /// important for data to remain immutable after it is created, these values are
     /// represented with <see cref="ImmutableJsonValue"/> instead. It is easily convertible
-    /// to primitive types and also to <see cref="Newtonsoft.Json"/> types.
+    /// to primitive types and array/dictionary structures.
     /// </para>
     /// </remarks>
     [JsonConverter(typeof(ImmutableJsonValueSerializer))]
@@ -135,27 +135,7 @@ namespace LaunchDarkly.Client
             }
             return value;
         }
-
-        /// <summary>
-        /// Initializes an <see cref="ImmutableJsonValue"/> from an arbitrary JSON value.
-        /// </summary>
-        /// <remarks>
-        /// <para>
-        /// If the value is of a mutable type (object or array), it is copied.
-        /// </para>
-        /// <para>
-        /// For primitive value types, it is simpler to call the <c>Of</c> methods. This method is only
-        /// useful if you already have a <see cref="JToken"/>.
-        /// </para>
-        /// </remarks>
-        /// <param name="value">the initial value</param>
-        /// <returns>a struct that wraps the value</returns>
-        public static ImmutableJsonValue FromJToken(JToken value)
-        {
-            return new ImmutableJsonValue(value is JContainer ? value.DeepClone() :
-                NormalizePrimitives(value));
-        }
-
+        
         /// <summary>
         /// Initializes an <see cref="ImmutableJsonValue"/> from a boolean value.
         /// </summary>
@@ -254,7 +234,7 @@ namespace LaunchDarkly.Client
         /// <param name="dictionary">a dictionary of strings to booleans</param>
         /// <returns>a struct representing a JSON object</returns>
         public static ImmutableJsonValue FromDictionary(IReadOnlyDictionary<string, bool> dictionary) =>
-            FromDictionary(dictionary, JValueFromBool);
+            FromDictionaryInternal(dictionary, JValueFromBool);
 
         /// <summary>
         /// Initializes an <see cref="ImmutableJsonValue"/> as a JSON object, from a dictionary
@@ -263,7 +243,7 @@ namespace LaunchDarkly.Client
         /// <param name="dictionary">a dictionary of strings to ints</param>
         /// <returns>a struct representing a JSON object</returns>
         public static ImmutableJsonValue FromDictionary(IReadOnlyDictionary<string, int> dictionary) =>
-            FromDictionary(dictionary, JValueFromInt);
+            FromDictionaryInternal(dictionary, JValueFromInt);
 
         /// <summary>
         /// Initializes an <see cref="ImmutableJsonValue"/> as a JSON object, from a dictionary
@@ -272,7 +252,7 @@ namespace LaunchDarkly.Client
         /// <param name="dictionary">a dictionary of strings to floats</param>
         /// <returns>a struct representing a JSON object</returns>
         public static ImmutableJsonValue FromDictionary(IReadOnlyDictionary<string, float> dictionary) =>
-            FromDictionary(dictionary, JValueFromFloat);
+            FromDictionaryInternal(dictionary, JValueFromFloat);
 
         /// <summary>
         /// Initializes an <see cref="ImmutableJsonValue"/> as a JSON object, from a dictionary
@@ -281,7 +261,7 @@ namespace LaunchDarkly.Client
         /// <param name="dictionary">a dictionary of strings to strings</param>
         /// <returns>a struct representing a JSON object</returns>
         public static ImmutableJsonValue FromDictionary(IReadOnlyDictionary<string, string> dictionary) =>
-            FromDictionary(dictionary, JValueFromString);
+            FromDictionaryInternal(dictionary, JValueFromString);
 
         /// <summary>
         /// Initializes an <see cref="ImmutableJsonValue"/> as a JSON object, from a dictionary
@@ -290,9 +270,9 @@ namespace LaunchDarkly.Client
         /// <param name="dictionary">a dictionary of strings to JSON values</param>
         /// <returns>a struct representing a JSON object</returns>
         public static ImmutableJsonValue FromDictionary(IReadOnlyDictionary<string, ImmutableJsonValue> dictionary) =>
-            FromDictionary(dictionary, v => v.InnerValue);
+            FromDictionaryInternal(dictionary, v => v.InnerValue);
 
-        private static ImmutableJsonValue FromDictionary<T>(IReadOnlyDictionary<string, T> dictionary,
+        private static ImmutableJsonValue FromDictionaryInternal<T>(IReadOnlyDictionary<string, T> dictionary,
             Func<T, JToken> convert)
         {
             var o = new JObject();
@@ -461,86 +441,19 @@ namespace LaunchDarkly.Client
             }
             return new ImmutableJsonObjectConverter<T>(null, null);
         }
-        
-        /// <summary>
-        /// Returns the value as a <see cref="JArray"/>, deep-copying it so the original value
-        /// cannot be changed.
-        /// </summary>
-        /// <remarks>
-        /// <para>
-        /// If the value is <see langword="null"/> or is not an array, this returns an empty array.
-        /// It will never throw an exception.
-        /// </para>
-        /// <para>
-        /// This is a method rather than a property to emphasize that it may be an expensive
-        /// operation and will always return a different instanc.
-        /// </para>
-        /// </remarks>
-        /// <returns>the array</returns>
-        public JArray AsJArray()
-        {
-            if (_value is JArray)
-            {
-                return _value.DeepClone() as JArray;
-            }
-            return new JArray();
-        }
 
         /// <summary>
-        /// Returns the value as a <see cref="JObject"/>, deep-copying it so the original value
-        /// cannot be changed.
+        /// Converts the value to the desired type.
         /// </summary>
         /// <remarks>
         /// <para>
-        /// If the value is <see langword="null"/> or is not a <see cref="JObject"/>, this returns an
-        /// empty object. It will never throw an exception.
-        /// </para>
-        /// <para>
-        /// This is a method rather than a property to emphasize that it may be an expensive
-        /// operation and will always return a different instanc.
-        /// </para>
-        /// </remarks>
-        /// <returns>the object</returns>
-        /// <exception cref="ArgumentException">if the value is not a <see cref="JObject"/></exception>
-        public JObject AsJObject()
-        {
-            if (_value is JObject)
-            {
-                return _value.DeepClone() as JObject;
-            }
-            return new JObject();
-        }
-
-        /// <summary>
-        /// Returns the value as a <see cref="JToken"/>, deep-copying any mutable values so the
-        /// original value cannot be changed.
-        /// </summary>
-        /// <remarks>
-        /// This is a method rather than a property to emphasize that it may be an expensive
-        /// operation.
-        /// </remarks>
-        /// <returns>the value</returns>
-        public JToken AsJToken() => _value is JContainer ? _value.DeepClone() : _value;
-
-        /// <summary>
-        /// Converts the value to the desired type, deep-copying any mutable values so the
-        /// original value cannot be changed.
-        /// </summary>
-        /// <remarks>
-        /// <para>
-        /// This is similar to <c>AsJToken().Value&lt;T&gt;()</c>, but its conversion behavior
-        /// is consistent with the <see cref="ImmutableJsonValue"/> properties like
-        /// <see cref="AsBool"/>, <see cref="AsInt"/>, etc., rather than with the
-        /// <see cref="JToken"/> conversion behavior: specifically, unconvertible values
-        /// will return a default value rather than throwing an exception, and floats are
-        /// rounded toward zero when converted to ints.
-        /// </para>
-        /// <para>
-        /// If the type parameter is <see cref="ImmutableJsonValue"/>, the same instance is returned.
-        /// </para>
-        /// <para>
-        /// If you specify a type that this class has no conversion property for, it will
-        /// return the default value of that type (i.e. <see langword="null"/> for classes).
+        /// This method only works for primitive types: the type parameter can only be
+        /// <see langword="bool"/>, <see langword="int"/>, <see langword="long"/>,
+        /// <see langword="float"/>, <see langword="double"/>, or <see langword="string"/>
+        /// (or <see cref="ImmutableJsonValue"/>, which returns the value unchanged. Type
+        /// conversion behavior is consistent with the <see cref="ImmutableJsonValue"/>
+        /// properties like <see cref="AsBool"/>, <see cref="AsInt"/>, etc. Any type that
+        /// cannot be converted will return <c>default(T)</c> rather than throwing an exception.
         /// </para>
         /// </remarks>
         /// <typeparam name="T">the desired type</typeparam>
@@ -551,29 +464,17 @@ namespace LaunchDarkly.Client
             {
                 return (T)(object)AsBool; // odd double cast is necessary due to C# generics
             }
-            else if (typeof(T) == typeof(int))
+            else if (typeof(T) == typeof(int) || typeof(T) == typeof(long))
             {
                 return (T)(object)AsInt;
             }
-            else if (typeof(T) == typeof(float))
+            else if (typeof(T) == typeof(float) || typeof(T) == typeof(double))
             {
                 return (T)(object)AsFloat;
             }
             else if (typeof(T) == typeof(string))
             {
                 return (T)(object)AsString;
-            }
-            else if (typeof(T) == typeof(JToken))
-            {
-                return (T)(object)AsJToken();
-            }
-            else if (typeof(T) == typeof(JObject))
-            {
-                return (T)(object)AsJObject();
-            }
-            else if (typeof(T) == typeof(JArray))
-            {
-                return (T)(object)AsJArray();
             }
             else if (typeof(T) == typeof(ImmutableJsonValue))
             {
@@ -644,8 +545,6 @@ namespace LaunchDarkly.Client
 
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
-            // Note that we use FromSafeValue here instead of calling FromJToken,
-            // because we do not need to do a deep copy of the newly-parsed value.
             return ImmutableJsonValue.FromSafeValue(JToken.Load(reader));
         }
 

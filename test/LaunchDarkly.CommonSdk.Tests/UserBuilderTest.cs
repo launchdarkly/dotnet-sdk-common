@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using LaunchDarkly.Client;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Xunit;
 
 namespace LaunchDarkly.Common.Tests
@@ -168,8 +167,8 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void BuilderCanSetJsonCustomAttribute()
         {
-            var value = new JArray(new List<JToken>() { new JValue(true), new JValue(1.5) });
-            TestCustomAttribute<JToken>(value, (b, n, v) => b.Custom(n, ImmutableJsonValue.FromJToken(v)));
+            var value = ImmutableJsonValue.FromValues(new int[] { 1, 2 });
+            TestCustomAttribute<ImmutableJsonValue>(value, (b, n, v) => b.Custom(n, v));
         }
 
         [Fact]
@@ -196,28 +195,6 @@ namespace LaunchDarkly.Common.Tests
             TestCustomAttribute<float>(1.5f, (b, n, v) => b.Custom(n, v));
         }
         
-        [Fact]
-        public void CustomBoolAttributeUsesStaticInstancesForTrueAndFalse()
-        {
-            var attr = "ok";
-            var t0 = User.Builder(key).Custom(attr, true).Build();
-            var t1 = User.Builder(key).Custom(attr, true).Build();
-            var f0 = User.Builder(key).Custom(attr, false).Build();
-            var f1 = User.Builder(key).Custom(attr, false).Build();
-            Assert.Same(t0.Custom[attr].AsJToken(), t1.Custom[attr].AsJToken());
-            Assert.Same(f0.Custom[attr].AsJToken(), f1.Custom[attr].AsJToken());
-        }
-
-        [Fact]
-        public void ModifyingOriginalJsonValueDoesNotModifyAttributeOfExistingUser()
-        {
-            var mutableJson = new JArray() { new JValue("mauve") };
-            var u = User.Builder(key).Custom("colors", ImmutableJsonValue.FromJToken(mutableJson)).Build();
-            mutableJson.Add(new JValue("puce"));
-            TestUtil.AssertJsonEquals(new JArray() { new JValue("mauve") },
-                u.Custom["colors"].AsJArray());
-        }
-
         [Fact]
         public void TestUserEqualityWithBuilderFromUser()
         {

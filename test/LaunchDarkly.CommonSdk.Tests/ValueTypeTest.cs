@@ -1,5 +1,5 @@
 ﻿using LaunchDarkly.Client;
-using Newtonsoft.Json.Linq;
+using System.Collections.Generic;
 using Xunit;
 
 namespace LaunchDarkly.Common.Tests
@@ -14,8 +14,8 @@ namespace LaunchDarkly.Common.Tests
         private static readonly ImmutableJsonValue jsonInt = ImmutableJsonValue.Of(jsonIntValue);
         private static readonly ImmutableJsonValue jsonFloat = ImmutableJsonValue.Of(jsonFloatValue);
         private static readonly ImmutableJsonValue jsonString = ImmutableJsonValue.Of(jsonStringValue);
-        private static readonly ImmutableJsonValue jsonArray = ImmutableJsonValue.FromJToken(new JArray { new JValue("item") });
-        private static readonly ImmutableJsonValue jsonObject = ImmutableJsonValue.FromJToken(new JObject { { "a", new JValue("b") } });
+        private static readonly ImmutableJsonValue jsonArray = ImmutableJsonValue.FromValues(new string[] { "item" });
+        private static readonly ImmutableJsonValue jsonObject = ImmutableJsonValue.FromDictionary(new Dictionary<string, string> { { "a", "b" } });
 
         [Fact]
         public void BoolFromJson()
@@ -149,8 +149,7 @@ namespace LaunchDarkly.Common.Tests
                 try
                 {
                     type.ValueFromJson(v);
-                    Assert.True(false, "converting from " + (v.IsNull ? "null" : v.AsJToken().Type.ToString()) +
-                        " should throw exception");
+                    Assert.True(false, "converting from " + v.Type + " should throw exception");
                 }
                 catch (ValueTypeException) { }
             }

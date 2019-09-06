@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Collections.Immutable;
-using Newtonsoft.Json.Linq;
+﻿using System.Collections.Immutable;
 
 namespace LaunchDarkly.Client
 {
@@ -221,11 +219,6 @@ namespace LaunchDarkly.Client
 
     internal class UserBuilder : IUserBuilder
     {
-        // These constants are a minor optimization to reduce the number of JValue instances
-        // when converting from a bool.
-        private static readonly JValue TrueValue = new JValue(true);
-        private static readonly JValue FalseValue = new JValue(false);
-
         private string _key;
         private string _secondaryKey;
         private string _ipAddress;

@@ -1,6 +1,4 @@
 ﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using LaunchDarkly.Client;
 
@@ -88,13 +86,13 @@ namespace LaunchDarkly.Common
             _result.Key = _user.Key;
             _result.SecondaryKey = _user.SecondaryKey;
             _result.Anonymous = _user.Anonymous ? (bool?)true : null;
-            _result.IPAddress = CheckPrivateAttr("ip", _user.IPAddress);
-            _result.Country = CheckPrivateAttr("country", _user.Country);
-            _result.FirstName = CheckPrivateAttr("firstName", _user.FirstName);
-            _result.LastName = CheckPrivateAttr("lastName", _user.LastName);
-            _result.Name = CheckPrivateAttr("name", _user.Name);
-            _result.Avatar = CheckPrivateAttr("avatar", _user.Avatar);
-            _result.Email = CheckPrivateAttr("email", _user.Email);
+            _result.IPAddress = StringAttrIfNotPrivate("ip", _user.IPAddress);
+            _result.Country = StringAttrIfNotPrivate("country", _user.Country);
+            _result.FirstName = StringAttrIfNotPrivate("firstName", _user.FirstName);
+            _result.LastName = StringAttrIfNotPrivate("lastName", _user.LastName);
+            _result.Name = StringAttrIfNotPrivate("name", _user.Name);
+            _result.Avatar = StringAttrIfNotPrivate("avatar", _user.Avatar);
+            _result.Email = StringAttrIfNotPrivate("email", _user.Email);
 
             // With the custom attributes, for efficiency's sake we would like to reuse the same ImmutableDictionary
             // whenever possible. So, we'll lazily create a new collection only if it turns out that there are any
@@ -102,8 +100,7 @@ namespace LaunchDarkly.Common
             ImmutableDictionary<string, ImmutableJsonValue>.Builder customAttrsBuilder = null;
             foreach (var kv in _user.Custom)
             {
-                JToken value = CheckPrivateAttr(kv.Key, kv.Value.InnerValue);
-                if (value is null)
+                if (!CheckPrivateAttr(kv.Key, kv.Value))
                 {
                     if (customAttrsBuilder is null)
                     {
@@ -137,13 +134,9 @@ namespace LaunchDarkly.Common
             return _result;
         }
         
-        private T CheckPrivateAttr<T>(string name, T value) where T: class
+        private bool CheckPrivateAttr<T>(string name, T value)
         {
-            if (value is null)
-            {
-                return null;
-            }
-            else if (_config.AllAttributesPrivate ||
+            if (_config.AllAttributesPrivate ||
                      (_config.PrivateAttributeNames != null &&_config.PrivateAttributeNames.Contains(name)) ||
                      (_user.PrivateAttributeNames != null && _user.PrivateAttributeNames.Contains(name)))
             {
@@ -152,12 +145,17 @@ namespace LaunchDarkly.Common
                     _privateAttrs = ImmutableSortedSet.CreateBuilder<string>();
                 }
                 _privateAttrs.Add(name);
-                return null;
+                return false;
             }
             else
             {
-                return value;
+                return true;
             }
+        }
+
+        private string StringAttrIfNotPrivate(string name, string value)
+        {
+            return (value is null) ? null : (CheckPrivateAttr(name, value) ? value : null);
         }
     }
 }
