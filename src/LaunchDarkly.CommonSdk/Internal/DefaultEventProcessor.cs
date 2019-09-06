@@ -19,6 +19,7 @@ namespace LaunchDarkly.Common
 
         private readonly BlockingCollection<IEventMessage> _messageQueue;
         private readonly EventDispatcher _dispatcher;
+        readonly IDiagnosticStore _diagnosticStore;
         private readonly Timer _flushTimer;
         private readonly Timer _flushUsersTimer;
         private readonly Timer _diagnosticTimer;
@@ -31,7 +32,7 @@ namespace LaunchDarkly.Common
             _stopped = new AtomicBoolean(false);
             _inputCapacityExceeded = new AtomicBoolean(false);
             _messageQueue = new BlockingCollection<IEventMessage>(config.EventCapacity);
-            _dispatcher = new EventDispatcher(config, _messageQueue, userDeduplicator, httpClient, eventsUriPath);
+            _dispatcher = new EventDispatcher(config, _messageQueue, userDeduplicator, httpClient, eventsUriPath, config.DiagnosticStore);
             _flushTimer = new Timer(DoBackgroundFlush, null, config.EventFlushInterval,
                 config.EventFlushInterval);
             if (userDeduplicator != null && userDeduplicator.FlushInterval.HasValue)
@@ -45,7 +46,7 @@ namespace LaunchDarkly.Common
             }
             if (!config.DiagnosticOptOut && config.DiagnosticStore != null)
             {
-                IDiagnosticStore _diagnosticStore = config.DiagnosticStore;
+                _diagnosticStore = config.DiagnosticStore;
 
                 DiagnosticEvent _lastStats = _diagnosticStore.LastStats;
                 if (_lastStats != null) {
@@ -53,7 +54,7 @@ namespace LaunchDarkly.Common
                 }
 
                 if (_diagnosticStore.SendInitEvent) {
-                    DiagnosticEvent _initEvent = new DiagnosticEvent.Init(DateTime.Now.Millisecond, _diagnosticStore.DiagnosticId, config.DiagnosticConfigPayload);
+                    DiagnosticEvent _initEvent = new DiagnosticEvent.Init(Util.GetUnixTimestampMillis(DateTime.Now), _diagnosticStore.DiagnosticId, config.DiagnosticConfigPayload);
                     //SendDiagnosticEvent(_initEvent);
                 }
 
@@ -66,6 +67,7 @@ namespace LaunchDarkly.Common
             }
             else
             {
+                _diagnosticStore = null;
                 _diagnosticTimer = null;
             }
             _stopped = new AtomicBoolean(false);
@@ -223,6 +225,7 @@ namespace LaunchDarkly.Common
         private static readonly int MaxFlushWorkers = 5;
 
         private readonly IEventProcessorConfiguration _config;
+        private readonly IDiagnosticStore _diagnosticStore;
         private readonly IUserDeduplicator _userDeduplicator;
         private readonly CountdownEvent _flushWorkersCounter;
         private readonly HttpClient _httpClient;
@@ -235,9 +238,11 @@ namespace LaunchDarkly.Common
             BlockingCollection<IEventMessage> messageQueue,
             IUserDeduplicator userDeduplicator,
             HttpClient httpClient,
-            string eventsUriPath)
+            string eventsUriPath,
+            IDiagnosticStore diagnosticStore)
         {
             _config = config;
+            _diagnosticStore = diagnosticStore;
             _userDeduplicator = userDeduplicator;
             _flushWorkersCounter = new CountdownEvent(1);
             _httpClient = httpClient;
@@ -312,8 +317,12 @@ namespace LaunchDarkly.Common
 
         private void sendAndResetDiagnostics(EventBuffer buffer)
         {
-            long droppedEvents = buffer.GetAndResetDroppedCount();
-            long eventsInQueue = buffer.GetEventsInQueueCount();
+            if (_diagnosticStore != null) {
+                long droppedEvents = buffer.GetAndResetDroppedCount();
+                long eventsInQueue = buffer.GetEventsInQueueCount();
+                DiagnosticEvent diagnosticEvent = _diagnosticStore.CreateEventAndReset(droppedEvents, 0, eventsInQueue);
+                //SendDiagnosticEvent(diagnosticEvent)
+            }
         }
 
         private void WaitForFlushes()
