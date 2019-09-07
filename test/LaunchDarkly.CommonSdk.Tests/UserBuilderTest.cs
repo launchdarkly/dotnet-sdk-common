@@ -181,7 +181,7 @@ namespace LaunchDarkly.Common.Tests
             Assert.Null(user0.PrivateAttributeNames);
 
             var user1 = User.Builder(key).Custom("bar", value).AsPrivateAttribute().Build();
-            Assert.Equal(value, ImmutableJsonValue.FromJToken(user1.Custom["foo"]));
+            Assert.Equal(value, ImmutableJsonValue.FromJToken(user1.Custom["bar"]));
             Assert.Equal(new HashSet<string> { "bar" }, user1.PrivateAttributeNames);
         }
 
