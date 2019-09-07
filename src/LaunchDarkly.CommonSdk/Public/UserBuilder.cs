@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 
 namespace LaunchDarkly.Client
@@ -119,7 +120,35 @@ namespace LaunchDarkly.Client
         /// <param name="name">the key for the custom attribute</param>
         /// <param name="value">the value for the custom attribute</param>
         /// <returns>the same builder</returns>
+
+        [Obsolete("This method will be removed; use Custom(string, ImmutableJsonValue)")]
         IUserBuilderCanMakeAttributePrivate Custom(string name, JToken value);
+
+        /// <summary>
+        /// Adds a custom attribute whose value is a JSON value of any kind.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// When set to one of the <a href="http://docs.launchdarkly.com/docs/targeting-users#targeting-based-on-user-attributes">built-in
+        /// user attribute keys</a>, this custom attribute will be ignored.
+        /// </para>
+        /// <para>
+        /// This method is preferred over the deprecated <see cref="Custom(string, JToken)"/>, although it currently
+        /// produces the same result (the custom attributes in <see cref="User"/> are still stored as <see cref="JToken"/>),
+        /// because eventually all uses of <see cref="JToken"/> will be removed from the public API (to reduce third-party
+        /// dependencies and to avoid problems with the use of mutable types).
+        /// </para>
+        /// </remarks>
+        /// <example>
+        /// <code>
+        ///     var arrayOfIntsValue = ImmutableJsonValue.FromValues(new int[] { 1, 2, 3 });
+        ///     var user = User.Builder("key").Custom("numbers", arrayOfIntsValue).Build();
+        /// </code>
+        /// </example>
+        /// <param name="name">the key for the custom attribute</param>
+        /// <param name="value">the value for the custom attribute</param>
+        /// <returns>the same builder</returns>
+        IUserBuilderCanMakeAttributePrivate Custom(string name, ImmutableJsonValue value);
 
         /// <summary>
         /// Adds a custom attribute with a boolean value.
@@ -336,14 +365,19 @@ namespace LaunchDarkly.Client
             return this;
         }
 
-        public IUserBuilderCanMakeAttributePrivate Custom(string name, JToken value)
+        public IUserBuilderCanMakeAttributePrivate Custom(string name, ImmutableJsonValue value)
         {
             if (_custom is null)
             {
                 _custom = new Dictionary<string, JToken>();
             }
-            _custom[name] = value;
+            _custom[name] = value.InnerValue;
             return CanMakeAttributePrivate(name);
+        }
+
+        public IUserBuilderCanMakeAttributePrivate Custom(string name, JToken value)
+        {
+            return Custom(name, ImmutableJsonValue.FromSafeValue(value)); // it's not really a "safe value", but this preserves the current behavior until we eliminate JToken
         }
         
         public IUserBuilderCanMakeAttributePrivate Custom(string name, bool value)
@@ -446,6 +480,11 @@ namespace LaunchDarkly.Client
         public IUserBuilder Anonymous(bool anonymous)
         {
             return _builder.Anonymous(anonymous);
+        }
+
+        public IUserBuilderCanMakeAttributePrivate Custom(string name, ImmutableJsonValue value)
+        {
+            return _builder.Custom(name, value);
         }
 
         public IUserBuilderCanMakeAttributePrivate Custom(string name, JToken value)
