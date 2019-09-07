@@ -220,6 +220,7 @@ namespace LaunchDarkly.Client
         [JsonIgnore]
         public ISet<string> PrivateAttributeNames { get; set; }
 
+        [Obsolete("This method has been moved to the Clause class in .NET, and is not used in Xamarin")]
         internal JToken GetValueForEvaluation(string attribute)
         {
             switch (attribute)
