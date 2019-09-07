@@ -196,7 +196,8 @@ namespace LaunchDarkly.Client
         /// and will be removed in a future version. See remarks on <see cref="User"/>.
         /// </para>
         /// <para>
-        /// Also, in a future version this will be changed to an immutable dictionary.
+        /// Also, in a future version this will be changed to an immutable dictionary, whose values will be
+        /// <see cref="ImmutableJsonValue"/>.
         /// </para>
         /// </remarks>
         [JsonProperty(PropertyName = "custom", NullValueHandling = NullValueHandling.Ignore)]
