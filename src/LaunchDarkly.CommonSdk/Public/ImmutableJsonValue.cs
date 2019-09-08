@@ -1,12 +1,13 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
+using LaunchDarkly.Common;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace LaunchDarkly.Client
 {
+    // Note, internal classes used here are in ImmutableJsonValueHelpers.cs
+
     /// <summary>
     /// Describes the type of a JSON value.
     /// </summary>
@@ -63,6 +64,8 @@ namespace LaunchDarkly.Client
     [JsonConverter(typeof(ImmutableJsonValueSerializer))]
     public struct ImmutableJsonValue : IEquatable<ImmutableJsonValue>
     {
+        #region Private fields
+
         private static readonly JToken _jsonFalse = new JValue(false);
         private static readonly JToken _jsonTrue = new JValue(true);
         private static readonly JToken _jsonIntZero = new JValue(0);
@@ -77,16 +80,24 @@ namespace LaunchDarkly.Client
 
         private readonly JToken _value;
 
+        #endregion
+
+        #region Public static properties
+
         /// <summary>
         /// Convenience property for an <see cref="ImmutableJsonValue"/> that wraps a <see langword="null"/> value.
         /// </summary>
         public static ImmutableJsonValue Null => new ImmutableJsonValue(null);
 
+        #endregion
+
+        #region Internal/private constructor, factory, and properties
+
         private ImmutableJsonValue(JToken value)
         {
             _value = NormalizePrimitives(value);
         }
-
+        
         /// <summary>
         /// For internal use only. Directly accesses the wrapped value.
         /// </summary>
@@ -139,7 +150,11 @@ namespace LaunchDarkly.Client
             }
             return value;
         }
-        
+
+        #endregion
+
+        #region Public factory methods
+
         /// <summary>
         /// Initializes an <see cref="ImmutableJsonValue"/> from a <see cref="JToken"/>.
         /// </summary>
@@ -250,6 +265,10 @@ namespace LaunchDarkly.Client
 
         private static ImmutableJsonValue FromEnumerable<T>(IEnumerable<T> values, Func<T, JToken> convert)
         {
+            if (values is null)
+            {
+                return ImmutableJsonValue.Null;
+            }
             var a = new JArray();
             foreach (var item in values)
             {
@@ -306,6 +325,10 @@ namespace LaunchDarkly.Client
         private static ImmutableJsonValue FromDictionaryInternal<T>(IReadOnlyDictionary<string, T> dictionary,
             Func<T, JToken> convert)
         {
+            if (dictionary is null)
+            {
+                return ImmutableJsonValue.Null;
+            }
             var o = new JObject();
             foreach (var e in dictionary)
             {
@@ -313,6 +336,10 @@ namespace LaunchDarkly.Client
             }
             return ImmutableJsonValue.FromSafeValue(o);
         }
+
+        #endregion
+
+        #region Public properties
 
         /// <summary>
         /// The type of the JSON value.
@@ -351,6 +378,17 @@ namespace LaunchDarkly.Client
         /// True if the wrapped value is numeric.
         /// </summary>
         public bool IsNumber => !(_value is null) && (_value.Type == JTokenType.Integer || _value.Type == JTokenType.Float);
+        
+        /// <summary>
+        /// True if the wrapped value is an integer.
+        /// </summary>
+        /// <remarks>
+        /// JSON does not have separate types for integer and floating-point values; they are both just
+        /// numbers. <see cref="IsInt"/> returns true if and only if the actual numeric value has no
+        /// fractional component, so <c>ImmutableJsonValue(2).IsInt</c> and <c>ImmutableJsonValue(2.0f).IsInt</c>
+        /// are both true.
+        /// </remarks>
+        public bool IsInt => IsNumber && (AsFloat == (float)AsInt);
 
         /// <summary>
         /// Converts the value to a boolean.
@@ -425,6 +463,10 @@ namespace LaunchDarkly.Client
         /// If the value is <see langword="null"/> or is not numeric, this returns zero. It will never throw an exception.
         /// </remarks>
         public float AsFloat => IsNumber ? _value.Value<float>() : 0;
+
+        #endregion
+
+        #region Public methods
 
         /// <summary>
         /// Converts the value to a read-only list of elements of some type.
@@ -564,6 +606,11 @@ namespace LaunchDarkly.Client
         /// </summary>
         public bool Equals(ImmutableJsonValue o)
         {
+            if (IsNumber)
+            {
+                // don't rely on JToken's int/float designation, look at the actual numeric value
+                return o.IsNumber && AsFloat == o.AsFloat;
+            }
             return JToken.DeepEquals(_value, o._value);
         }
 
@@ -581,153 +628,7 @@ namespace LaunchDarkly.Client
         {
             return ToJsonString();
         }
-    }
 
-    internal class ImmutableJsonValueSerializer : JsonConverter
-    {
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
-        {
-            if (value is ImmutableJsonValue jv)
-            {
-                if (jv.InnerValue is null)
-                {
-                    writer.WriteNull();
-                }
-                else
-                {
-                    jv.InnerValue.WriteTo(writer);
-                }
-            }
-        }
-
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
-        {
-            return ImmutableJsonValue.FromSafeValue(JToken.Load(reader));
-        }
-
-        public override bool CanConvert(Type objectType)
-        {
-            return objectType == typeof(ImmutableJsonValue);
-        }
-    }
-
-    // This struct wraps an existing JArray and makes it behave as an IReadOnlyList, with
-    // transparent value conversion.
-    internal struct ImmutableJsonArrayConverter<T> : IReadOnlyList<T>
-    {
-        private readonly JArray _array;
-        private readonly Func<ImmutableJsonValue, T> _converter;
-
-        internal ImmutableJsonArrayConverter(JArray array, Func<ImmutableJsonValue, T> converter)
-        {
-            _array = array;
-            _converter = converter;
-        }
-
-        public T this[int index]
-        {
-            get
-            {
-                if (_array is null || index < 0 || index >= _array.Count)
-                {
-                    throw new IndexOutOfRangeException();
-                }
-                return _converter(ImmutableJsonValue.FromSafeValue(_array[index]));
-            }
-        }
-
-        public int Count => _array is null ? 0 : _array.Count;
-
-        public IEnumerator<T> GetEnumerator()
-        {
-            if (_array is null)
-            {
-                return Enumerable.Empty<T>().GetEnumerator();
-            }
-            var conv = _converter;
-            return _array.Select<JToken, T>(v => conv(ImmutableJsonValue.FromSafeValue(v))).GetEnumerator();
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
-    }
-
-    // This struct wraps an existing JObject and makes it behave as an IReadOnlyDictionary, with
-    // transparent value conversion.
-    internal struct ImmutableJsonObjectConverter<T> : IReadOnlyDictionary<string, T>
-    {
-        private readonly JObject _object;
-        private readonly Func<ImmutableJsonValue, T> _converter;
-
-        internal ImmutableJsonObjectConverter(JObject o, Func<ImmutableJsonValue, T> converter)
-        {
-            _object = o;
-            _converter = converter;
-        }
-
-        public T this[string key]
-        {
-            get
-            {
-                // Note that JObject[key] does *not* throw a KeyNotFoundException, but we should
-                if (_object is null || !_object.TryGetValue(key, out var v))
-                {
-                    throw new KeyNotFoundException();
-                }
-                return _converter(ImmutableJsonValue.FromSafeValue(v));
-            }
-        }
-            
-        public IEnumerable<string> Keys =>
-            _object is null ? Enumerable.Empty<string>() :
-            _object.Properties().Select(p => p.Name);
-
-        public IEnumerable<T> Values
-        {
-            get
-            {
-                if (_object is null)
-                {
-                    return Enumerable.Empty<T>();
-                }
-                var conv = _converter; // lambda can't use instance field
-                return _object.Properties().Select(p => conv(ImmutableJsonValue.FromSafeValue(p.Value)));
-            }
-        }
-
-        public int Count => _object is null ? 0 : _object.Count;
-
-        public bool ContainsKey(string key) =>
-            !(_object is null) && _object.TryGetValue(key, out var ignore);
-
-        public IEnumerator<KeyValuePair<string, T>> GetEnumerator()
-        {
-            if (_object is null)
-            {
-                return Enumerable.Empty<KeyValuePair<string, T>>().GetEnumerator();
-            }
-            var conv = _converter; // lambda can't use instance field
-            return _object.Properties().Select<JProperty, KeyValuePair<string, T>>(
-                p => new KeyValuePair<string, T>(p.Name, conv(ImmutableJsonValue.FromSafeValue(p.Value)))
-                ).GetEnumerator();
-        }
-
-        public bool TryGetValue(string key, out T value)
-        {
-            if (!(_object is null) && _object.TryGetValue(key, out var v))
-            {
-                value = _converter(ImmutableJsonValue.FromSafeValue(v));
-                return true;
-            }
-            value = default(T);
-            return false;
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
+        #endregion
     }
 }
