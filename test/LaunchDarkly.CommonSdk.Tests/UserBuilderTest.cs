@@ -166,10 +166,12 @@ namespace LaunchDarkly.Common.Tests
         }
 
         [Fact]
-        public void BuilderCanSetJsonCustomAttribute()
+        public void BuilderCanSetJsonCustomAttributeWithDeprecatedMethod()
         {
             var value = new JArray(new List<JToken>() { new JValue(true), new JValue(1.5) });
+#pragma warning disable 0618
             TestCustomAttribute<JToken>(value, (b, n, v) => b.Custom(n, v));
+#pragma warning restore 0618
         }
 
         [Fact]
