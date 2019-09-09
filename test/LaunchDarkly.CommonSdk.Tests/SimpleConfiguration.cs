@@ -28,5 +28,10 @@ namespace LaunchDarkly.Common.Tests
         public bool InlineUsersInEvents { get; set; }
         public TimeSpan HttpClientTimeout { get; set; } = TimeSpan.FromSeconds(30);
         public HttpMessageHandler HttpMessageHandler { get; set; }
+
+        public Exception TranslateHttpException(Exception e) =>
+            TranslateHttpExceptionFn is null ? e : TranslateHttpExceptionFn(e);
+
+        public Func<Exception, Exception> TranslateHttpExceptionFn { get; set; }
     }
 }

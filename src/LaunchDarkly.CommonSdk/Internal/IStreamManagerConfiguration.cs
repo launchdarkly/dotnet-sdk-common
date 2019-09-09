@@ -11,5 +11,10 @@ namespace LaunchDarkly.Common
         TimeSpan ReadTimeout { get; }
         TimeSpan ReconnectTime { get; }
         TimeSpan HttpClientTimeout { get; }
+        /// <summary>
+        /// For mobile platforms where HTTP requests might throw platform-specific exceptions, this method should
+        /// translate them to standard .NET exceptions. Otherwise it should just return the same exception.
+        /// </summary>
+        Exception TranslateHttpException(Exception e);
     }
 }
