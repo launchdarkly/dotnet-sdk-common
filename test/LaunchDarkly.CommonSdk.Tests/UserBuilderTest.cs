@@ -177,6 +177,7 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void BuilderCanSetImmutableJsonCustomAttribute()
         {
+#pragma warning disable 0618
             var value = ImmutableJsonValue.FromValues(new int[] { 1, 2 });
             var user0 = User.Builder(key).Custom("foo", value).Build();
             Assert.Equal(value, ImmutableJsonValue.FromJToken(user0.Custom["foo"]));
@@ -185,6 +186,7 @@ namespace LaunchDarkly.Common.Tests
             var user1 = User.Builder(key).Custom("bar", value).AsPrivateAttribute().Build();
             Assert.Equal(value, ImmutableJsonValue.FromJToken(user1.Custom["bar"]));
             Assert.Equal(new HashSet<string> { "bar" }, user1.PrivateAttributeNames);
+#pragma warning restore 0618
         }
 
         [Fact]

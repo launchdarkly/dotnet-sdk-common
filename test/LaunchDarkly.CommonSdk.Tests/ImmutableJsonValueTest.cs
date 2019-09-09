@@ -20,10 +20,12 @@ namespace LaunchDarkly.Common.Tests
         static readonly ImmutableJsonValue anIntValue = ImmutableJsonValue.Of(someInt);
         static readonly ImmutableJsonValue aFloatValue = ImmutableJsonValue.Of(someFloat);
         static readonly ImmutableJsonValue aStringValue = ImmutableJsonValue.Of(someString);
+#pragma warning disable 0618
         static readonly ImmutableJsonValue aTrueBoolValueFromJToken = ImmutableJsonValue.FromJToken(new JValue(true));
         static readonly ImmutableJsonValue anIntValueFromJToken = ImmutableJsonValue.FromJToken(new JValue(someInt));
         static readonly ImmutableJsonValue aFloatValueFromJToken = ImmutableJsonValue.FromJToken(new JValue(someFloat));
         static readonly ImmutableJsonValue aStringValueFromJToken = ImmutableJsonValue.FromJToken(new JValue(someString));
+#pragma warning restore 0618
         static readonly ImmutableJsonValue aNumericLookingStringValue = ImmutableJsonValue.Of("3");
         static readonly ImmutableJsonValue anArrayValue =
             ImmutableJsonValue.FromValues(new int[] { 3 });
@@ -86,9 +88,11 @@ namespace LaunchDarkly.Common.Tests
         public void BoolValuesUseSameInstances()
         {
             Assert.Same(ImmutableJsonValue.Of(true).InnerValue, ImmutableJsonValue.Of(true).InnerValue);
-            Assert.Same(ImmutableJsonValue.Of(true).InnerValue, ImmutableJsonValue.FromJToken(new JValue(true)).InnerValue);
             Assert.Same(ImmutableJsonValue.Of(false).InnerValue, ImmutableJsonValue.Of(false).InnerValue);
+#pragma warning disable 0618
+            Assert.Same(ImmutableJsonValue.Of(true).InnerValue, ImmutableJsonValue.FromJToken(new JValue(true)).InnerValue);
             Assert.Same(ImmutableJsonValue.Of(false).InnerValue, ImmutableJsonValue.FromJToken(new JValue(false)).InnerValue);
+#pragma warning restore 0618
         }
 
         [Fact]
@@ -406,8 +410,10 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void IntAndFloatJTokensWithSameValueAreEqual()
         {
+#pragma warning disable 0618
             Assert.Equal(ImmutableJsonValue.FromJToken(new JValue(2)),
                 ImmutableJsonValue.FromJToken(new JValue(2.0f)));
+#pragma warning restore 0618
         }
 
         [Fact]
