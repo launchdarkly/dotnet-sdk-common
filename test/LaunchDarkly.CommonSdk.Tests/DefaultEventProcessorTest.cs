@@ -15,6 +15,7 @@ namespace LaunchDarkly.Common.Tests
     {
         private const String HttpDateFormat = "ddd, dd MMM yyyy HH:mm:ss 'GMT'";
         private const string EventsUriPath = "/post-events-here";
+        private const string DiagnosticUriPath = "/post-diagnostic-here";
 
         private SimpleConfiguration _config = new SimpleConfiguration();
         private IEventProcessor _ep;
@@ -41,7 +42,7 @@ namespace LaunchDarkly.Common.Tests
         private IEventProcessor MakeProcessor(SimpleConfiguration config)
         {
             return new DefaultEventProcessor(config, new TestUserDeduplicator(),
-                Util.MakeHttpClient(config, SimpleClientEnvironment.Instance), EventsUriPath);
+                Util.MakeHttpClient(config, SimpleClientEnvironment.Instance), EventsUriPath, DiagnosticUriPath);
         }
     
         [Fact]
