@@ -170,9 +170,15 @@ namespace LaunchDarkly.Client
         /// In order to avoid the mutability problem, this method performs a deep copy of any <see cref="JObject"/>
         /// or <see cref="JArray"/> value.
         /// </para>
+        /// <para>
+        /// <see cref="FromJToken(JToken)"/> and <see cref="AsJToken()"/> are immediately deprecated, to
+        /// encourage developers to migrate away from using <see cref="JToken"/>-based SDK methods as soon as
+        /// possible.
+        /// </para>
         /// </remarks>
         /// <param name="value">a <see cref="JToken"/> value</param>
         /// <returns>a corresponding <see cref="ImmutableJsonValue"/></returns>
+        [Obsolete("This method will be removed in the future; use non-JToken factory methods instead")]
         public static ImmutableJsonValue FromJToken(JToken value)
         {
             if (value is JArray || value is JObject)
@@ -530,8 +536,14 @@ namespace LaunchDarkly.Client
         /// In order to avoid the mutability problem, this method performs a deep copy of any <see cref="JObject"/>
         /// or <see cref="JArray"/> value.
         /// </para>
+        /// <para>
+        /// <see cref="FromJToken(JToken)"/> and <see cref="AsJToken"/> are immediately deprecated, to
+        /// encourage developers to migrate away from using <see cref="JToken"/>-based SDK methods as soon as
+        /// possible.
+        /// </para>
         /// </remarks>
         /// <returns>a <see cref="JToken"/> representation of this value</returns>
+        [Obsolete("This method will be removed in the future; use non-JToken-based methods and properties instead")]
         public JToken AsJToken()
         {
             if (_value is JArray || _value is JObject)
