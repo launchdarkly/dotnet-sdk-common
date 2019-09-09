@@ -5,11 +5,11 @@ namespace LaunchDarkly.Common
 {
     class DiagnosticId
     {
-        internal readonly Guid diagnosticId;
-        internal readonly string SdkKeySuffix;
+        public readonly Guid diagnosticId;
+        public readonly string sdkKeySuffix;
 
         internal DiagnosticId(string sdkKey, Guid diagnosticId) {
-            SdkKeySuffix = sdkKey.Substring(Math.Max(0, sdkKey.Length - 6));
+            this.sdkKeySuffix = sdkKey.Substring(Math.Max(0, sdkKey.Length - 6));
             this.diagnosticId = diagnosticId;
         }
     }

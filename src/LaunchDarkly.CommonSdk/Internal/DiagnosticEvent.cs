@@ -6,55 +6,54 @@ namespace LaunchDarkly.Common
 {
     abstract class DiagnosticEvent
     {
-        internal readonly string Kind;
-        internal readonly long CreationDate;
-        internal readonly DiagnosticId Id;
+        public readonly string kind;
+        public readonly long creationDate;
+        public readonly DiagnosticId id;
 
         internal DiagnosticEvent(string kind, long creationDate, DiagnosticId diagnosticId)
         {
-            Kind = kind;
-            CreationDate = creationDate;
-            Id = diagnosticId;
+            this.kind = kind;
+            this.creationDate = creationDate;
+            this.id = diagnosticId;
         }
+    }
 
-        internal class Statistics : DiagnosticEvent
+    internal class StatisticsDiagnosticEvent : DiagnosticEvent
+    {
+        public readonly long dataSinceDate;
+        public readonly long droppedEvents;
+        public readonly long deduplicatedUsers;
+        public readonly long eventsInQueue;
+
+        internal StatisticsDiagnosticEvent(long creationDate, DiagnosticId diagnosticId,
+                            long dataSinceDate, long droppedEvents,
+                            long deduplicatedUsers, long eventsInQueue)
+            : base("diagnostic", creationDate, diagnosticId)
         {
-            internal readonly long DataSinceDate;
-            internal readonly long DroppedEvents;
-            internal readonly long DeduplicatedUsers;
-            internal readonly long EventsInQueue;
-
-            internal Statistics(long creationDate, DiagnosticId diagnosticId,
-                                long dataSinceDate, long droppedEvents,
-                                long deduplicatedUsers, long eventsInQueue)
-                : base("diagnostic", creationDate, diagnosticId)
-            {
-                DataSinceDate = dataSinceDate;
-                DroppedEvents = droppedEvents;
-                DeduplicatedUsers = deduplicatedUsers;
-                EventsInQueue = eventsInQueue;
-            }
+            this.dataSinceDate = dataSinceDate;
+            this.droppedEvents = droppedEvents;
+            this.deduplicatedUsers = deduplicatedUsers;
+            this.eventsInQueue = eventsInQueue;
         }
+    }
 
-        internal class Init : DiagnosticEvent
+    internal class InitDiagnosticEvent : DiagnosticEvent
+    {
+        public readonly DiagnosticSdk sdk;
+        public readonly Dictionary<String, Object> configuration;
+        public readonly DiagnosticPlatform platform = new DiagnosticPlatform();
+
+        internal InitDiagnosticEvent(long creationDate, DiagnosticId diagnosticId, Dictionary<String, Object> Configuration)
+            : base("diagnostic-init", creationDate, diagnosticId)
         {
-            internal readonly DiagnosticSdk Sdk;
-            internal readonly Dictionary<String, Object> Configuration;
-            internal readonly DiagnosticPlatform Platform = new DiagnosticPlatform();
-
-            internal Init(long creationDate, DiagnosticId diagnosticId, Dictionary<String, Object> Configuration)
-                : base("diagnostic-init", creationDate, diagnosticId)
-            {
-                Sdk = new DiagnosticSdk();
-                this.Configuration = Configuration;
-            }
+            this.sdk = new DiagnosticSdk();
+            this.configuration = Configuration;
         }
-
     }
 
     class DiagnosticSdk
     {
-        internal static readonly string Name = "dotnet-server-sdk";
+        public readonly string name = "dotnet-server-sdk";
 
         internal DiagnosticSdk()
         {
@@ -64,7 +63,7 @@ namespace LaunchDarkly.Common
 
     class DiagnosticPlatform
     {
-        internal static readonly string Name = "DotNet";
+        public readonly string name = "DotNet";
 
         internal DiagnosticPlatform()
         {

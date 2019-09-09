@@ -7,6 +7,6 @@ namespace LaunchDarkly.Common
         bool SendInitEvent { get; }
         DiagnosticEvent LastStats { get; }
         DateTime DataSince { get; }
-        DiagnosticEvent.Statistics CreateEventAndReset(long droppedEvents, long deduplicatedUsers, long eventsInQueue);
+        StatisticsDiagnosticEvent CreateEventAndReset(long droppedEvents, long deduplicatedUsers, long eventsInQueue);
     }
 }

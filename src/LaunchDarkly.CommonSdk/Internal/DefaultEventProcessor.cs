@@ -27,12 +27,12 @@ namespace LaunchDarkly.Common
         private AtomicBoolean _inputCapacityExceeded;
 
         internal DefaultEventProcessor(IEventProcessorConfiguration config,
-            IUserDeduplicator userDeduplicator, HttpClient httpClient, string eventsUriPath)
+            IUserDeduplicator userDeduplicator, HttpClient httpClient, string eventsUriPath, string diagnosticUriPath)
         {
             _stopped = new AtomicBoolean(false);
             _inputCapacityExceeded = new AtomicBoolean(false);
             _messageQueue = new BlockingCollection<IEventMessage>(config.EventCapacity);
-            _dispatcher = new EventDispatcher(config, _messageQueue, userDeduplicator, httpClient, eventsUriPath, config.DiagnosticStore);
+            _dispatcher = new EventDispatcher(config, _messageQueue, userDeduplicator, httpClient, eventsUriPath, diagnosticUriPath, config.DiagnosticStore);
             _flushTimer = new Timer(DoBackgroundFlush, null, config.EventFlushInterval,
                 config.EventFlushInterval);
             if (userDeduplicator != null && userDeduplicator.FlushInterval.HasValue)
@@ -50,12 +50,12 @@ namespace LaunchDarkly.Common
 
                 DiagnosticEvent _lastStats = _diagnosticStore.LastStats;
                 if (_lastStats != null) {
-                    //SendDiagnosticEvent(_lastStats);
+                    _dispatcher.SendDiagnosticEventAsync(JsonConvert.SerializeObject(_lastStats, Formatting.None));
                 }
 
                 if (_diagnosticStore.SendInitEvent) {
-                    DiagnosticEvent _initEvent = new DiagnosticEvent.Init(Util.GetUnixTimestampMillis(DateTime.Now), _diagnosticStore.DiagnosticId, config.DiagnosticConfigPayload);
-                    //SendDiagnosticEvent(_initEvent);
+                    InitDiagnosticEvent _initEvent = new InitDiagnosticEvent(Util.GetUnixTimestampMillis(DateTime.Now), _diagnosticStore.DiagnosticId, config.DiagnosticConfigPayload);
+                    _dispatcher.SendDiagnosticEventAsync(JsonConvert.SerializeObject(_initEvent, Formatting.None));
                 }
 
                 DateTime _dataSince = _diagnosticStore.DataSince;
@@ -230,8 +230,10 @@ namespace LaunchDarkly.Common
         private readonly CountdownEvent _flushWorkersCounter;
         private readonly HttpClient _httpClient;
         private readonly Uri _uri;
+        private readonly Uri _diagnosticUri;
         private readonly Random _random;
         private long _lastKnownPastTime;
+        private long deduplicatedUserCount = 0;
         private volatile bool _disabled;
 
         internal EventDispatcher(IEventProcessorConfiguration config,
@@ -239,6 +241,7 @@ namespace LaunchDarkly.Common
             IUserDeduplicator userDeduplicator,
             HttpClient httpClient,
             string eventsUriPath,
+            string diagnosticUriPath,
             IDiagnosticStore diagnosticStore)
         {
             _config = config;
@@ -247,6 +250,7 @@ namespace LaunchDarkly.Common
             _flushWorkersCounter = new CountdownEvent(1);
             _httpClient = httpClient;
             _uri = new Uri(_config.EventsUri, eventsUriPath);
+            _diagnosticUri = new Uri(_config.EventsUri, diagnosticUriPath);
             _random = new Random();
 
             _httpClient.DefaultRequestHeaders.Add("X-LaunchDarkly-Event-Schema",
@@ -320,8 +324,9 @@ namespace LaunchDarkly.Common
             if (_diagnosticStore != null) {
                 long droppedEvents = buffer.GetAndResetDroppedCount();
                 long eventsInQueue = buffer.GetEventsInQueueCount();
-                DiagnosticEvent diagnosticEvent = _diagnosticStore.CreateEventAndReset(droppedEvents, 0, eventsInQueue);
-                //SendDiagnosticEvent(diagnosticEvent)
+                DiagnosticEvent diagnosticEvent = _diagnosticStore.CreateEventAndReset(droppedEvents, deduplicatedUserCount, eventsInQueue);
+                deduplicatedUserCount = 0;
+                SendDiagnosticEventAsync(JsonConvert.SerializeObject(diagnosticEvent, Formatting.None));
             }
         }
 
@@ -377,7 +382,7 @@ namespace LaunchDarkly.Common
                         buffer.AddEvent(ie);
                     } else if (!(e is IdentifyEvent))
                     {
-                        // Deduplicated
+                       deduplicatedUserCount++;
                     }
                 }
             }
@@ -567,6 +572,71 @@ namespace LaunchDarkly.Common
                     if (!Util.IsHttpErrorRecoverable((int)response.StatusCode))
                     {
                         _disabled = true;
+                    }
+                }
+            }
+        }
+
+        internal async Task SendDiagnosticEventAsync(String jsonDiagnostic)
+        {
+            DefaultEventProcessor.Log.DebugFormat("Submitting diagnostic event to {0} with json: {1}",
+                _diagnosticUri.AbsoluteUri, jsonDiagnostic);
+
+            for (var attempt = 0; attempt < 2; attempt++)
+            {
+                if (attempt > 0)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(1));
+                }
+
+                using (var cts = new CancellationTokenSource(_config.HttpClientTimeout))
+                {
+                    try
+                    {
+                        Stopwatch timer = new Stopwatch();
+
+                        using (var stringContent = new StringContent(jsonDiagnostic, Encoding.UTF8, "application/json"))
+                        using (var response = await _httpClient.PostAsync(_diagnosticUri, stringContent, cts.Token))
+                        {
+                            timer.Stop();
+                            DefaultEventProcessor.Log.DebugFormat("Event delivery took {0} ms, response status {1}",
+                                timer.ElapsedMilliseconds, response.StatusCode);
+                            if (!response.IsSuccessStatusCode)
+                            {
+                                DefaultEventProcessor.Log.Error(Util.HttpErrorMessage((int)response.StatusCode,
+                                    "event delivery", "some events were dropped"));
+                                if (!Util.IsHttpErrorRecoverable((int)response.StatusCode))
+                                {
+                                    _disabled = true;
+                                }
+                            }
+                        }
+                        return; // success
+                    }
+                    catch (Exception e)
+                    {
+                        var errorMessage = "Error ({2})";
+                        switch (e)
+                        {
+                            case TaskCanceledException tce:
+                                if (tce.CancellationToken == cts.Token)
+                                {
+                                    // Indicates the task was cancelled deliberately somehow; in this case don't retry
+                                    DefaultEventProcessor.Log.Warn("Event sending task was cancelled");
+                                    return;
+                                }
+                                else
+                                {
+                                    // Otherwise this was a request timeout.
+                                    errorMessage = "Timed out";
+                                }
+                                break;
+                            default:
+                                break;
+                        }
+                        DefaultEventProcessor.Log.WarnFormat(errorMessage + " sending diagnostic event; {0}",
+                            attempt == 1 ? "will not retry" : "will retry after one second",
+                            Util.ExceptionMessage(e));
                     }
                 }
             }
