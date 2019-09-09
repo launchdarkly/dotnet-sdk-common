@@ -207,20 +207,7 @@ namespace LaunchDarkly.Common.Tests
             Assert.Equal((int)someFloat, aFloatValueFromJToken.AsInt);
             Assert.Equal((int)someFloat, aFloatValueFromJToken.Value<int>());
         }
-
-        [Fact]
-        public void IntFromFloatRoundsToNearest()
-        {
-            Assert.Equal(2, ImmutableJsonValue.Of(2.25f).AsInt);
-            Assert.Equal(2, ImmutableJsonValue.Of(2.25f).Value<int>());
-            Assert.Equal(2, ImmutableJsonValue.Of(2.75f).AsInt);
-            Assert.Equal(2, ImmutableJsonValue.Of(2.75f).Value<int>());
-            Assert.Equal(-2, ImmutableJsonValue.Of(-2.25f).AsInt);
-            Assert.Equal(-2, ImmutableJsonValue.Of(-2.25f).Value<int>());
-            Assert.Equal(-2, ImmutableJsonValue.Of(-2.75f).AsInt);
-            Assert.Equal(-2, ImmutableJsonValue.Of(-2.75f).Value<int>());
-        }
-
+        
         [Fact]
         public void FloatValueAsIntRoundsTowardZero()
         {
