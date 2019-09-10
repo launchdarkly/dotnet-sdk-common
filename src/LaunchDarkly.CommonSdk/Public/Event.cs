@@ -55,12 +55,24 @@ namespace LaunchDarkly.Client
         /// <summary>
         /// The computed value of the flag.
         /// </summary>
-        public JToken Value { get; private set; }
+        [Obsolete("Use ImmutableJsonValue; JToken is a mutable type")]
+        public JToken Value => ImmutableJsonValue.InnerValue;
+
+        /// <summary>
+        /// The computed value of the flag.
+        /// </summary>
+        public ImmutableJsonValue ImmutableJsonValue { get; private set; }
 
         /// <summary>
         /// The default value of the flag.
         /// </summary>
-        public JToken Default { get; private set; }
+        [Obsolete("Use ImmutableJsonDefault; JToken is a mutable type")]
+        public JToken Default => ImmutableJsonDefault.InnerValue;
+
+        /// <summary>
+        /// The default value of the flag.
+        /// </summary>
+        public ImmutableJsonValue ImmutableJsonDefault { get; private set; }
 
         /// <summary>
         /// The version of the flag.
@@ -93,12 +105,13 @@ namespace LaunchDarkly.Client
         public EvaluationReason Reason { get; private set; }
 
         internal FeatureRequestEvent(long creationDate, string key, User user, int? variation,
-            JToken value, JToken defaultValue, int? version, string prereqOf, bool trackEvents, long? debugEventsUntilDate,
+            ImmutableJsonValue value, ImmutableJsonValue defaultValue, int? version, string prereqOf,
+            bool trackEvents, long? debugEventsUntilDate,
             bool debug, EvaluationReason reason) : base(creationDate, key, user)
         {
             Variation = variation;
-            Value = value;
-            Default = defaultValue;
+            ImmutableJsonValue = value;
+            ImmutableJsonDefault = defaultValue;
             Version = version;
             PrereqOf = prereqOf;
             TrackEvents = trackEvents;
@@ -121,29 +134,29 @@ namespace LaunchDarkly.Client
         /// <summary>
         /// Custom data provided for the event.
         /// </summary>
-        [Obsolete("Use JsonData.")]
-        public string Data
-        {
-            get
-            {
-                return JsonData == null ? null : JsonData.ToString();
-            }
-        }
+        [Obsolete("Use ImmutableJsonData")]
+        public string Data => ImmutableJsonData.IsNull ? null : ImmutableJsonData.AsString;
 
         /// <summary>
         /// Custom data provided for the event.
         /// </summary>
-        public JToken JsonData { get; private set; }
+        [Obsolete("Use ImmutableJsonData; JToken is a mutable type")]
+        public JToken JsonData => ImmutableJsonData.InnerValue;
+
+        /// <summary>
+        /// Custom data provided for the event.
+        /// </summary>
+        public ImmutableJsonValue ImmutableJsonData { get; private set; }
 
         /// <summary>
         /// An optional numeric value that can be used in analytics.
         /// </summary>
         public double? MetricValue { get; private set; }
 
-        internal CustomEvent(long creationDate, string key, User user, JToken data, double? metricValue) :
+        internal CustomEvent(long creationDate, string key, User user, ImmutableJsonValue data, double? metricValue) :
             base(creationDate, key, user)
         {
-            JsonData = data;
+            ImmutableJsonData = data;
             MetricValue = metricValue;
         }
     }

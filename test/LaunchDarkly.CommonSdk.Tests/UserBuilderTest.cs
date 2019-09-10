@@ -166,10 +166,27 @@ namespace LaunchDarkly.Common.Tests
         }
 
         [Fact]
-        public void BuilderCanSetJsonCustomAttribute()
+        public void BuilderCanSetJsonCustomAttributeWithDeprecatedMethod()
         {
             var value = new JArray(new List<JToken>() { new JValue(true), new JValue(1.5) });
+#pragma warning disable 0618
             TestCustomAttribute<JToken>(value, (b, n, v) => b.Custom(n, v));
+#pragma warning restore 0618
+        }
+
+        [Fact]
+        public void BuilderCanSetImmutableJsonCustomAttribute()
+        {
+#pragma warning disable 0618
+            var value = ImmutableJsonValue.FromValues(new int[] { 1, 2 });
+            var user0 = User.Builder(key).Custom("foo", value).Build();
+            Assert.Equal(value, ImmutableJsonValue.FromJToken(user0.Custom["foo"]));
+            Assert.Null(user0.PrivateAttributeNames);
+
+            var user1 = User.Builder(key).Custom("bar", value).AsPrivateAttribute().Build();
+            Assert.Equal(value, ImmutableJsonValue.FromJToken(user1.Custom["bar"]));
+            Assert.Equal(new HashSet<string> { "bar" }, user1.PrivateAttributeNames);
+#pragma warning restore 0618
         }
 
         [Fact]
