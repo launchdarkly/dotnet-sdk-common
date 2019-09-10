@@ -19,7 +19,7 @@ namespace LaunchDarkly.Common
         {
             if (e is FeatureRequestEvent fe)
             {
-                _eventsState.IncrementCounter(fe.Key, fe.Variation, fe.Version, fe.Value, fe.Default);
+                _eventsState.IncrementCounter(fe.Key, fe.Variation, fe.Version, fe.ImmutableJsonValue, fe.ImmutableJsonDefault);
                 _eventsState.NoteTimestamp(fe.CreationDate);
             }
         }
@@ -52,7 +52,7 @@ namespace LaunchDarkly.Common
             }
         }
 
-        internal void IncrementCounter(string key, int? variation, int? version, JToken flagValue, JToken defaultVal)
+        internal void IncrementCounter(string key, int? variation, int? version, ImmutableJsonValue flagValue, ImmutableJsonValue defaultVal)
         {
             EventsCounterKey counterKey = new EventsCounterKey(key, version, variation);
             if (Counters.TryGetValue(counterKey, out EventsCounterValue value))
@@ -111,10 +111,10 @@ namespace LaunchDarkly.Common
     internal sealed class EventsCounterValue
     {
         internal int Count;
-        internal readonly JToken FlagValue;
-        internal readonly JToken Default;
+        internal readonly ImmutableJsonValue FlagValue;
+        internal readonly ImmutableJsonValue Default;
 
-        internal EventsCounterValue(int count, JToken flagValue, JToken defaultVal)
+        internal EventsCounterValue(int count, ImmutableJsonValue flagValue, ImmutableJsonValue defaultVal)
         {
             Count = count;
             FlagValue = flagValue;
