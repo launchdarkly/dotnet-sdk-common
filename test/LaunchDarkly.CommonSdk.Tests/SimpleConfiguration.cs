@@ -31,7 +31,7 @@ namespace LaunchDarkly.Common.Tests
         internal string WrapperVersion { get; set; }
         internal Dictionary<String, Object> DiagnosticConfigPayload { get; set; } = new Dictionary<String, Object>();
         internal IDiagnosticStore DiagnosticStore { get; set; }
-        
+
         string IHttpRequestConfiguration.HttpAuthorizationKey => SdkKey;
         Uri IEventProcessorConfiguration.EventsUri => EventsUri;
         TimeSpan IStreamManagerConfiguration.ReadTimeout => ReadTimeout;

@@ -48,7 +48,7 @@ namespace LaunchDarkly.Common
             {
                 _diagnosticStore = config.DiagnosticStore;
 
-                DiagnosticEvent _lastStats = _diagnosticStore.LastStats;
+                Dictionary<string, Object> _lastStats = _diagnosticStore.LastStats;
                 if (_lastStats != null) {
                     _dispatcher.SendDiagnosticEventAsync(JsonConvert.SerializeObject(_lastStats, Formatting.None));
                 }
@@ -233,7 +233,6 @@ namespace LaunchDarkly.Common
         private readonly Uri _diagnosticUri;
         private readonly Random _random;
         private long _lastKnownPastTime;
-        private long deduplicatedUserCount = 0;
         private volatile bool _disabled;
 
         internal EventDispatcher(IEventProcessorConfiguration config,
@@ -256,7 +255,7 @@ namespace LaunchDarkly.Common
             _httpClient.DefaultRequestHeaders.Add("X-LaunchDarkly-Event-Schema",
                 DefaultEventProcessor.CurrentSchemaVersion);
             
-            EventBuffer buffer = new EventBuffer(config.EventCapacity);
+            EventBuffer buffer = new EventBuffer(config.EventCapacity, _diagnosticStore);
 
             Task.Run(() => RunMainLoop(messageQueue, buffer));
         }
@@ -322,11 +321,9 @@ namespace LaunchDarkly.Common
         private void sendAndResetDiagnostics(EventBuffer buffer)
         {
             if (_diagnosticStore != null) {
-                long droppedEvents = buffer.GetAndResetDroppedCount();
-                long eventsInQueue = buffer.GetEventsInQueueCount();
-                DiagnosticEvent diagnosticEvent = _diagnosticStore.CreateEventAndReset(droppedEvents, deduplicatedUserCount, eventsInQueue);
-                deduplicatedUserCount = 0;
-                SendDiagnosticEventAsync(JsonConvert.SerializeObject(diagnosticEvent, Formatting.None));
+                long EventsInQueue = buffer.GetEventsInQueueCount();
+                Dictionary<String, Object> stats = _diagnosticStore.GetStatsAndReset(EventsInQueue);
+                SendDiagnosticEventAsync(JsonConvert.SerializeObject(stats, Formatting.None));
             }
         }
 
@@ -382,7 +379,7 @@ namespace LaunchDarkly.Common
                         buffer.AddEvent(ie);
                     } else if (!(e is IdentifyEvent))
                     {
-                       deduplicatedUserCount++;
+                       _diagnosticStore.IncrementDeduplicatedUsers();
                     }
                 }
             }
@@ -653,22 +650,23 @@ namespace LaunchDarkly.Common
     {
         private readonly List<Event> _events;
         private readonly EventSummarizer _summarizer;
+        private readonly IDiagnosticStore _diagnosticStore;
         private readonly int _capacity;
         private bool _exceededCapacity;
-        private long _droppedEventCount = 0;
 
-        internal EventBuffer(int capacity)
+        internal EventBuffer(int capacity, IDiagnosticStore diagnosticStore)
         {
             _capacity = capacity;
             _events = new List<Event>();
             _summarizer = new EventSummarizer();
+            _diagnosticStore = diagnosticStore;
         }
 
         internal void AddEvent(Event e)
         {
             if (_events.Count >= _capacity)
             {
-                _droppedEventCount++;
+                _diagnosticStore.IncrementDroppedEvents();
                 if (!_exceededCapacity)
                 {
                     DefaultEventProcessor.Log.Warn("Exceeded event queue capacity. Increase capacity to avoid dropping events.");
@@ -696,12 +694,6 @@ namespace LaunchDarkly.Common
         {
             _events.Clear();
             _summarizer.Clear();
-        }
-
-        internal long GetAndResetDroppedCount() {
-            long res = _droppedEventCount;
-            _droppedEventCount = 0;
-            return res;
         }
 
         internal long GetEventsInQueueCount() {
