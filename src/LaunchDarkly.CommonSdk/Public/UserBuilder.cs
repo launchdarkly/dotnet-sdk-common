@@ -114,14 +114,18 @@ namespace LaunchDarkly.Client
         /// Adds a custom attribute whose value is a JSON value of any kind.
         /// </summary>
         /// <remarks>
+        /// <para>
         /// When set to one of the <a href="http://docs.launchdarkly.com/docs/targeting-users#targeting-based-on-user-attributes">built-in
         /// user attribute keys</a>, this custom attribute will be ignored.
+        /// </para>
+        /// <para>
+        /// In a future version, it will only be possible to use <see cref="ImmutableJsonValue"/>, not <see cref="JToken"/>.
+        /// </para>
         /// </remarks>
         /// <param name="name">the key for the custom attribute</param>
         /// <param name="value">the value for the custom attribute</param>
         /// <returns>the same builder</returns>
-
-        [Obsolete("This method will be removed; use Custom(string, ImmutableJsonValue)")]
+        [Obsolete("Use Custom(string, ImmutableJsonValue)")]
         IUserBuilderCanMakeAttributePrivate Custom(string name, JToken value);
 
         /// <summary>
