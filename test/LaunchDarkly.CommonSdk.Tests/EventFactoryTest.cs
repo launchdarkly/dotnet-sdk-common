@@ -7,8 +7,8 @@ namespace LaunchDarkly.Common.Tests
     public class EventFactoryTest
     {
         private static readonly User user = User.WithKey("user-key");
-        private static readonly ImmutableJsonValue resultVal = ImmutableJsonValue.Of("result");
-        private static readonly ImmutableJsonValue defaultVal = ImmutableJsonValue.Of("default");
+        private static readonly LdValue resultVal = LdValue.Of("result");
+        private static readonly LdValue defaultVal = LdValue.Of("default");
 
         private long TimeNow()
         {
@@ -31,7 +31,7 @@ namespace LaunchDarkly.Common.Tests
         {
             var time = TimeNow();
             var flag = new FlagEventPropertiesBuilder("flag-key").Version(100).Build();
-            var result = new EvaluationDetail<ImmutableJsonValue>(resultVal, 1, EvaluationReason.Fallthrough.Instance);
+            var result = new EvaluationDetail<LdValue>(resultVal, 1, EvaluationReason.Fallthrough.Instance);
             var e = EventFactory.Default.NewFeatureRequestEvent(flag, user, result, defaultVal);
             Assert.True(e.CreationDate >= time);
             Assert.Equal(flag.Key, e.Key);
@@ -51,7 +51,7 @@ namespace LaunchDarkly.Common.Tests
         {
             var flag = new FlagEventPropertiesBuilder("flag-key").Version(100)
                 .TrackEvents(true).DebugEventsUntilDate(1000).Build();
-            var result = new EvaluationDetail<ImmutableJsonValue>(resultVal, 1, EvaluationReason.Fallthrough.Instance);
+            var result = new EvaluationDetail<LdValue>(resultVal, 1, EvaluationReason.Fallthrough.Instance);
             var e = EventFactory.Default.NewFeatureRequestEvent(flag, user, result, defaultVal);
             Assert.True(e.TrackEvents);
             Assert.Equal(1000, e.DebugEventsUntilDate);
@@ -61,7 +61,7 @@ namespace LaunchDarkly.Common.Tests
         public void FeatureEventHasReasonWhenUsingFactoryWithReason()
         {
             var flag = new FlagEventPropertiesBuilder("flag-key").Version(100).Build();
-            var result = new EvaluationDetail<ImmutableJsonValue>(resultVal, 1, EvaluationReason.Fallthrough.Instance);
+            var result = new EvaluationDetail<LdValue>(resultVal, 1, EvaluationReason.Fallthrough.Instance);
             var e = EventFactory.DefaultWithReasons.NewFeatureRequestEvent(flag, user, result, defaultVal);
             Assert.Equal(result.Reason, e.Reason);
         }
@@ -72,7 +72,7 @@ namespace LaunchDarkly.Common.Tests
             var flag = new FlagEventPropertiesBuilder("flag-key").Version(100)
                 .ExperimentReason(EvaluationReason.Fallthrough.Instance)
                 .Build();
-            var result = new EvaluationDetail<ImmutableJsonValue>(resultVal, 1, EvaluationReason.Fallthrough.Instance);
+            var result = new EvaluationDetail<LdValue>(resultVal, 1, EvaluationReason.Fallthrough.Instance);
             var e = EventFactory.Default.NewFeatureRequestEvent(flag, user, result, defaultVal);
             Assert.Equal(result.Reason, e.Reason);
             Assert.True(e.TrackEvents);
@@ -84,7 +84,7 @@ namespace LaunchDarkly.Common.Tests
             var time = TimeNow();
             var flag = new FlagEventPropertiesBuilder("flag-key").Version(100).Build();
             var err = EvaluationErrorKind.EXCEPTION;
-            var result = new EvaluationDetail<ImmutableJsonValue>(resultVal, 1, EvaluationReason.Fallthrough.Instance);
+            var result = new EvaluationDetail<LdValue>(resultVal, 1, EvaluationReason.Fallthrough.Instance);
             var e = EventFactory.Default.NewDefaultFeatureRequestEvent(flag, user, defaultVal, err);
             Assert.True(e.CreationDate >= time);
             Assert.Equal(flag.Key, e.Key);
@@ -105,7 +105,7 @@ namespace LaunchDarkly.Common.Tests
             var flag = new FlagEventPropertiesBuilder("flag-key").Version(100)
                 .TrackEvents(true).DebugEventsUntilDate(1000).Build();
             var err = EvaluationErrorKind.EXCEPTION;
-            var result = new EvaluationDetail<ImmutableJsonValue>(resultVal, 1, EvaluationReason.Fallthrough.Instance);
+            var result = new EvaluationDetail<LdValue>(resultVal, 1, EvaluationReason.Fallthrough.Instance);
             var e = EventFactory.Default.NewDefaultFeatureRequestEvent(flag, user, defaultVal, err);
             Assert.True(e.TrackEvents);
             Assert.Equal(1000, e.DebugEventsUntilDate);
@@ -153,7 +153,7 @@ namespace LaunchDarkly.Common.Tests
             var time = TimeNow();
             var parentFlag = new FlagEventPropertiesBuilder("flag-key").Version(100).Build();
             var flag = new FlagEventPropertiesBuilder("prereq-key").Version(100).Build();
-            var result = new EvaluationDetail<ImmutableJsonValue>(resultVal, 1, EvaluationReason.Fallthrough.Instance);
+            var result = new EvaluationDetail<LdValue>(resultVal, 1, EvaluationReason.Fallthrough.Instance);
             var e = EventFactory.Default.NewPrerequisiteFeatureRequestEvent(flag, user, result, parentFlag);
             Assert.True(e.CreationDate >= time);
             Assert.Equal("prereq-key", e.Key);
@@ -161,7 +161,7 @@ namespace LaunchDarkly.Common.Tests
             Assert.Equal(flag.EventVersion, e.Version);
             Assert.Equal(result.VariationIndex, e.Variation);
             Assert.Equal(result.Value, e.Value);
-            Assert.Equal(ImmutableJsonValue.Null, e.Default);
+            Assert.Equal(LdValue.Null, e.Default);
             Assert.Equal("flag-key", e.PrereqOf);
             Assert.Null(e.Reason);
             Assert.False(e.TrackEvents);
@@ -173,7 +173,7 @@ namespace LaunchDarkly.Common.Tests
         {
             var parentFlag = new FlagEventPropertiesBuilder("flag-key").Version(100).Build();
             var flag = new FlagEventPropertiesBuilder("prereq-key").Version(100).Build();
-            var result = new EvaluationDetail<ImmutableJsonValue>(resultVal, 1, EvaluationReason.Fallthrough.Instance);
+            var result = new EvaluationDetail<LdValue>(resultVal, 1, EvaluationReason.Fallthrough.Instance);
             var e = EventFactory.DefaultWithReasons.NewPrerequisiteFeatureRequestEvent(flag, user, result, parentFlag);
             Assert.Equal(result.Reason, e.Reason);
         }
@@ -185,7 +185,7 @@ namespace LaunchDarkly.Common.Tests
             var flag = new FlagEventPropertiesBuilder("prereq-key").Version(100)
                 .ExperimentReason(EvaluationReason.Fallthrough.Instance)
                 .Build();
-            var result = new EvaluationDetail<ImmutableJsonValue>(resultVal, 1, EvaluationReason.Fallthrough.Instance);
+            var result = new EvaluationDetail<LdValue>(resultVal, 1, EvaluationReason.Fallthrough.Instance);
             var e = EventFactory.Default.NewPrerequisiteFeatureRequestEvent(flag, user, result, parentFlag);
             Assert.Equal(result.Reason, e.Reason);
             Assert.True(e.TrackEvents);
@@ -195,7 +195,7 @@ namespace LaunchDarkly.Common.Tests
         public void CustomEventHasBasicProperties()
         {
             var time = TimeNow();
-            var data = ImmutableJsonValue.Of("hi");
+            var data = LdValue.Of("hi");
             var e = EventFactory.Default.NewCustomEvent("yay", user, data, 1.5);
             Assert.True(e.CreationDate >= time);
             Assert.Equal("yay", e.Key);
@@ -207,8 +207,8 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void CustomEventCanOmitData()
         {
-            var e = EventFactory.Default.NewCustomEvent("yay", user, ImmutableJsonValue.Null, null);
-            Assert.Equal(ImmutableJsonValue.Null, e.Data);
+            var e = EventFactory.Default.NewCustomEvent("yay", user, LdValue.Null, null);
+            Assert.Equal(LdValue.Null, e.Data);
             Assert.Null(e.MetricValue);
         }
 

@@ -89,7 +89,7 @@ namespace LaunchDarkly.Common.Tests
             _ep = MakeProcessor(_config);
             IFlagEventProperties flag = new FlagEventPropertiesBuilder("flagkey").Version(11).TrackEvents(true).Build();
             FeatureRequestEvent fe = EventFactory.Default.NewFeatureRequestEvent(flag, _user,
-                new EvaluationDetail<ImmutableJsonValue>(ImmutableJsonValue.Of("value"), 1, null), ImmutableJsonValue.Null);
+                new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, null), LdValue.Null);
             _ep.SendEvent(fe);
 
             JArray output = FlushAndGetEvents(OkResponse());
@@ -106,7 +106,7 @@ namespace LaunchDarkly.Common.Tests
             _ep = MakeProcessor(_config);
             IFlagEventProperties flag = new FlagEventPropertiesBuilder("flagkey").Version(11).TrackEvents(true).Build();
             FeatureRequestEvent fe = EventFactory.Default.NewFeatureRequestEvent(flag, _user,
-                new EvaluationDetail<ImmutableJsonValue>(ImmutableJsonValue.Of("value"), 1, null), ImmutableJsonValue.Null);
+                new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, null), LdValue.Null);
             _ep.SendEvent(fe);
 
             JArray output = FlushAndGetEvents(OkResponse());
@@ -123,7 +123,7 @@ namespace LaunchDarkly.Common.Tests
             _ep = MakeProcessor(_config);
             IFlagEventProperties flag = new FlagEventPropertiesBuilder("flagkey").Version(11).TrackEvents(true).Build();
             FeatureRequestEvent fe = EventFactory.Default.NewFeatureRequestEvent(flag, _user,
-                new EvaluationDetail<ImmutableJsonValue>(ImmutableJsonValue.Of("value"), 1, null), ImmutableJsonValue.Null);
+                new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, null), LdValue.Null);
             _ep.SendEvent(fe);
 
             JArray output = FlushAndGetEvents(OkResponse());
@@ -140,7 +140,7 @@ namespace LaunchDarkly.Common.Tests
             _ep = MakeProcessor(_config);
             IFlagEventProperties flag = new FlagEventPropertiesBuilder("flagkey").Version(11).TrackEvents(true).Build();
             FeatureRequestEvent fe = EventFactory.Default.NewFeatureRequestEvent(flag, _user,
-                new EvaluationDetail<ImmutableJsonValue>(ImmutableJsonValue.Of("value"), 1, null), ImmutableJsonValue.Null);
+                new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, null), LdValue.Null);
             _ep.SendEvent(fe);
 
             JArray output = FlushAndGetEvents(OkResponse());
@@ -155,7 +155,7 @@ namespace LaunchDarkly.Common.Tests
              _ep = MakeProcessor(_config);
             IFlagEventProperties flag = new FlagEventPropertiesBuilder("flagkey").Version(11).TrackEvents(true).Build();
             FeatureRequestEvent fe = EventFactory.Default.NewFeatureRequestEvent(flag, null,
-                new EvaluationDetail<ImmutableJsonValue>(ImmutableJsonValue.Of("value"), 1, null), ImmutableJsonValue.Null);
+                new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, null), LdValue.Null);
             _ep.SendEvent(fe);
 
             JArray output = FlushAndGetEvents(OkResponse());
@@ -171,7 +171,7 @@ namespace LaunchDarkly.Common.Tests
             _ep = MakeProcessor(_config);
             IFlagEventProperties flag = new FlagEventPropertiesBuilder("flagkey").Version(11).TrackEvents(false).Build();
             FeatureRequestEvent fe = EventFactory.Default.NewFeatureRequestEvent(flag, _user,
-                new EvaluationDetail<ImmutableJsonValue>(ImmutableJsonValue.Of("value"), 1, null), ImmutableJsonValue.Null);
+                new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, null), LdValue.Null);
             _ep.SendEvent(fe);
 
             JArray output = FlushAndGetEvents(OkResponse());
@@ -187,7 +187,7 @@ namespace LaunchDarkly.Common.Tests
             long futureTime = Util.GetUnixTimestampMillis(DateTime.Now) + 1000000;
             IFlagEventProperties flag = new FlagEventPropertiesBuilder("flagkey").Version(11).DebugEventsUntilDate(futureTime).Build();
             FeatureRequestEvent fe = EventFactory.Default.NewFeatureRequestEvent(flag, _user,
-                new EvaluationDetail<ImmutableJsonValue>(ImmutableJsonValue.Of("value"), 1, null), ImmutableJsonValue.Null);
+                new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, null), LdValue.Null);
             _ep.SendEvent(fe);
 
             JArray output = FlushAndGetEvents(OkResponse());
@@ -205,7 +205,7 @@ namespace LaunchDarkly.Common.Tests
             IFlagEventProperties flag = new FlagEventPropertiesBuilder("flagkey").Version(11).TrackEvents(true)
                 .DebugEventsUntilDate(futureTime).Build();
             FeatureRequestEvent fe = EventFactory.Default.NewFeatureRequestEvent(flag, _user,
-                new EvaluationDetail<ImmutableJsonValue>(ImmutableJsonValue.Of("value"), 1, null), ImmutableJsonValue.Null);
+                new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, null), LdValue.Null);
             _ep.SendEvent(fe);
 
             JArray output = FlushAndGetEvents(OkResponse());
@@ -241,7 +241,7 @@ namespace LaunchDarkly.Common.Tests
             long debugUntil = serverTime + 1000;
             IFlagEventProperties flag = new FlagEventPropertiesBuilder("flagkey").Version(11).DebugEventsUntilDate(debugUntil).Build();
             FeatureRequestEvent fe = EventFactory.Default.NewFeatureRequestEvent(flag, _user,
-                new EvaluationDetail<ImmutableJsonValue>(ImmutableJsonValue.Of("value"), 1, null), ImmutableJsonValue.Null);
+                new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, null), LdValue.Null);
             _ep.SendEvent(fe);
 
             // Should get a summary event only, not a full feature event
@@ -268,7 +268,7 @@ namespace LaunchDarkly.Common.Tests
             long debugUntil = serverTime - 1000;
             IFlagEventProperties flag = new FlagEventPropertiesBuilder("flagkey").Version(11).DebugEventsUntilDate(debugUntil).Build();
             FeatureRequestEvent fe = EventFactory.Default.NewFeatureRequestEvent(flag, _user,
-                new EvaluationDetail<ImmutableJsonValue>(ImmutableJsonValue.Of("value"), 1, null), ImmutableJsonValue.Null);
+                new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, null), LdValue.Null);
             _ep.SendEvent(fe);
 
             // Should get a summary event only, not a full feature event
@@ -285,11 +285,11 @@ namespace LaunchDarkly.Common.Tests
             _ep = MakeProcessor(_config);
             IFlagEventProperties flag1 = new FlagEventPropertiesBuilder("flagkey1").Version(11).TrackEvents(true).Build();
             IFlagEventProperties flag2 = new FlagEventPropertiesBuilder("flagkey2").Version(22).TrackEvents(true).Build();
-            ImmutableJsonValue value = ImmutableJsonValue.Of("value");
+            var value = LdValue.Of("value");
             FeatureRequestEvent fe1 = EventFactory.Default.NewFeatureRequestEvent(flag1, _user,
-                new EvaluationDetail<ImmutableJsonValue>(value, 1, null), ImmutableJsonValue.Null);
+                new EvaluationDetail<LdValue>(value, 1, null), LdValue.Null);
             FeatureRequestEvent fe2 = EventFactory.Default.NewFeatureRequestEvent(flag2, _user,
-                new EvaluationDetail<ImmutableJsonValue>(value, 1, null), ImmutableJsonValue.Null);
+                new EvaluationDetail<LdValue>(value, 1, null), LdValue.Null);
             _ep.SendEvent(fe1);
             _ep.SendEvent(fe2);
 
@@ -307,13 +307,13 @@ namespace LaunchDarkly.Common.Tests
             _ep = MakeProcessor(_config);
             IFlagEventProperties flag1 = new FlagEventPropertiesBuilder("flagkey1").Version(11).Build();
             IFlagEventProperties flag2 = new FlagEventPropertiesBuilder("flagkey2").Version(22).Build();
-            ImmutableJsonValue value = ImmutableJsonValue.Of("value");
-            ImmutableJsonValue default1 = ImmutableJsonValue.Of("default1");
-            ImmutableJsonValue default2 = ImmutableJsonValue.Of("default2");
+            var value = LdValue.Of("value");
+            var default1 = LdValue.Of("default1");
+            var default2 = LdValue.Of("default2");
             FeatureRequestEvent fe1 = EventFactory.Default.NewFeatureRequestEvent(flag1, _user,
-                new EvaluationDetail<ImmutableJsonValue>(value, 1, null), default1);
+                new EvaluationDetail<LdValue>(value, 1, null), default1);
             FeatureRequestEvent fe2 = EventFactory.Default.NewFeatureRequestEvent(flag2, _user,
-                new EvaluationDetail<ImmutableJsonValue>(value, 1, null), default2);
+                new EvaluationDetail<LdValue>(value, 1, null), default2);
             _ep.SendEvent(fe1);
             _ep.SendEvent(fe2);
 
@@ -327,7 +327,7 @@ namespace LaunchDarkly.Common.Tests
         public void CustomEventIsQueuedWithUser()
         {
             _ep = MakeProcessor(_config);
-            CustomEvent e = EventFactory.Default.NewCustomEvent("eventkey", _user, ImmutableJsonValue.Of(3), 1.5);
+            CustomEvent e = EventFactory.Default.NewCustomEvent("eventkey", _user, LdValue.Of(3), 1.5);
             _ep.SendEvent(e);
 
             JArray output = FlushAndGetEvents(OkResponse());
@@ -341,7 +341,7 @@ namespace LaunchDarkly.Common.Tests
         {
             _config.InlineUsersInEvents = true;
             _ep = MakeProcessor(_config);
-            CustomEvent e = EventFactory.Default.NewCustomEvent("eventkey", _user, ImmutableJsonValue.Of(3), null);
+            CustomEvent e = EventFactory.Default.NewCustomEvent("eventkey", _user, LdValue.Of(3), null);
             _ep.SendEvent(e);
 
             JArray output = FlushAndGetEvents(OkResponse());
@@ -355,7 +355,7 @@ namespace LaunchDarkly.Common.Tests
             _config.AllAttributesPrivate = true;
             _config.InlineUsersInEvents = true;
             _ep = MakeProcessor(_config);
-            CustomEvent e = EventFactory.Default.NewCustomEvent("eventkey", _user, ImmutableJsonValue.Of(3), null);
+            CustomEvent e = EventFactory.Default.NewCustomEvent("eventkey", _user, LdValue.Of(3), null);
             _ep.SendEvent(e);
 
             JArray output = FlushAndGetEvents(OkResponse());
@@ -367,7 +367,7 @@ namespace LaunchDarkly.Common.Tests
         public void CustomEventCanHaveNullUser()
         {
             _ep = MakeProcessor(_config);
-            CustomEvent e = EventFactory.Default.NewCustomEvent("eventkey", null, ImmutableJsonValue.Of("data"), null);
+            CustomEvent e = EventFactory.Default.NewCustomEvent("eventkey", null, LdValue.Of("data"), null);
             _ep.SendEvent(e);
 
             JArray output = FlushAndGetEvents(OkResponse());

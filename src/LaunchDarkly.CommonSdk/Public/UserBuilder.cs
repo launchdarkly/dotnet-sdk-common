@@ -1,4 +1,6 @@
-﻿using System.Collections.Immutable;
+using System;
+using System.Collections.Immutable;
+using Newtonsoft.Json.Linq;
 
 namespace LaunchDarkly.Client
 {
@@ -110,19 +112,27 @@ namespace LaunchDarkly.Client
         /// <param name="anonymous">true if the user is anonymous</param>
         /// <returns>the same builder</returns>
         IUserBuilder Anonymous(bool anonymous);
-
+        
         /// <summary>
         /// Adds a custom attribute whose value is a JSON value of any kind.
         /// </summary>
         /// <remarks>
-        /// When set to one of the <see href="http://docs.launchdarkly.com/docs/targeting-users#targeting-based-on-user-attributes">built-in
-        /// user attribute keys</see>, this custom attribute will be ignored.
+        /// <para>
+        /// When set to one of the <a href="http://docs.launchdarkly.com/docs/targeting-users#targeting-based-on-user-attributes">built-in
+        /// user attribute keys</a>, this custom attribute will be ignored.
+        /// </para>
         /// </remarks>
+        /// <example>
+        /// <code>
+        ///     var arrayOfIntsValue = LdValue.FromValues(new int[] { 1, 2, 3 });
+        ///     var user = User.Builder("key").Custom("numbers", arrayOfIntsValue).Build();
+        /// </code>
+        /// </example>
         /// <param name="name">the key for the custom attribute</param>
         /// <param name="value">the value for the custom attribute</param>
         /// <returns>the same builder</returns>
-        IUserBuilderCanMakeAttributePrivate Custom(string name, ImmutableJsonValue value);
-        
+        IUserBuilderCanMakeAttributePrivate Custom(string name, LdValue value);
+
         /// <summary>
         /// Adds a custom attribute with a boolean value.
         /// </summary>
@@ -229,7 +239,7 @@ namespace LaunchDarkly.Client
         private string _avatar;
         private string _email;
         private bool _anonymous;
-        private ImmutableDictionary<string, ImmutableJsonValue>.Builder _custom;
+        private ImmutableDictionary<string, LdValue>.Builder _custom;
         private ImmutableHashSet<string>.Builder _privateAttributeNames;
 
         internal UserBuilder(string key)
@@ -258,7 +268,7 @@ namespace LaunchDarkly.Client
         {
             return new User(_key, _secondaryKey, _ipAddress, _country, _firstName, _lastName, _name, _avatar, _email,
                 _anonymous,
-                _custom is null ? ImmutableDictionary.Create<string, ImmutableJsonValue>() : _custom.ToImmutableDictionary(),
+                _custom is null ? ImmutableDictionary.Create<string, LdValue>() : _custom.ToImmutableDictionary(),
                 _privateAttributeNames is null ? ImmutableHashSet.Create<string>() : _privateAttributeNames.ToImmutableHashSet());
         }
 
@@ -322,11 +332,11 @@ namespace LaunchDarkly.Client
             return this;
         }
 
-        public IUserBuilderCanMakeAttributePrivate Custom(string name, ImmutableJsonValue value)
+        public IUserBuilderCanMakeAttributePrivate Custom(string name, LdValue value)
         {
             if (_custom is null)
             {
-                _custom = ImmutableDictionary.CreateBuilder<string, ImmutableJsonValue>();
+                _custom = ImmutableDictionary.CreateBuilder<string, LdValue>();
             }
             _custom[name] = value;
             return CanMakeAttributePrivate(name);
@@ -334,22 +344,22 @@ namespace LaunchDarkly.Client
         
         public IUserBuilderCanMakeAttributePrivate Custom(string name, bool value)
         {
-            return Custom(name, ImmutableJsonValue.Of(value));
+            return Custom(name, LdValue.Of(value));
         }
         
         public IUserBuilderCanMakeAttributePrivate Custom(string name, string value)
         {
-            return Custom(name, ImmutableJsonValue.Of(value));
+            return Custom(name, LdValue.Of(value));
         }
         
         public IUserBuilderCanMakeAttributePrivate Custom(string name, int value)
         {
-            return Custom(name, ImmutableJsonValue.Of(value));
+            return Custom(name, LdValue.Of(value));
         }
         
         public IUserBuilderCanMakeAttributePrivate Custom(string name, float value)
         {
-            return Custom(name, ImmutableJsonValue.Of(value));
+            return Custom(name, LdValue.Of(value));
         }
 
         private IUserBuilderCanMakeAttributePrivate CanMakeAttributePrivate(string attrName)
@@ -434,11 +444,11 @@ namespace LaunchDarkly.Client
             return _builder.Anonymous(anonymous);
         }
 
-        public IUserBuilderCanMakeAttributePrivate Custom(string name, ImmutableJsonValue value)
+        public IUserBuilderCanMakeAttributePrivate Custom(string name, LdValue value)
         {
             return _builder.Custom(name, value);
         }
-
+        
         public IUserBuilderCanMakeAttributePrivate Custom(string name, bool value)
         {
             return _builder.Custom(name, value);

@@ -29,9 +29,9 @@ namespace LaunchDarkly.Common
         [JsonProperty(PropertyName = "version", NullValueHandling = NullValueHandling.Ignore)]
         internal int? Version { get; set; }
         [JsonProperty(PropertyName = "value")]
-        internal ImmutableJsonValue Value { get; set; }
+        internal LdValue Value { get; set; }
         [JsonProperty(PropertyName = "default", NullValueHandling = NullValueHandling.Ignore)]
-        internal ImmutableJsonValue Default { get; set; }
+        internal LdValue? Default { get; set; }
         [JsonProperty(PropertyName = "prereqOf", NullValueHandling = NullValueHandling.Ignore)]
         internal string PrereqOf { get; set; }
         [JsonProperty(PropertyName = "reason", NullValueHandling = NullValueHandling.Ignore)]
@@ -59,7 +59,7 @@ namespace LaunchDarkly.Common
         [JsonProperty(PropertyName = "userKey", NullValueHandling = NullValueHandling.Ignore)]
         internal string UserKey { get; set; }
         [JsonProperty(PropertyName = "data", NullValueHandling = NullValueHandling.Ignore)]
-        internal ImmutableJsonValue? Data { get; set; }
+        internal LdValue? Data { get; set; }
         [JsonProperty(PropertyName = "metricValue", NullValueHandling = NullValueHandling.Ignore)]
         internal double? MetricValue { get; set; }
     }
@@ -85,7 +85,7 @@ namespace LaunchDarkly.Common
     internal sealed class EventSummaryFlag
     {
         [JsonProperty(PropertyName = "default")]
-        internal ImmutableJsonValue Default { get; set; }
+        internal LdValue Default { get; set; }
         [JsonProperty(PropertyName = "counters")]
         internal List<EventSummaryCounter> Counters { get; set; }
     }
@@ -95,7 +95,7 @@ namespace LaunchDarkly.Common
         [JsonProperty(PropertyName = "variation", NullValueHandling = NullValueHandling.Ignore)]
         internal int? Variation { get; set; }
         [JsonProperty(PropertyName = "value")]
-        internal ImmutableJsonValue Value { get; private set; }
+        internal LdValue Value { get; private set; }
         [JsonProperty(PropertyName = "version", NullValueHandling = NullValueHandling.Ignore)]
         internal int? Version { get; private set; }
         [JsonProperty(PropertyName = "count")]
@@ -103,7 +103,7 @@ namespace LaunchDarkly.Common
         [JsonProperty(PropertyName = "unknown", NullValueHandling = NullValueHandling.Ignore)]
         internal bool? Unknown { get; private set; }
 
-        internal EventSummaryCounter(int? variation, ImmutableJsonValue value, int? version, int count)
+        internal EventSummaryCounter(int? variation, LdValue value, int? version, int count)
         {
             Variation = variation;
             Value = value;
@@ -177,7 +177,8 @@ namespace LaunchDarkly.Common
                         Version = fe.Version,
                         Variation = fe.Variation,
                         Value = fe.Value,
-                        Default = fe.Default,
+                        // Default is nullable to save a little bandwidth if it's null
+                        Default = fe.Default.IsNull ? null : (LdValue?)fe.Default,
                         PrereqOf = fe.PrereqOf,
                         Reason = fe.Reason
                     };
@@ -197,7 +198,8 @@ namespace LaunchDarkly.Common
                         Key = ce.Key,
                         User = MaybeInlineUser(ce.User, _config.InlineUsersInEvents),
                         UserKey = MaybeUserKey(ce.User, _config.InlineUsersInEvents),
-                        Data = ce.Data.IsNull ? null : (ImmutableJsonValue?)ce.Data,
+                        // Data is nullable to save a little bandwidth if it's null
+                        Data = ce.Data.IsNull ? null : (LdValue?)ce.Data,
                         MetricValue = ce.MetricValue
                     };
                 case IndexEvent ie:

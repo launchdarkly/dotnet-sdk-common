@@ -53,12 +53,12 @@ namespace LaunchDarkly.Client
         /// <summary>
         /// The computed value of the flag.
         /// </summary>
-        public ImmutableJsonValue Value { get; private set; }
+        public LdValue Value { get; private set; }
 
         /// <summary>
         /// The default value of the flag.
         /// </summary>
-        public ImmutableJsonValue Default { get; private set; }
+        public LdValue Default { get; private set; }
 
         /// <summary>
         /// The version of the flag.
@@ -91,7 +91,8 @@ namespace LaunchDarkly.Client
         public EvaluationReason Reason { get; private set; }
 
         internal FeatureRequestEvent(long creationDate, string key, User user, int? variation,
-            ImmutableJsonValue value, ImmutableJsonValue defaultValue, int? version, string prereqOf, bool trackEvents, long? debugEventsUntilDate,
+            LdValue value, LdValue defaultValue, int? version, string prereqOf,
+            bool trackEvents, long? debugEventsUntilDate,
             bool debug, EvaluationReason reason) : base(creationDate, key, user)
         {
             Variation = variation;
@@ -119,14 +120,14 @@ namespace LaunchDarkly.Client
         /// <summary>
         /// Custom data provided for the event.
         /// </summary>
-        public ImmutableJsonValue Data { get; private set; }
+        public LdValue Data { get; private set; }
 
         /// <summary>
         /// An optional numeric value that can be used in analytics.
         /// </summary>
         public double? MetricValue { get; private set; }
 
-        internal CustomEvent(long creationDate, string key, User user, ImmutableJsonValue data, double? metricValue) :
+        internal CustomEvent(long creationDate, string key, User user, LdValue data, double? metricValue) :
             base(creationDate, key, user)
         {
             Data = data;

@@ -12,7 +12,7 @@ namespace LaunchDarkly.Common
     /// <summary>
     /// A type-safe standardized mechanism for converting between JSON and all of the value types
     /// supported by LaunchDarkly SDKs. Use the predefined <see cref="ValueTypes"/> instances. Unlike
-    /// the type conversions in <see cref="ImmutableJsonValue"/> which never throw exceptions, these
+    /// the type conversions in <see cref="LdValue"/> which never throw exceptions, these
     /// converters will throw a <see cref="ValueTypeException"/> if an incompatible type is requested,
     /// because the SDK evaluation methods need to be able to detect this condition.
     /// </summary>
@@ -31,8 +31,7 @@ namespace LaunchDarkly.Common
     /// because JSON only really has one numeric type).
     /// </para>
     /// <para>
-    /// 3. <c>String</c> and <c>Json</c> can be converted from either an actual <see langword="null"/> or a
-    /// <see cref="JToken"/> of type <see cref="JTokenType.Null"/>.
+    /// 3. <c>String</c> and <c>Json</c> can be converted from a null value.
     /// </para>
     /// <para>
     /// This is a struct rather than a class so that in any context where we expect a <c>ValueType</c>,
@@ -56,20 +55,20 @@ namespace LaunchDarkly.Common
         /// However, these exceptions should not happen often.
         /// </para>
         /// </remarks>
-        public Func<ImmutableJsonValue, T> ValueFromJson { get; }
+        public Func<LdValue, T> ValueFromJson { get; }
 
         /// <summary>
         /// Function for converting the desired type to a JSON value.
         /// </summary>
-        public Func<T, ImmutableJsonValue> ValueToJson { get; }
+        public Func<T, LdValue> ValueToJson { get; }
 
-        internal ValueType(Func<ImmutableJsonValue, T> valueFromJson, Func<T, ImmutableJsonValue> valueToJson)
+        internal ValueType(Func<LdValue, T> valueFromJson, Func<T, LdValue> valueToJson)
         {
             ValueFromJson = valueFromJson;
             ValueToJson = valueToJson;
         }
     }
-    
+
     internal static class ValueTypes
     {
         public static readonly ValueType<bool> Bool = new ValueType<bool>(
@@ -81,7 +80,7 @@ namespace LaunchDarkly.Common
                 }
                 return json.AsBool;
             },
-            value => ImmutableJsonValue.Of(value)
+            value => LdValue.Of(value)
         );
 
         // Note that Int uses ImmutableJsonValue's rounding behavior for floating-point values
@@ -90,31 +89,31 @@ namespace LaunchDarkly.Common
         // our other strongly-typed SDKs.
         public static readonly ValueType<int> Int = new ValueType<int>(
             json => json.IsNumber ? json.AsInt : throw new ValueTypeException(),
-            value => ImmutableJsonValue.Of(value)
+            value => LdValue.Of(value)
         );
 
         public static readonly ValueType<float> Float = new ValueType<float>(
             json => json.IsNumber ? json.AsFloat : throw new ValueTypeException(),
-            value => ImmutableJsonValue.Of(value)
+            value => LdValue.Of(value)
         );
 
         public static readonly ValueType<string> String = new ValueType<string>(
             json =>
             {
-                if (json.IsNull || json.InnerValue.Type == JTokenType.Null)
+                if (json.IsNull)
                 {
                     return null; // strings are always nullable
                 }
-                if (json.InnerValue.Type != JTokenType.String)
+                if (json.Type != JsonValueType.String)
                 {
                     throw new ValueTypeException();
                 }
                 return json.AsString;
             },
-            value => ImmutableJsonValue.Of(value)
+            value => LdValue.Of(value)
         );
-
-        internal static readonly ValueType<ImmutableJsonValue> Json = new ValueType<ImmutableJsonValue>(
+        
+        internal static readonly ValueType<LdValue> Json = new ValueType<LdValue>(
             json => json,
             value => value
         );

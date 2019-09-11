@@ -51,7 +51,7 @@ namespace LaunchDarkly.Common
 
         /// <see cref="User.Custom"/>
         [JsonProperty(PropertyName = "custom", NullValueHandling = NullValueHandling.Ignore)]
-        public IImmutableDictionary<string, ImmutableJsonValue> Custom { get; internal set; }
+        public IImmutableDictionary<string, LdValue> Custom { get; internal set; }
 
         /// <summary>
         /// A list of attribute names that have been omitted from the event.
@@ -97,7 +97,7 @@ namespace LaunchDarkly.Common
             // With the custom attributes, for efficiency's sake we would like to reuse the same ImmutableDictionary
             // whenever possible. So, we'll lazily create a new collection only if it turns out that there are any
             // changes needed (i.e. if one of the custom attributes turns out to be private).
-            ImmutableDictionary<string, ImmutableJsonValue>.Builder customAttrsBuilder = null;
+            ImmutableDictionary<string, LdValue>.Builder customAttrsBuilder = null;
             foreach (var kv in _user.Custom)
             {
                 if (!CheckPrivateAttr(kv.Key, kv.Value))
@@ -107,7 +107,7 @@ namespace LaunchDarkly.Common
                         // This is the first private custom attribute we've found. Lazily create the builder
                         // by first copying all of the ones we've already iterated over. We can rely on the
                         // iteration order being the same because it's immutable.
-                        customAttrsBuilder = ImmutableDictionary.CreateBuilder<string, ImmutableJsonValue>();
+                        customAttrsBuilder = ImmutableDictionary.CreateBuilder<string, LdValue>();
                         foreach (var kv1 in _user.Custom)
                         {
                             if (kv1.Key == kv.Key)

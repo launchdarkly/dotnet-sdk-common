@@ -167,8 +167,14 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void BuilderCanSetJsonCustomAttribute()
         {
-            var value = ImmutableJsonValue.FromValues(new int[] { 1, 2 });
-            TestCustomAttribute<ImmutableJsonValue>(value, (b, n, v) => b.Custom(n, v));
+            var value = LdValue.FromValues(new int[] { 1, 2 });
+            var user0 = User.Builder(key).Custom("foo", value).Build();
+            Assert.Equal(value, user0.Custom["foo"]);
+            Assert.Equal(0, user0.PrivateAttributeNames.Count);
+
+            var user1 = User.Builder(key).Custom("bar", value).AsPrivateAttribute().Build();
+            Assert.Equal(value, user1.Custom["bar"]);
+            Assert.Equal(new HashSet<string> { "bar" }, user1.PrivateAttributeNames);
         }
 
         [Fact]

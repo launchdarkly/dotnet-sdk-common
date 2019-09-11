@@ -50,7 +50,7 @@ namespace LaunchDarkly.Client
         private readonly string _avatar;
         private readonly string _email;
         private readonly bool _anonymous;
-        internal readonly ImmutableDictionary<string, ImmutableJsonValue> _custom;
+        internal readonly ImmutableDictionary<string, LdValue> _custom;
         internal readonly ImmutableHashSet<string> _privateAttributeNames;
 
         /// <summary>
@@ -123,14 +123,14 @@ namespace LaunchDarkly.Client
         /// Custom attributes for the user.
         /// </summary>
         [JsonProperty(PropertyName = "custom", NullValueHandling = NullValueHandling.Ignore)]
-        public IImmutableDictionary<string, ImmutableJsonValue> Custom => _custom;
+        public IImmutableDictionary<string, LdValue> Custom => _custom;
 
         /// <summary>
         /// Used internally to track which attributes are private.
         /// </summary>
         [JsonIgnore]
         public IImmutableSet<string> PrivateAttributeNames => _privateAttributeNames;
-        
+
         /// <summary>
         /// Creates an <see cref="IUserBuilder"/> for constructing a user object using a fluent syntax.
         /// </summary>
@@ -178,7 +178,7 @@ namespace LaunchDarkly.Client
         private User(string key)
         {
             _key = key;
-            _custom = ImmutableDictionary.Create<string, ImmutableJsonValue>();
+            _custom = ImmutableDictionary.Create<string, LdValue>();
             _privateAttributeNames = ImmutableHashSet.Create<string>();
         }
         
@@ -188,7 +188,7 @@ namespace LaunchDarkly.Client
         [JsonConstructor]
         public User(string key, string secondaryKey, string ip, string country, string firstName,
                     string lastName, string name, string avatar, string email, bool? anonymous,
-                    ImmutableDictionary<string, ImmutableJsonValue> custom, ImmutableHashSet<string> privateAttributeNames)
+                    ImmutableDictionary<string, LdValue> custom, ImmutableHashSet<string> privateAttributeNames)
         {
             _key = key;
             _secondary = secondaryKey;
@@ -200,7 +200,7 @@ namespace LaunchDarkly.Client
             _avatar = avatar;
             _email = email;
             _anonymous = anonymous.HasValue && anonymous.Value;
-            _custom = custom ?? ImmutableDictionary.Create<string, ImmutableJsonValue>();
+            _custom = custom ?? ImmutableDictionary.Create<string, LdValue>();
             _privateAttributeNames = privateAttributeNames ?? ImmutableHashSet.Create<string>();
         }
 

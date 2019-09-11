@@ -38,7 +38,7 @@ namespace LaunchDarkly.Common
         /// <param name="defaultVal">the default value passed to the Variation method</param>
         /// <returns>an event</returns>
         internal FeatureRequestEvent NewFeatureRequestEvent(IFlagEventProperties flag, User user,
-            EvaluationDetail<ImmutableJsonValue> result, ImmutableJsonValue defaultVal)
+            EvaluationDetail<LdValue> result, LdValue defaultVal)
         {
             bool experiment = flag.IsExperiment(result.Reason);
             return new FeatureRequestEvent(GetTimestamp(), flag.Key, user, result.VariationIndex, result.Value, defaultVal,
@@ -56,7 +56,7 @@ namespace LaunchDarkly.Common
         /// <param name="errorKind">the type of error</param>
         /// <returns>an event</returns>
         internal FeatureRequestEvent NewDefaultFeatureRequestEvent(IFlagEventProperties flag, User user,
-            ImmutableJsonValue defaultVal, EvaluationErrorKind errorKind)
+            LdValue defaultVal, EvaluationErrorKind errorKind)
         {
             return new FeatureRequestEvent(GetTimestamp(), flag.Key, user, null, defaultVal, defaultVal,
                 flag.EventVersion, null, flag.TrackEvents, flag.DebugEventsUntilDate, false,
@@ -73,7 +73,7 @@ namespace LaunchDarkly.Common
         /// <param name="errorKind">the type of error</param>
         /// <returns>an event</returns>
         internal FeatureRequestEvent NewUnknownFeatureRequestEvent(string key, User user,
-            ImmutableJsonValue defaultVal, EvaluationErrorKind errorKind)
+            LdValue defaultVal, EvaluationErrorKind errorKind)
         {
             return new FeatureRequestEvent(GetTimestamp(), key, user, null, defaultVal, defaultVal,
                 null, null, false, null, false,
@@ -89,10 +89,10 @@ namespace LaunchDarkly.Common
         /// <param name="prereqOf">the flag that used this flag as a prerequisite</param>
         /// <returns>an event</returns>
         internal FeatureRequestEvent NewPrerequisiteFeatureRequestEvent(IFlagEventProperties prereqFlag, User user,
-            EvaluationDetail<ImmutableJsonValue> result, IFlagEventProperties prereqOf)
+            EvaluationDetail<LdValue> result, IFlagEventProperties prereqOf)
         {
             bool experiment = prereqFlag.IsExperiment(result.Reason);
-            return new FeatureRequestEvent(GetTimestamp(), prereqFlag.Key, user, result.VariationIndex, result.Value, ImmutableJsonValue.Null,
+            return new FeatureRequestEvent(GetTimestamp(), prereqFlag.Key, user, result.VariationIndex, result.Value, LdValue.Null,
                 prereqFlag.EventVersion, prereqOf.Key, experiment || prereqFlag.TrackEvents, prereqFlag.DebugEventsUntilDate, false,
                 (experiment || IncludeReasons) ? result.Reason : null);
         }
@@ -116,7 +116,7 @@ namespace LaunchDarkly.Common
         /// <param name="data">optional event data, may be null</param>
         /// <param name="metricValue">optional numeric value for analytics</param>
         /// <returns>an event</returns>
-        internal CustomEvent NewCustomEvent(string key, User user, ImmutableJsonValue data, double? metricValue = null)
+        internal CustomEvent NewCustomEvent(string key, User user, LdValue data, double? metricValue = null)
         {
             return new CustomEvent(GetTimestamp(), key, user, data, metricValue);
         }

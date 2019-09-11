@@ -51,7 +51,7 @@ namespace LaunchDarkly.Common
             }
         }
 
-        internal void IncrementCounter(string key, int? variation, int? version, ImmutableJsonValue flagValue, ImmutableJsonValue defaultVal)
+        internal void IncrementCounter(string key, int? variation, int? version, LdValue flagValue, LdValue defaultVal)
         {
             EventsCounterKey counterKey = new EventsCounterKey(key, version, variation);
             if (Counters.TryGetValue(counterKey, out EventsCounterValue value))
@@ -110,10 +110,10 @@ namespace LaunchDarkly.Common
     internal sealed class EventsCounterValue
     {
         internal int Count;
-        internal readonly ImmutableJsonValue FlagValue;
-        internal readonly ImmutableJsonValue Default;
+        internal readonly LdValue FlagValue;
+        internal readonly LdValue Default;
 
-        internal EventsCounterValue(int count, ImmutableJsonValue flagValue, ImmutableJsonValue defaultVal)
+        internal EventsCounterValue(int count, LdValue flagValue, LdValue defaultVal)
         {
             Count = count;
             FlagValue = flagValue;
