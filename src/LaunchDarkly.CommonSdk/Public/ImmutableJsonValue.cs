@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using LaunchDarkly.Common;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -35,7 +37,7 @@ namespace LaunchDarkly.Client
         /// </summary>
         Array,
         /// <summary>
-        /// The value is an object (dictionary).
+        /// The value is an object (a.k.a. hash or dictionary).
         /// </summary>
         Object
     }
@@ -58,7 +60,8 @@ namespace LaunchDarkly.Client
     /// <para>
     /// Note that this is a <see langword="struct"/>, not a class, so it is always passed by value
     /// and is not nullable; JSON nulls are represented by the constant <see cref="Null"/> and can
-    /// be detected with <see cref="IsNull"/>.
+    /// be detected with <see cref="IsNull"/>. Whenever possible, <see cref="ImmutableJsonValue"/>
+    /// stores primitive types within the struct rather than allocating an object on the heap.
     /// </para>
     /// </remarks>
     [JsonConverter(typeof(ImmutableJsonValueSerializer))]
@@ -66,19 +69,26 @@ namespace LaunchDarkly.Client
     {
         #region Private fields
 
+        private static readonly ImmutableJsonValue _nullInstance = new ImmutableJsonValue(JsonValueType.Null, null);
         private static readonly JToken _jsonFalse = new JValue(false);
         private static readonly JToken _jsonTrue = new JValue(true);
         private static readonly JToken _jsonIntZero = new JValue(0);
         private static readonly JToken _jsonFloatZero = new JValue(0);
         private static readonly JToken _jsonStringEmpty = new JValue("");
 
-        private static readonly ImmutableJsonValue _falseInstance = new ImmutableJsonValue(new JValue(false));
-        private static readonly ImmutableJsonValue _trueInstance = new ImmutableJsonValue(new JValue(true));
-        private static readonly ImmutableJsonValue _intZeroInstance = new ImmutableJsonValue(new JValue(0));
-        private static readonly ImmutableJsonValue _floatZeroInstance = new ImmutableJsonValue(new JValue(0f));
-        private static readonly ImmutableJsonValue _stringEmptyInstance = new ImmutableJsonValue(new JValue(""));
-
-        private readonly JToken _value;
+        // Often, ImmutableJsonValue wraps an existing JToken. In that case, it will be in _wrappedJTokenValue,
+        // and _type will be set to one of our type constants as appropriate. However, when creating a value of
+        // a primitive type, we'd like to be able to access that value without having to create a JToken on the
+        // heap. In that case, _type will indicate the type, and the value will be in _boolValue, _intValue,
+        // etc. If we ever need to convert these primitives to a JToken, InnerValue will lazily create this and
+        // keep it in _synthesizedJTokenValue (which is only used by InnerValue).
+        private readonly JsonValueType _type;
+        private readonly JToken _wrappedJTokenValue; // is never null unless _type is Null
+        private readonly bool _boolValue;
+        private readonly int _intValue;
+        private readonly float _floatValue;
+        private readonly string _stringValue;
+        private volatile JToken _synthesizedJTokenValue; // see InnerValue
 
         #endregion
 
@@ -87,26 +97,105 @@ namespace LaunchDarkly.Client
         /// <summary>
         /// Convenience property for an <see cref="ImmutableJsonValue"/> that wraps a <see langword="null"/> value.
         /// </summary>
-        public static ImmutableJsonValue Null => new ImmutableJsonValue(null);
+        public static ImmutableJsonValue Null => _nullInstance;
 
         #endregion
 
-        #region Internal/private constructor, factory, and properties
+        #region Internal/private constructors, factory, and properties
 
-        private ImmutableJsonValue(JToken value)
+        // Constructor from an existing JToken
+        private ImmutableJsonValue(JsonValueType type, JToken value)
         {
-            _value = NormalizePrimitives(value);
+            _type = type;
+            _wrappedJTokenValue = value;
+            _boolValue = false;
+            _intValue = 0;
+            _floatValue = 0;
+            _stringValue = null;
+            _synthesizedJTokenValue = null;
         }
-        
+
+        // Constructor from a primitive type
+        private ImmutableJsonValue(JsonValueType type, bool boolValue, int intValue, float floatValue, string stringValue)
+        {
+            _type = type;
+            _wrappedJTokenValue = null;
+            _boolValue = boolValue;
+            _intValue = intValue;
+            _floatValue = floatValue;
+            _stringValue = stringValue;
+            _synthesizedJTokenValue = null;
+        }
+
         /// <summary>
-        /// For internal use only. Directly accesses the wrapped value.
+        /// For internal use only. Accesses the wrapped value as a JToken.
         /// </summary>
         /// <remarks>
+        /// <para>
         /// This internal method is used for efficiency only during flag evaluation or JSON serialization,
         /// where we know we will not be modifying any mutable objects or arrays and we will not be
         /// exposing the value to any external code.
+        /// </para>
+        /// <para>
+        /// For values that were initialized from primitive types and do not have a wrapped JToken,
+        /// this lazily creates one if necessary. Note that for efficiency, no synchronization is used
+        /// when doing this, so there is a race condition where we might do it twice but the result
+        /// will be the same.
+        /// </para>
         /// </remarks>
-        internal JToken InnerValue => _value;
+        internal JToken InnerValue
+        {
+            get
+            {
+                if (Type == JsonValueType.Null)
+                {
+                    return null;
+                }
+                if (!(_wrappedJTokenValue is null))
+                {
+                    return _wrappedJTokenValue;
+                }
+                // This is a primitive type; perhaps we already converted it to a JToken?
+                if (!(_synthesizedJTokenValue is null))
+                {
+                    return _synthesizedJTokenValue;
+                }
+                // No - create one now as appropriate.
+                JToken value = null;
+                switch (Type)
+                {
+                    case JsonValueType.Bool:
+                        value = _boolValue ? _jsonTrue : _jsonFalse;
+                        break;
+                    case JsonValueType.Number:
+                        if (_intValue != 0)
+                        {
+                            value = new JValue(_intValue);
+                        }
+                        else if (_floatValue != 0)
+                        {
+                            value = new JValue(_floatValue);
+                        }
+                        else
+                        {
+                            value = _jsonIntZero;
+                        }
+                        break;
+                    case JsonValueType.String:
+                        // _stringValue should never be null in this case because we would have
+                        // stored the type as Null
+                        value = _stringValue.Length == 0 ? _jsonStringEmpty : new JValue(_stringValue);
+                        break;
+                }
+                _synthesizedJTokenValue = value;
+                return value;
+            }
+        }
+
+        /// <summary>
+        /// True if this value was created from an existing JToken. Used only in serialization.
+        /// </summary>
+        internal bool HasWrappedJToken => !(_wrappedJTokenValue is null);
 
         /// <summary>
         /// For internal use only. Initializes an <see cref="ImmutableJsonValue"/> from an arbitrary JSON
@@ -126,29 +215,39 @@ namespace LaunchDarkly.Client
         /// </remarks>
         /// <param name="value">the initial value</param>
         /// <returns>a struct that wraps the value</returns>
-        internal static ImmutableJsonValue FromSafeValue(JToken value) => new ImmutableJsonValue(value);
-
-        private static JToken NormalizePrimitives(JToken value)
+        internal static ImmutableJsonValue FromSafeValue(JToken value)
         {
-            if (!(value is null))
+            if (value is null || value.Type == JTokenType.Null)
             {
-                switch (value.Type)
-                {
-                    case JTokenType.Boolean:
-                        return JValueFromBool(value.Value<bool>());
-                    case JTokenType.Integer when value.Value<int>() == 0:
-                        return _jsonIntZero;
-                    case JTokenType.Float when value.Value<float>() == 0f:
-                        return _jsonFloatZero;
-                    case JTokenType.String when value.Value<string>().Length == 0:
-                        return _jsonStringEmpty;
-                    case JTokenType.Null:
-                        // Newtonsoft.Json sometimes gives us real nulls and sometimes gives us "nully" objects.
-                        // Normalize these to null.
-                        return null;
-                }
+                return _nullInstance;
             }
-            return value;
+            switch (value.Type)
+            {
+                case JTokenType.Boolean:
+                    return Of(value.Value<bool>()); // this uses static instances for true and false
+                case JTokenType.Integer:
+                case JTokenType.Float:
+                    return new ImmutableJsonValue(JsonValueType.Number, value);
+                case JTokenType.String:
+                    // JToken can unfortunately claim that the type is string but actually have a null in it.
+                    var s = value.Value<string>();
+                    return s is null ? _nullInstance : new ImmutableJsonValue(JsonValueType.String, value);
+                case JTokenType.Array:
+                    return new ImmutableJsonValue(JsonValueType.Array, value);
+                case JTokenType.Object:
+                    return new ImmutableJsonValue(JsonValueType.Object, value);
+                // JTokenType also defines a few nonstandard types like TimeSpan, which can only be created
+                // programmatically - we will never see them in parsed input. These are meaningless in
+                // LaunchDarkly logic, which only supports standard JSON types, so we will convert them
+                // to strings except for dates, which we will encode as Unix milliseconds because that's
+                // what our date logic uses in flag evaluations.
+                case JTokenType.Date:
+                    var t = value.Value<DateTime>().ToUniversalTime();
+                    float millis = Util.GetUnixTimestampMillis(t);
+                    return Of(millis);
+                default:
+                    return Of(value.Value<string>());
+            }
         }
 
         #endregion
@@ -192,42 +291,47 @@ namespace LaunchDarkly.Client
         /// Initializes an <see cref="ImmutableJsonValue"/> from a boolean value.
         /// </summary>
         /// <remarks>
-        /// This method reuses static instances for <see langword="true"/> and <see langword="false"/>,
-        /// so it will never create new objects.
+        /// This method will not create any objects on the heap.
         /// </remarks>
         /// <param name="value">the initial value</param>
         /// <returns>a struct that wraps the value</returns>
-        public static ImmutableJsonValue Of(bool value) => new ImmutableJsonValue(JValueFromBool(value));
-
-        private static JToken JValueFromBool(bool value) => value ? _jsonTrue : _jsonFalse;
+        public static ImmutableJsonValue Of(bool value) =>
+            new ImmutableJsonValue(JsonValueType.Bool, value, 0, 0, null);
 
         /// <summary>
         /// Initializes an <see cref="ImmutableJsonValue"/> from an integer value.
         /// </summary>
+        /// <remarks>
+        /// This method will not create any objects on the heap unless you later call <see cref="AsJToken"/>.
+        /// </remarks>
         /// <param name="value">the initial value</param>
         /// <returns>a struct that wraps the value</returns>
-        public static ImmutableJsonValue Of(int value) => new ImmutableJsonValue(JValueFromInt(value));
-
-        private static JToken JValueFromInt(int value) => value == 0 ? _jsonIntZero : new JValue(value);
+        public static ImmutableJsonValue Of(int value) =>
+            new ImmutableJsonValue(JsonValueType.Number, false, value, 0, null);
 
         /// <summary>
         /// Initializes an <see cref="ImmutableJsonValue"/> from a float value.
         /// </summary>
+        /// <remarks>
+        /// This method will not create any objects on the heap unless you later call <see cref="AsJToken"/>.
+        /// </remarks>
         /// <param name="value">the initial value</param>
         /// <returns>a struct that wraps the value</returns>
-        public static ImmutableJsonValue Of(float value) => new ImmutableJsonValue(JValueFromFloat(value));
-
-        private static JToken JValueFromFloat(float value) => value == 0 ? _jsonFloatZero : new JValue(value);
+        public static ImmutableJsonValue Of(float value) =>
+            new ImmutableJsonValue(JsonValueType.Number, false, 0, value, null);
 
         /// <summary>
         /// Initializes an <see cref="ImmutableJsonValue"/> from a string value.
         /// </summary>
+        /// <remarks>
+        /// A null string reference will be stored as <see cref="Null"/> rather than as a string. For a
+        /// non-null string, this method will not create any additional objects on the heap unless you
+        /// later call <see cref="AsJToken"/>.
+        /// </remarks>
         /// <param name="value">the initial value</param>
         /// <returns>a struct that wraps the value</returns>
-        public static ImmutableJsonValue Of(string value) => new ImmutableJsonValue(JValueFromString(value));
-
-        private static JToken JValueFromString(string value) =>
-            value is null ? null : (value.Length == 0 ? _jsonStringEmpty : new JValue(value));
+        public static ImmutableJsonValue Of(string value) =>
+            value is null ? Null : new ImmutableJsonValue(JsonValueType.String, false, 0, 0, value);
 
         /// <summary>
         /// Initializes an <see cref="ImmutableJsonValue"/> as an array, from a sequence of booleans.
@@ -235,7 +339,7 @@ namespace LaunchDarkly.Client
         /// <param name="arrayValue">a sequence of booleans</param>
         /// <returns>a struct representing a JSON array</returns>
         public static ImmutableJsonValue FromValues(IEnumerable<bool> arrayValue) =>
-            FromEnumerable(arrayValue, JValueFromBool);
+            FromEnumerable(arrayValue, (bool b) => Of(b));
 
         /// <summary>
         /// Initializes an <see cref="ImmutableJsonValue"/> as an array, from a sequence of ints.
@@ -243,7 +347,7 @@ namespace LaunchDarkly.Client
         /// <param name="arrayValue">a sequence of ints</param>
         /// <returns>a struct representing a JSON array</returns>
         public static ImmutableJsonValue FromValues(IEnumerable<int> arrayValue) =>
-            FromEnumerable(arrayValue, JValueFromInt);
+            FromEnumerable(arrayValue, (int n) => Of(n));
 
         /// <summary>
         /// Initializes an <see cref="ImmutableJsonValue"/> as an array, from a sequence of floats.
@@ -251,7 +355,7 @@ namespace LaunchDarkly.Client
         /// <param name="arrayValue">a sequence of floats</param>
         /// <returns>a struct representing a JSON array</returns>
         public static ImmutableJsonValue FromValues(IEnumerable<float> arrayValue) =>
-            FromEnumerable(arrayValue, JValueFromFloat);
+            FromEnumerable(arrayValue, (float f) => Of(f));
 
         /// <summary>
         /// Initializes an <see cref="ImmutableJsonValue"/> from a sequence of strings.
@@ -259,7 +363,7 @@ namespace LaunchDarkly.Client
         /// <param name="arrayValue">a sequence of strings</param>
         /// <returns>a struct representing a JSON array</returns>
         public static ImmutableJsonValue FromValues(IEnumerable<string> arrayValue) =>
-            FromEnumerable(arrayValue, JValueFromString);
+            FromEnumerable(arrayValue, (string s) => Of(s));
 
         /// <summary>
         /// Initializes an <see cref="ImmutableJsonValue"/> as an array, from a sequence of JSON values.
@@ -267,20 +371,20 @@ namespace LaunchDarkly.Client
         /// <param name="arrayValue">a sequence of values</param>
         /// <returns>a struct representing a JSON array</returns>
         public static ImmutableJsonValue FromValues(IEnumerable<ImmutableJsonValue> arrayValue) =>
-            FromEnumerable(arrayValue, v => v.InnerValue);
+            FromEnumerable(arrayValue, v => v);
 
-        private static ImmutableJsonValue FromEnumerable<T>(IEnumerable<T> values, Func<T, JToken> convert)
+        private static ImmutableJsonValue FromEnumerable<T>(IEnumerable<T> values, Func<T, ImmutableJsonValue> convert)
         {
             if (values is null)
             {
-                return ImmutableJsonValue.Null;
+                return Null;
             }
             var a = new JArray();
             foreach (var item in values)
             {
-                a.Add(convert(item));
+                a.Add(convert(item).InnerValue);
             }
-            return ImmutableJsonValue.FromSafeValue(a);
+            return FromSafeValue(a);
         }
 
         /// <summary>
@@ -290,7 +394,7 @@ namespace LaunchDarkly.Client
         /// <param name="dictionary">a dictionary of strings to booleans</param>
         /// <returns>a struct representing a JSON object</returns>
         public static ImmutableJsonValue FromDictionary(IReadOnlyDictionary<string, bool> dictionary) =>
-            FromDictionaryInternal(dictionary, JValueFromBool);
+            FromDictionaryInternal(dictionary, (bool b) => Of(b));
 
         /// <summary>
         /// Initializes an <see cref="ImmutableJsonValue"/> as a JSON object, from a dictionary
@@ -299,7 +403,7 @@ namespace LaunchDarkly.Client
         /// <param name="dictionary">a dictionary of strings to ints</param>
         /// <returns>a struct representing a JSON object</returns>
         public static ImmutableJsonValue FromDictionary(IReadOnlyDictionary<string, int> dictionary) =>
-            FromDictionaryInternal(dictionary, JValueFromInt);
+            FromDictionaryInternal(dictionary, (int n) => Of(n));
 
         /// <summary>
         /// Initializes an <see cref="ImmutableJsonValue"/> as a JSON object, from a dictionary
@@ -308,7 +412,7 @@ namespace LaunchDarkly.Client
         /// <param name="dictionary">a dictionary of strings to floats</param>
         /// <returns>a struct representing a JSON object</returns>
         public static ImmutableJsonValue FromDictionary(IReadOnlyDictionary<string, float> dictionary) =>
-            FromDictionaryInternal(dictionary, JValueFromFloat);
+            FromDictionaryInternal(dictionary, (float f) => Of(f));
 
         /// <summary>
         /// Initializes an <see cref="ImmutableJsonValue"/> as a JSON object, from a dictionary
@@ -317,7 +421,7 @@ namespace LaunchDarkly.Client
         /// <param name="dictionary">a dictionary of strings to strings</param>
         /// <returns>a struct representing a JSON object</returns>
         public static ImmutableJsonValue FromDictionary(IReadOnlyDictionary<string, string> dictionary) =>
-            FromDictionaryInternal(dictionary, JValueFromString);
+            FromDictionaryInternal(dictionary, (string s) => Of(s));
 
         /// <summary>
         /// Initializes an <see cref="ImmutableJsonValue"/> as a JSON object, from a dictionary
@@ -326,21 +430,21 @@ namespace LaunchDarkly.Client
         /// <param name="dictionary">a dictionary of strings to JSON values</param>
         /// <returns>a struct representing a JSON object</returns>
         public static ImmutableJsonValue FromDictionary(IReadOnlyDictionary<string, ImmutableJsonValue> dictionary) =>
-            FromDictionaryInternal(dictionary, v => v.InnerValue);
+            FromDictionaryInternal(dictionary, v => v);
 
         private static ImmutableJsonValue FromDictionaryInternal<T>(IReadOnlyDictionary<string, T> dictionary,
-            Func<T, JToken> convert)
+            Func<T, ImmutableJsonValue> convert)
         {
             if (dictionary is null)
             {
-                return ImmutableJsonValue.Null;
+                return Null;
             }
             var o = new JObject();
             foreach (var e in dictionary)
             {
-                o.Add(e.Key, convert(e.Value));
+                o.Add(e.Key, convert(e.Value).InnerValue);
             }
-            return ImmutableJsonValue.FromSafeValue(o);
+            return FromSafeValue(o);
         }
 
         #endregion
@@ -350,41 +454,18 @@ namespace LaunchDarkly.Client
         /// <summary>
         /// The type of the JSON value.
         /// </summary>
-        public JsonValueType Type
-        {
-            get
-            {
-                if (!(_value is null))
-                {
-                    switch (_value.Type)
-                    {
-                        case JTokenType.Boolean:
-                            return JsonValueType.Bool;
-                        case JTokenType.Integer:
-                        case JTokenType.Float:
-                            return JsonValueType.Number;
-                        case JTokenType.String:
-                            return JsonValueType.String;
-                        case JTokenType.Array:
-                            return JsonValueType.Array;
-                        case JTokenType.Object:
-                            return JsonValueType.Object;
-                    }
-                }
-                return JsonValueType.Null;
-            }
-        }
+        public JsonValueType Type => _type;
 
         /// <summary>
         /// True if the wrapped value is <see langword="null"/>.
         /// </summary>
-        public bool IsNull => _value is null || _value.Type == JTokenType.Null;
+        public bool IsNull => Type == JsonValueType.Null;
 
         /// <summary>
         /// True if the wrapped value is numeric.
         /// </summary>
-        public bool IsNumber => !(_value is null) && (_value.Type == JTokenType.Integer || _value.Type == JTokenType.Float);
-        
+        public bool IsNumber => Type == JsonValueType.Number;
+
         /// <summary>
         /// True if the wrapped value is an integer.
         /// </summary>
@@ -403,7 +484,8 @@ namespace LaunchDarkly.Client
         /// If the value is <see langword="null"/> or is not a boolean, this returns <see langword="false"/>.
         /// It will never throw an exception.
         /// </remarks>
-        public bool AsBool => (_value is null || _value.Type != JTokenType.Boolean) ? false : _value.Value<bool>();
+        public bool AsBool => Type == JsonValueType.Bool &&
+            (_wrappedJTokenValue is null ? _boolValue : _wrappedJTokenValue.Value<bool>());
 
         /// <summary>
         /// Converts the value to a string.
@@ -416,15 +498,20 @@ namespace LaunchDarkly.Client
         {
             get
             {
-                if (_value is null)
+                switch (Type)
                 {
-                    return null;
+                    case JsonValueType.Null:
+                        return null;
+                    case JsonValueType.String:
+                        return _wrappedJTokenValue is null ? _stringValue : _wrappedJTokenValue.Value<string>();
+                    case JsonValueType.Bool:
+                        return AsBool.ToString();
+                    case JsonValueType.Number:
+                        return AsFloat.ToString();
+                    default:
+                        return _wrappedJTokenValue is null ? null :
+                            JsonConvert.SerializeObject(_wrappedJTokenValue);
                 }
-                if (_value.Type == JTokenType.Array || _value.Type == JTokenType.Object)
-                {
-                    return JsonConvert.SerializeObject(_value);
-                }
-                return _value.Value<string>();
             }
         }
 
@@ -447,16 +534,15 @@ namespace LaunchDarkly.Client
         {
             get
             {
-                if (!(_value is null))
+                if (Type == JsonValueType.Number)
                 {
-                    if (_value.Type == JTokenType.Integer)
+                    if (_wrappedJTokenValue is null)
                     {
-                        return _value.Value<int>();
+                        // we stored a primitive int or float - it's whichever one is nonzero, if any
+                        return _floatValue == 0 ? _intValue : (int)_floatValue;
                     }
-                    if (_value.Type == JTokenType.Float)
-                    {
-                        return (int)_value.Value<float>();
-                    }
+                    return _wrappedJTokenValue.Type == JTokenType.Integer ?
+                        _wrappedJTokenValue.Value<int>() : (int)_wrappedJTokenValue.Value<float>();
                 }
                 return 0;
             }
@@ -468,7 +554,23 @@ namespace LaunchDarkly.Client
         /// <remarks>
         /// If the value is <see langword="null"/> or is not numeric, this returns zero. It will never throw an exception.
         /// </remarks>
-        public float AsFloat => IsNumber ? _value.Value<float>() : 0;
+        public float AsFloat
+        {
+            get
+            {
+                if (Type == JsonValueType.Number)
+                {
+                    if (_wrappedJTokenValue is null)
+                    {
+                        // we stored a primitive int or float - it's whichever one is nonzero, if any
+                        return _intValue == 0 ? _floatValue : (float)_intValue;
+                    }
+                    return _wrappedJTokenValue.Type == JTokenType.Float ?
+                        _wrappedJTokenValue.Value<float>() : (float)_wrappedJTokenValue.Value<int>();
+                }
+                return 0;
+            }
+        }
 
         #endregion
 
@@ -492,7 +594,7 @@ namespace LaunchDarkly.Client
         /// <typeparam name="T">the element type</typeparam>
         /// <returns>an array of elements of the specified type</returns>
         public IReadOnlyList<T> AsList<T>() =>
-            (_value is JArray a) ?
+            (_wrappedJTokenValue is JArray a) ?
                 new ImmutableJsonArrayConverter<T>(a, v => v.Value<T>()) :
                 new ImmutableJsonArrayConverter<T>(null, null);
 
@@ -514,7 +616,7 @@ namespace LaunchDarkly.Client
         /// <returns>a read-only dictionary</returns>
         public IReadOnlyDictionary<string, T> AsDictionary<T>()
         {
-            if (_value is JObject o)
+            if (_wrappedJTokenValue is JObject o)
             {
                 return new ImmutableJsonObjectConverter<T>(o, v => v.Value<T>());
             }
@@ -546,11 +648,11 @@ namespace LaunchDarkly.Client
         [Obsolete("This method will be removed in the future; use non-JToken-based methods and properties instead")]
         public JToken AsJToken()
         {
-            if (_value is JArray || _value is JObject)
+            if (_wrappedJTokenValue is JArray || _wrappedJTokenValue is JObject)
             {
-                return _value.DeepClone();
+                return _wrappedJTokenValue.DeepClone();
             }
-            return _value;
+            return InnerValue;
         }
 
         /// <summary>
@@ -605,7 +707,7 @@ namespace LaunchDarkly.Client
         /// <returns>the JSON encoding of the value</returns>
         public string ToJsonString()
         {
-            return IsNull ? "null" : JsonConvert.SerializeObject(_value);
+            return IsNull ? "null" : JsonConvert.SerializeObject(InnerValue);
         }
 
         /// <summary>
@@ -618,18 +720,43 @@ namespace LaunchDarkly.Client
         /// </summary>
         public bool Equals(ImmutableJsonValue o)
         {
-            if (IsNumber)
+            if (Type != o.Type)
             {
-                // don't rely on JToken's int/float designation, look at the actual numeric value
-                return o.IsNumber && AsFloat == o.AsFloat;
+                return false;
             }
-            return JToken.DeepEquals(_value, o._value);
+            switch (Type)
+            {
+                case JsonValueType.Null:
+                    return true;
+                case JsonValueType.Bool:
+                    return AsBool == o.AsBool;
+                case JsonValueType.Number:
+                    return AsFloat == o.AsFloat; // don't worry about ints because you can't lose precision going from int to float
+                case JsonValueType.String:
+                    return AsString.Equals(o.AsString);
+                default:
+                    // array and object types always have a wrapped JToken
+                    return JToken.DeepEquals(_wrappedJTokenValue, o._wrappedJTokenValue);
+            }
         }
 
         /// <inheritdoc/>
         public override int GetHashCode()
         {
-            return IsNull ? 0 : _value.GetHashCode();
+            switch (Type)
+            {
+                case JsonValueType.Null:
+                    return 0;
+                case JsonValueType.Bool:
+                    return AsBool.GetHashCode();
+                case JsonValueType.Number:
+                    return AsFloat.GetHashCode();
+                case JsonValueType.String:
+                    return AsString.GetHashCode();
+                default:
+                    // array and object types always have a wrapped JToken
+                    return _wrappedJTokenValue.GetHashCode();
+            }
         }
 
         /// <summary>

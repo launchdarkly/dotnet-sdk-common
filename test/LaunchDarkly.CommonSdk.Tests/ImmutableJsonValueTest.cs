@@ -33,6 +33,24 @@ namespace LaunchDarkly.Common.Tests
             ImmutableJsonValue.FromDictionary(MakeDictionary("x"));
 
         [Fact]
+        public void ValuesCreatedFromPrimitivesDoNotHaveJToken()
+        {
+            Assert.False(aTrueBoolValue.HasWrappedJToken);
+            Assert.False(anIntValue.HasWrappedJToken);
+            Assert.False(aFloatValue.HasWrappedJToken);
+            Assert.False(aStringValue.HasWrappedJToken);
+
+            Assert.True(anIntValueFromJToken.HasWrappedJToken);
+            Assert.True(aFloatValueFromJToken.HasWrappedJToken);
+            Assert.True(aStringValueFromJToken.HasWrappedJToken);
+            Assert.True(anArrayValue.HasWrappedJToken);
+            Assert.True(anObjectValue.HasWrappedJToken);
+
+            // Boolean is a special case where we never create a token because we reuse two static ones
+            Assert.False(aTrueBoolValueFromJToken.HasWrappedJToken);
+        }
+
+        [Fact]
         public void CanGetValueAsBool()
         {
             Assert.Equal(JsonValueType.Bool, aTrueBoolValue.Type);

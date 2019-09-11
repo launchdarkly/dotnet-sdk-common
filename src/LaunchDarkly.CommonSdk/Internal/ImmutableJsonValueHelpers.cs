@@ -10,21 +10,53 @@ namespace LaunchDarkly.Common
 {
     internal class ImmutableJsonValueSerializer : JsonConverter
     {
+        // For values of primitive types that were not created from an existing JToken, this logic will
+        // serialize them directly to JSON without ever allocating a JToken.
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
             if (value is ImmutableJsonValue jv)
             {
-                if (jv.InnerValue is null)
+                if (jv.HasWrappedJToken)
                 {
-                    writer.WriteNull();
+                    jv.InnerValue.WriteTo(writer);
                 }
                 else
                 {
-                    jv.InnerValue.WriteTo(writer);
+                    switch (jv.Type)
+                    {
+                        case JsonValueType.Null:
+                            writer.WriteNull();
+                            break;
+                        case JsonValueType.Bool:
+                            writer.WriteValue(jv.AsBool);
+                            break;
+                        case JsonValueType.Number:
+                            if (jv.IsInt)
+                            {
+                                writer.WriteValue(jv.AsInt);
+                            }
+                            else
+                            {
+                                writer.WriteValue(jv.AsFloat);
+                            }
+                            break;
+                        case JsonValueType.String:
+                            writer.WriteValue(jv.AsString);
+                            break;
+                        default:
+                            // this shouldn't happen since all non-primitive types should have a JToken
+                            writer.WriteNull();
+                            break;
+                    }
                 }
             }
         }
 
+        // Currently we always preserve the value in a JToken when parsing JSON. As long as JToken is exposed
+        // in the public API, there would be no point in using our own primitive value mechanism because we
+        // might need to get it as a JToken later at which point we'd be recreating that object. Once we are
+        // completely avoiding JToken conversions, we can change this method to discard the JToken for
+        // primitive types.
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
             return ImmutableJsonValue.FromSafeValue(JToken.Load(reader));
