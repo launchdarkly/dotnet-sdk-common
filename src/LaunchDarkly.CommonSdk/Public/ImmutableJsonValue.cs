@@ -478,7 +478,7 @@ namespace LaunchDarkly.Client
         public bool IsInt => IsNumber && (AsFloat == (float)AsInt);
 
         /// <summary>
-        /// Converts the value to a boolean.
+        /// Gets the boolean value if this is a boolean.
         /// </summary>
         /// <remarks>
         /// If the value is <see langword="null"/> or is not a boolean, this returns <see langword="false"/>.
@@ -488,35 +488,20 @@ namespace LaunchDarkly.Client
             (_wrappedJTokenValue is null ? _boolValue : _wrappedJTokenValue.Value<bool>());
 
         /// <summary>
-        /// Converts the value to a string.
+        /// Gets the string value if this is a string.
         /// </summary>
         /// <remarks>
-        /// If the value is <see langword="null"/>, this returns <see langword="null"/>. If the value is of a
-        /// non-string type, it is converted to a string. It will never throw an exception.
+        /// <para>
+        /// If the value is <see langword="null"/> or is not a string, this returns <see langword="null"/>.
+        /// It will never throw an exception. To get a JSON representation of the value as a string, use
+        /// <see cref="ToJsonString"/> instead.
+        /// </para>
         /// </remarks>
-        public string AsString
-        {
-            get
-            {
-                switch (Type)
-                {
-                    case JsonValueType.Null:
-                        return null;
-                    case JsonValueType.String:
-                        return _wrappedJTokenValue is null ? _stringValue : _wrappedJTokenValue.Value<string>();
-                    case JsonValueType.Bool:
-                        return AsBool.ToString();
-                    case JsonValueType.Number:
-                        return AsFloat.ToString();
-                    default:
-                        return _wrappedJTokenValue is null ? null :
-                            JsonConvert.SerializeObject(_wrappedJTokenValue);
-                }
-            }
-        }
+        public string AsString => Type == JsonValueType.String ?
+            (_wrappedJTokenValue is null ? _stringValue : _wrappedJTokenValue.Value<string>()) : null;
 
         /// <summary>
-        /// Converts the value to an integer.
+        /// Gets the value as an <see langword="int"/> if it is numeric.
         /// </summary>
         /// <remarks>
         /// <para>
@@ -549,7 +534,7 @@ namespace LaunchDarkly.Client
         }
 
         /// <summary>
-        /// Converts the value to a float.
+        /// Gets the value as an <see langword="float"/> if it is numeric.
         /// </summary>
         /// <remarks>
         /// If the value is <see langword="null"/> or is not numeric, this returns zero. It will never throw an exception.
