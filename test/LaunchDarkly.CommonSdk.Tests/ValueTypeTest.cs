@@ -10,24 +10,24 @@ namespace LaunchDarkly.Common.Tests
         private const float jsonFloatValue = 3.25f;
         private const string jsonStringValue = "hi";
 
-        private static readonly ImmutableJsonValue jsonBoolTrue = ImmutableJsonValue.Of(true);
-        private static readonly ImmutableJsonValue jsonInt = ImmutableJsonValue.Of(jsonIntValue);
-        private static readonly ImmutableJsonValue jsonFloat = ImmutableJsonValue.Of(jsonFloatValue);
-        private static readonly ImmutableJsonValue jsonString = ImmutableJsonValue.Of(jsonStringValue);
-        private static readonly ImmutableJsonValue jsonArray = ImmutableJsonValue.FromValues(new string[] { "item" });
-        private static readonly ImmutableJsonValue jsonObject = ImmutableJsonValue.FromDictionary(new Dictionary<string, string> { { "a", "b" } });
+        private static readonly LdValue jsonBoolTrue = LdValue.Of(true);
+        private static readonly LdValue jsonInt = LdValue.Of(jsonIntValue);
+        private static readonly LdValue jsonFloat = LdValue.Of(jsonFloatValue);
+        private static readonly LdValue jsonString = LdValue.Of(jsonStringValue);
+        private static readonly LdValue jsonArray = LdValue.FromValues(new string[] { "item" });
+        private static readonly LdValue jsonObject = LdValue.FromDictionary(new Dictionary<string, string> { { "a", "b" } });
 
         [Fact]
         public void BoolFromJson()
         {
-            Assert.True(ValueTypes.Bool.ValueFromJson(ImmutableJsonValue.Of(true)));
+            Assert.True(ValueTypes.Bool.ValueFromJson(LdValue.Of(true)));
         }
 
         [Fact]
         public void BoolFromNonBoolValueIsError()
         {
-            VerifyConversionError(ValueTypes.Bool, new ImmutableJsonValue[] {
-                ImmutableJsonValue.Null, jsonInt, jsonFloat, jsonString, jsonArray, jsonObject
+            VerifyConversionError(ValueTypes.Bool, new LdValue[] {
+                LdValue.Null, jsonInt, jsonFloat, jsonString, jsonArray, jsonObject
             });
         }
 
@@ -46,17 +46,17 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void IntFromJsonFloatRoundsToNearestInt()
         {
-            Assert.Equal(2, ValueTypes.Int.ValueFromJson(ImmutableJsonValue.Of(2.25f)));
-            Assert.Equal(3, ValueTypes.Int.ValueFromJson(ImmutableJsonValue.Of(2.75f)));
-            Assert.Equal(-2, ValueTypes.Int.ValueFromJson(ImmutableJsonValue.Of(-2.25f)));
-            Assert.Equal(-3, ValueTypes.Int.ValueFromJson(ImmutableJsonValue.Of(-2.75f)));
+            Assert.Equal(2, ValueTypes.Int.ValueFromJson(LdValue.Of(2.25f)));
+            Assert.Equal(3, ValueTypes.Int.ValueFromJson(LdValue.Of(2.75f)));
+            Assert.Equal(-2, ValueTypes.Int.ValueFromJson(LdValue.Of(-2.25f)));
+            Assert.Equal(-3, ValueTypes.Int.ValueFromJson(LdValue.Of(-2.75f)));
         }
 
         [Fact]
         public void IntFromNonNumericValueIsError()
         {
-            VerifyConversionError(ValueTypes.Int, new ImmutableJsonValue[] {
-                ImmutableJsonValue.Null, jsonBoolTrue, jsonString, jsonArray, jsonObject
+            VerifyConversionError(ValueTypes.Int, new LdValue[] {
+                LdValue.Null, jsonBoolTrue, jsonString, jsonArray, jsonObject
             });
         }
 
@@ -81,8 +81,8 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void FloatFromNonNumericValueIsError()
         {
-            VerifyConversionError(ValueTypes.Float, new ImmutableJsonValue[] {
-                ImmutableJsonValue.Null, ImmutableJsonValue.Of(true), jsonString, jsonArray, jsonObject
+            VerifyConversionError(ValueTypes.Float, new LdValue[] {
+                LdValue.Null, LdValue.Of(true), jsonString, jsonArray, jsonObject
             });
         }
 
@@ -101,19 +101,19 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void StringFromNull()
         {
-            Assert.Null(ValueTypes.String.ValueFromJson(ImmutableJsonValue.Null));
+            Assert.Null(ValueTypes.String.ValueFromJson(LdValue.Null));
         }
 
         [Fact]
         public void StringFromJsonNull()
         {
-            Assert.Null(ValueTypes.String.ValueFromJson(ImmutableJsonValue.Null));
+            Assert.Null(ValueTypes.String.ValueFromJson(LdValue.Null));
         }
 
         [Fact]
         public void StringFromNonStringValueIsError()
         {
-            VerifyConversionError(ValueTypes.String, new ImmutableJsonValue[] {
+            VerifyConversionError(ValueTypes.String, new LdValue[] {
                 jsonBoolTrue, jsonInt, jsonFloat, jsonArray, jsonObject
             });
         }
@@ -133,7 +133,7 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void JsonFromNull()
         {
-            Assert.Equal(ImmutableJsonValue.Null, ValueTypes.Json.ValueFromJson(ImmutableJsonValue.Null));
+            Assert.Equal(LdValue.Null, ValueTypes.Json.ValueFromJson(LdValue.Null));
         }
 
         [Fact]
@@ -154,7 +154,7 @@ namespace LaunchDarkly.Common.Tests
             Assert.Same(jsonObject.InnerValue, ValueTypes.MutableJson.ValueFromJson(jsonObject));
         }
         
-        private void VerifyConversionError<T>(ValueType<T> type, ImmutableJsonValue[] badValues)
+        private void VerifyConversionError<T>(ValueType<T> type, LdValue[] badValues)
         {
             foreach (var v in badValues)
             {
