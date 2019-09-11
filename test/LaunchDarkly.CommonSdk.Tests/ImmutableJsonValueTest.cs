@@ -107,32 +107,26 @@ namespace LaunchDarkly.Common.Tests
         }
 
         [Fact]
-        public void NullValueAsStringIsNull()
+        public void NonStringValueAsStringIsNull()
         {
-            Assert.Null(ImmutableJsonValue.Null.AsString);
-            Assert.Null(ImmutableJsonValue.Null.Value<string>());
-            Assert.Equal(ImmutableJsonValue.Null, ImmutableJsonValue.Of((string)null));
-        }
-
-        [Fact]
-        public void NonStringValuesAreStringified()
-        {
-            Assert.Equal(true.ToString(), aTrueBoolValue.AsString);
-            Assert.Equal(true.ToString(), aTrueBoolValue.Value<string>());
-            Assert.Equal(true.ToString(), aTrueBoolValueFromJToken.AsString);
-            Assert.Equal(true.ToString(), aTrueBoolValueFromJToken.Value<string>());
-            Assert.Equal(someInt.ToString(), anIntValue.AsString);
-            Assert.Equal(someInt.ToString(), anIntValue.Value<string>());
-            Assert.Equal(someInt.ToString(), anIntValueFromJToken.AsString);
-            Assert.Equal(someInt.ToString(), anIntValueFromJToken.Value<string>());
-            Assert.Equal(someFloat.ToString(), aFloatValue.AsString);
-            Assert.Equal(someFloat.ToString(), aFloatValue.Value<string>());
-            Assert.Equal(someFloat.ToString(), aFloatValueFromJToken.AsString);
-            Assert.Equal(someFloat.ToString(), aFloatValueFromJToken.Value<string>());
-            Assert.Equal("[3]", anArrayValue.AsString);
-            Assert.Equal("[3]", anArrayValue.Value<string>());
-            Assert.Equal("{\"1\":\"x\"}", anObjectValue.AsString);
-            Assert.Equal("{\"1\":\"x\"}", anObjectValue.Value<string>());
+            var values = new ImmutableJsonValue[]
+            {
+                ImmutableJsonValue.Null,
+                aTrueBoolValue,
+                aTrueBoolValueFromJToken,
+                anIntValue,
+                anIntValueFromJToken,
+                aFloatValue,
+                aFloatValueFromJToken,
+                anArrayValue,
+                anObjectValue
+            };
+            foreach (var value in values)
+            {
+                Assert.NotEqual(JsonValueType.String, value.Type);
+                Assert.Null(value.AsString);
+                Assert.Null(value.Value<string>());
+            }
         }
 
         [Fact]
