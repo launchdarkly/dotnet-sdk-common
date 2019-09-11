@@ -8,13 +8,13 @@ using Newtonsoft.Json.Linq;
 
 namespace LaunchDarkly.Common
 {
-    internal class ImmutableJsonValueSerializer : JsonConverter
+    internal class LdValueSerializer : JsonConverter
     {
         // For values of primitive types that were not created from an existing JToken, this logic will
         // serialize them directly to JSON without ever allocating a JToken.
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
-            if (value is ImmutableJsonValue jv)
+            if (value is LdValue jv)
             {
                 if (jv.HasWrappedJToken)
                 {
@@ -59,23 +59,23 @@ namespace LaunchDarkly.Common
         // primitive types.
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
-            return ImmutableJsonValue.FromSafeValue(JToken.Load(reader));
+            return LdValue.FromSafeValue(JToken.Load(reader));
         }
 
         public override bool CanConvert(Type objectType)
         {
-            return objectType == typeof(ImmutableJsonValue);
+            return objectType == typeof(LdValue);
         }
     }
 
     // This struct wraps an existing JArray and makes it behave as an IReadOnlyList, with
     // transparent value conversion.
-    internal struct ImmutableJsonArrayConverter<T> : IReadOnlyList<T>
+    internal struct LdValueArrayConverter<T> : IReadOnlyList<T>
     {
         private readonly JArray _array;
-        private readonly Func<ImmutableJsonValue, T> _converter;
+        private readonly Func<LdValue, T> _converter;
 
-        internal ImmutableJsonArrayConverter(JArray array, Func<ImmutableJsonValue, T> converter)
+        internal LdValueArrayConverter(JArray array, Func<LdValue, T> converter)
         {
             _array = array;
             _converter = converter;
@@ -89,7 +89,7 @@ namespace LaunchDarkly.Common
                 {
                     throw new IndexOutOfRangeException();
                 }
-                return _converter(ImmutableJsonValue.FromSafeValue(_array[index]));
+                return _converter(LdValue.FromSafeValue(_array[index]));
             }
         }
 
@@ -102,7 +102,7 @@ namespace LaunchDarkly.Common
                 return Enumerable.Empty<T>().GetEnumerator();
             }
             var conv = _converter;
-            return _array.Select<JToken, T>(v => conv(ImmutableJsonValue.FromSafeValue(v))).GetEnumerator();
+            return _array.Select<JToken, T>(v => conv(LdValue.FromSafeValue(v))).GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -113,12 +113,12 @@ namespace LaunchDarkly.Common
 
     // This struct wraps an existing JObject and makes it behave as an IReadOnlyDictionary, with
     // transparent value conversion.
-    internal struct ImmutableJsonObjectConverter<T> : IReadOnlyDictionary<string, T>
+    internal struct LdValueObjectConverter<T> : IReadOnlyDictionary<string, T>
     {
         private readonly JObject _object;
-        private readonly Func<ImmutableJsonValue, T> _converter;
+        private readonly Func<LdValue, T> _converter;
 
-        internal ImmutableJsonObjectConverter(JObject o, Func<ImmutableJsonValue, T> converter)
+        internal LdValueObjectConverter(JObject o, Func<LdValue, T> converter)
         {
             _object = o;
             _converter = converter;
@@ -133,7 +133,7 @@ namespace LaunchDarkly.Common
                 {
                     throw new KeyNotFoundException();
                 }
-                return _converter(ImmutableJsonValue.FromSafeValue(v));
+                return _converter(LdValue.FromSafeValue(v));
             }
         }
 
@@ -150,7 +150,7 @@ namespace LaunchDarkly.Common
                     return Enumerable.Empty<T>();
                 }
                 var conv = _converter; // lambda can't use instance field
-                return _object.Properties().Select(p => conv(ImmutableJsonValue.FromSafeValue(p.Value)));
+                return _object.Properties().Select(p => conv(LdValue.FromSafeValue(p.Value)));
             }
         }
 
@@ -167,7 +167,7 @@ namespace LaunchDarkly.Common
             }
             var conv = _converter; // lambda can't use instance field
             return _object.Properties().Select<JProperty, KeyValuePair<string, T>>(
-                p => new KeyValuePair<string, T>(p.Name, conv(ImmutableJsonValue.FromSafeValue(p.Value)))
+                p => new KeyValuePair<string, T>(p.Name, conv(LdValue.FromSafeValue(p.Value)))
                 ).GetEnumerator();
         }
 
@@ -175,7 +175,7 @@ namespace LaunchDarkly.Common
         {
             if (!(_object is null) && _object.TryGetValue(key, out var v))
             {
-                value = _converter(ImmutableJsonValue.FromSafeValue(v));
+                value = _converter(LdValue.FromSafeValue(v));
                 return true;
             }
             value = default(T);

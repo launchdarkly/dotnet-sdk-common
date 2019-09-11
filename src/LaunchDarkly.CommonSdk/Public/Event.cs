@@ -55,24 +55,24 @@ namespace LaunchDarkly.Client
         /// <summary>
         /// The computed value of the flag.
         /// </summary>
-        [Obsolete("Use ImmutableJsonValue; JToken is a mutable type")]
-        public JToken Value => ImmutableJsonValue.InnerValue;
+        [Obsolete("Use LdValue; JToken is a mutable type")]
+        public JToken Value => LdValue.InnerValue;
 
         /// <summary>
         /// The computed value of the flag.
         /// </summary>
-        public ImmutableJsonValue ImmutableJsonValue { get; private set; }
+        public LdValue LdValue { get; private set; }
 
         /// <summary>
         /// The default value of the flag.
         /// </summary>
         [Obsolete("Use ImmutableJsonDefault; JToken is a mutable type")]
-        public JToken Default => ImmutableJsonDefault.InnerValue;
+        public JToken Default => LdValueDefault.InnerValue;
 
         /// <summary>
         /// The default value of the flag.
         /// </summary>
-        public ImmutableJsonValue ImmutableJsonDefault { get; private set; }
+        public LdValue LdValueDefault { get; private set; }
 
         /// <summary>
         /// The version of the flag.
@@ -105,13 +105,13 @@ namespace LaunchDarkly.Client
         public EvaluationReason Reason { get; private set; }
 
         internal FeatureRequestEvent(long creationDate, string key, User user, int? variation,
-            ImmutableJsonValue value, ImmutableJsonValue defaultValue, int? version, string prereqOf,
+            LdValue value, LdValue defaultValue, int? version, string prereqOf,
             bool trackEvents, long? debugEventsUntilDate,
             bool debug, EvaluationReason reason) : base(creationDate, key, user)
         {
             Variation = variation;
-            ImmutableJsonValue = value;
-            ImmutableJsonDefault = defaultValue;
+            LdValue = value;
+            LdValueDefault = defaultValue;
             Version = version;
             PrereqOf = prereqOf;
             TrackEvents = trackEvents;
@@ -135,28 +135,28 @@ namespace LaunchDarkly.Client
         /// Custom data provided for the event.
         /// </summary>
         [Obsolete("Use ImmutableJsonData")]
-        public string Data => ImmutableJsonData.IsNull ? null : ImmutableJsonData.AsString;
+        public string Data => LdValueData.IsNull ? null : LdValueData.AsString;
 
         /// <summary>
         /// Custom data provided for the event.
         /// </summary>
         [Obsolete("Use ImmutableJsonData; JToken is a mutable type")]
-        public JToken JsonData => ImmutableJsonData.InnerValue;
+        public JToken JsonData => LdValueData.InnerValue;
 
         /// <summary>
         /// Custom data provided for the event.
         /// </summary>
-        public ImmutableJsonValue ImmutableJsonData { get; private set; }
+        public LdValue LdValueData { get; private set; }
 
         /// <summary>
         /// An optional numeric value that can be used in analytics.
         /// </summary>
         public double? MetricValue { get; private set; }
 
-        internal CustomEvent(long creationDate, string key, User user, ImmutableJsonValue data, double? metricValue) :
+        internal CustomEvent(long creationDate, string key, User user, LdValue data, double? metricValue) :
             base(creationDate, key, user)
         {
-            ImmutableJsonData = data;
+            LdValueData = data;
             MetricValue = metricValue;
         }
     }

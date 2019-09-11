@@ -8,7 +8,7 @@ using Xunit;
 
 namespace LaunchDarkly.Common.Tests
 {
-    public class ImmutableJsonValueTest
+    public class LdValueTest
     {
         const int someInt = 3;
         const float someFloat = 3.25f;
@@ -16,21 +16,21 @@ namespace LaunchDarkly.Common.Tests
         static readonly JArray someArray = new JArray() { new JValue(3) };
         static readonly JObject someObject = new JObject() { { "1", new JValue("x") } };
 
-        static readonly ImmutableJsonValue aTrueBoolValue = ImmutableJsonValue.Of(true);
-        static readonly ImmutableJsonValue anIntValue = ImmutableJsonValue.Of(someInt);
-        static readonly ImmutableJsonValue aFloatValue = ImmutableJsonValue.Of(someFloat);
-        static readonly ImmutableJsonValue aStringValue = ImmutableJsonValue.Of(someString);
+        static readonly LdValue aTrueBoolValue = LdValue.Of(true);
+        static readonly LdValue anIntValue = LdValue.Of(someInt);
+        static readonly LdValue aFloatValue = LdValue.Of(someFloat);
+        static readonly LdValue aStringValue = LdValue.Of(someString);
 #pragma warning disable 0618
-        static readonly ImmutableJsonValue aTrueBoolValueFromJToken = ImmutableJsonValue.FromJToken(new JValue(true));
-        static readonly ImmutableJsonValue anIntValueFromJToken = ImmutableJsonValue.FromJToken(new JValue(someInt));
-        static readonly ImmutableJsonValue aFloatValueFromJToken = ImmutableJsonValue.FromJToken(new JValue(someFloat));
-        static readonly ImmutableJsonValue aStringValueFromJToken = ImmutableJsonValue.FromJToken(new JValue(someString));
+        static readonly LdValue aTrueBoolValueFromJToken = LdValue.FromJToken(new JValue(true));
+        static readonly LdValue anIntValueFromJToken = LdValue.FromJToken(new JValue(someInt));
+        static readonly LdValue aFloatValueFromJToken = LdValue.FromJToken(new JValue(someFloat));
+        static readonly LdValue aStringValueFromJToken = LdValue.FromJToken(new JValue(someString));
 #pragma warning restore 0618
-        static readonly ImmutableJsonValue aNumericLookingStringValue = ImmutableJsonValue.Of("3");
-        static readonly ImmutableJsonValue anArrayValue =
-            ImmutableJsonValue.FromValues(new int[] { 3 });
-        static readonly ImmutableJsonValue anObjectValue =
-            ImmutableJsonValue.FromDictionary(MakeDictionary("x"));
+        static readonly LdValue aNumericLookingStringValue = LdValue.Of("3");
+        static readonly LdValue anArrayValue =
+            LdValue.FromValues(new int[] { 3 });
+        static readonly LdValue anObjectValue =
+            LdValue.FromDictionary(MakeDictionary("x"));
 
         [Fact]
         public void ValuesCreatedFromPrimitivesDoNotHaveJToken()
@@ -64,9 +64,9 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void NonBooleanValueAsBoolIsFalse()
         {
-            var values = new ImmutableJsonValue[]
+            var values = new LdValue[]
             {
-                ImmutableJsonValue.Null,
+                LdValue.Null,
                 aStringValue,
                 aStringValueFromJToken,
                 anIntValue,
@@ -87,11 +87,11 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void BoolValuesUseSameInstances()
         {
-            Assert.Same(ImmutableJsonValue.Of(true).InnerValue, ImmutableJsonValue.Of(true).InnerValue);
-            Assert.Same(ImmutableJsonValue.Of(false).InnerValue, ImmutableJsonValue.Of(false).InnerValue);
+            Assert.Same(LdValue.Of(true).InnerValue, LdValue.Of(true).InnerValue);
+            Assert.Same(LdValue.Of(false).InnerValue, LdValue.Of(false).InnerValue);
 #pragma warning disable 0618
-            Assert.Same(ImmutableJsonValue.Of(true).InnerValue, ImmutableJsonValue.FromJToken(new JValue(true)).InnerValue);
-            Assert.Same(ImmutableJsonValue.Of(false).InnerValue, ImmutableJsonValue.FromJToken(new JValue(false)).InnerValue);
+            Assert.Same(LdValue.Of(true).InnerValue, LdValue.FromJToken(new JValue(true)).InnerValue);
+            Assert.Same(LdValue.Of(false).InnerValue, LdValue.FromJToken(new JValue(false)).InnerValue);
 #pragma warning restore 0618
         }
 
@@ -109,9 +109,9 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void NonStringValueAsStringIsNull()
         {
-            var values = new ImmutableJsonValue[]
+            var values = new LdValue[]
             {
-                ImmutableJsonValue.Null,
+                LdValue.Null,
                 aTrueBoolValue,
                 aTrueBoolValueFromJToken,
                 anIntValue,
@@ -132,8 +132,8 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void EmptyStringValuesUseSameInstance()
         {
-            Assert.Same(ImmutableJsonValue.Of("").AsString, ImmutableJsonValue.Of("").AsString);
-            Assert.Same(ImmutableJsonValue.Of("").InnerValue, ImmutableJsonValue.Of("").InnerValue);
+            Assert.Same(LdValue.Of("").AsString, LdValue.Of("").AsString);
+            Assert.Same(LdValue.Of("").InnerValue, LdValue.Of("").InnerValue);
         }
 
         [Fact]
@@ -150,9 +150,9 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void NonNumericValueAsIntIsZero()
         {
-            var values = new ImmutableJsonValue[]
+            var values = new LdValue[]
             {
-                ImmutableJsonValue.Null,
+                LdValue.Null,
                 aTrueBoolValue,
                 aTrueBoolValueFromJToken,
                 aStringValue,
@@ -171,7 +171,7 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void ZeroIntValuesUseSameInstance()
         {
-            Assert.Same(ImmutableJsonValue.Of(0).InnerValue, ImmutableJsonValue.Of(0).InnerValue);
+            Assert.Same(LdValue.Of(0).InnerValue, LdValue.Of(0).InnerValue);
         }
 
         [Fact]
@@ -197,9 +197,9 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void NonNumericValueAsFloatIsZero()
         {
-            var values = new ImmutableJsonValue[]
+            var values = new LdValue[]
             {
-                ImmutableJsonValue.Null,
+                LdValue.Null,
                 aTrueBoolValue,
                 aTrueBoolValueFromJToken,
                 aStringValue,
@@ -227,44 +227,44 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void FloatValueAsIntRoundsTowardZero()
         {
-            Assert.Equal(2, ImmutableJsonValue.Of(2.25f).AsInt);
-            Assert.Equal(2, ImmutableJsonValue.Of(2.75f).AsInt);
-            Assert.Equal(-2, ImmutableJsonValue.Of(-2.25f).AsInt);
-            Assert.Equal(-2, ImmutableJsonValue.Of(-2.75f).AsInt);
-            Assert.Equal(2, ImmutableJsonValue.Of(2.25f).Value<int>());
-            Assert.Equal(2, ImmutableJsonValue.Of(2.75f).Value<int>());
-            Assert.Equal(-2, ImmutableJsonValue.Of(-2.25f).Value<int>());
-            Assert.Equal(-2, ImmutableJsonValue.Of(-2.75f).Value<int>());
+            Assert.Equal(2, LdValue.Of(2.25f).AsInt);
+            Assert.Equal(2, LdValue.Of(2.75f).AsInt);
+            Assert.Equal(-2, LdValue.Of(-2.25f).AsInt);
+            Assert.Equal(-2, LdValue.Of(-2.75f).AsInt);
+            Assert.Equal(2, LdValue.Of(2.25f).Value<int>());
+            Assert.Equal(2, LdValue.Of(2.75f).Value<int>());
+            Assert.Equal(-2, LdValue.Of(-2.25f).Value<int>());
+            Assert.Equal(-2, LdValue.Of(-2.75f).Value<int>());
         }
 
         [Fact]
         public void ZeroFloatValuesUseSameInstance()
         {
-            Assert.Same(ImmutableJsonValue.Of(0f).InnerValue, ImmutableJsonValue.Of(0f).InnerValue);
+            Assert.Same(LdValue.Of(0f).InnerValue, LdValue.Of(0f).InnerValue);
         }
 
         [Fact]
         public void CanGetValuesAsList()
         {
-            Assert.Equal(new bool[] { true, false }, ImmutableJsonValue.FromValues(new bool[] { true, false }).AsList<bool>());
-            Assert.Equal(new int[] { 1, 2 }, ImmutableJsonValue.FromValues(new int[] { 1, 2 }).AsList<int>());
-            Assert.Equal(new float[] { 1.0f, 2.0f }, ImmutableJsonValue.FromValues(new float[] { 1.0f, 2.0f }).AsList<float>());
-            Assert.Equal(new string[] { "a", "b" }, ImmutableJsonValue.FromValues(new string[] { "a", "b" }).AsList<string>());
-            Assert.Equal(new ImmutableJsonValue[] { anIntValue, aStringValue },
-                ImmutableJsonValue.FromValues(new ImmutableJsonValue[] { anIntValue, aStringValue }).AsList<ImmutableJsonValue>());
-            Assert.Equal(ImmutableJsonValue.Null, ImmutableJsonValue.FromValues((IEnumerable<int>)null));
+            Assert.Equal(new bool[] { true, false }, LdValue.FromValues(new bool[] { true, false }).AsList<bool>());
+            Assert.Equal(new int[] { 1, 2 }, LdValue.FromValues(new int[] { 1, 2 }).AsList<int>());
+            Assert.Equal(new float[] { 1.0f, 2.0f }, LdValue.FromValues(new float[] { 1.0f, 2.0f }).AsList<float>());
+            Assert.Equal(new string[] { "a", "b" }, LdValue.FromValues(new string[] { "a", "b" }).AsList<string>());
+            Assert.Equal(new LdValue[] { anIntValue, aStringValue },
+                LdValue.FromValues(new LdValue[] { anIntValue, aStringValue }).AsList<LdValue>());
+            Assert.Equal(LdValue.Null, LdValue.FromValues((IEnumerable<int>)null));
         }
 
         [Fact]
         public void TypesAreConvertedInList()
         {
-            Assert.Equal(new float[] { 1.0f, 2.0f }, ImmutableJsonValue.FromValues(new int[] { 1, 2 }).AsList<float>());
+            Assert.Equal(new float[] { 1.0f, 2.0f }, LdValue.FromValues(new int[] { 1, 2 }).AsList<float>());
         }
 
         [Fact]
         public void ListCanGetItemByIndex()
         {
-            var v = ImmutableJsonValue.FromValues(new int[] { 1, 2, 3 });
+            var v = LdValue.FromValues(new int[] { 1, 2, 3 });
             var list = v.AsList<int>();
             Assert.Equal(2, list[1]);
             Assert.Throws<IndexOutOfRangeException>(() => list[-1]);
@@ -274,7 +274,7 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void ListCanBeEnumerated()
         {
-            var v = ImmutableJsonValue.FromValues(new int[] { 1, 2, 3 });
+            var v = LdValue.FromValues(new int[] { 1, 2, 3 });
             var list = v.AsList<int>();
             var listOut = new List<int>();
             Assert.Equal(3, list.Count);
@@ -288,9 +288,9 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void NonArrayValuesReturnEmptyOrList()
         {
-            var values = new ImmutableJsonValue[]
+            var values = new LdValue[]
             {
-                ImmutableJsonValue.Null,
+                LdValue.Null,
                 aTrueBoolValue,
                 anIntValue,
                 aFloatValue,
@@ -314,20 +314,20 @@ namespace LaunchDarkly.Common.Tests
         public void CanGetValueAsDictionary()
         {
             AssertDictsEqual(MakeDictionary(true, false),
-                ImmutableJsonValue.FromDictionary(MakeDictionary(true, false)).AsDictionary<bool>());
+                LdValue.FromDictionary(MakeDictionary(true, false)).AsDictionary<bool>());
             AssertDictsEqual(MakeDictionary(1, 2),
-                ImmutableJsonValue.FromDictionary(MakeDictionary(1, 2)).AsDictionary<int>());
+                LdValue.FromDictionary(MakeDictionary(1, 2)).AsDictionary<int>());
             AssertDictsEqual(MakeDictionary(1.0f, 2.0f),
-                ImmutableJsonValue.FromDictionary(MakeDictionary(1.0f, 2.0f)).AsDictionary<float>());
+                LdValue.FromDictionary(MakeDictionary(1.0f, 2.0f)).AsDictionary<float>());
             AssertDictsEqual(MakeDictionary(anIntValue, aStringValue),
-                ImmutableJsonValue.FromDictionary(MakeDictionary(anIntValue, aStringValue)).AsDictionary<ImmutableJsonValue>());
-            Assert.Equal(ImmutableJsonValue.Null, ImmutableJsonValue.FromDictionary((IReadOnlyDictionary<string, string>)null));
+                LdValue.FromDictionary(MakeDictionary(anIntValue, aStringValue)).AsDictionary<LdValue>());
+            Assert.Equal(LdValue.Null, LdValue.FromDictionary((IReadOnlyDictionary<string, string>)null));
         }
 
         [Fact]
         public void DictionaryCanGetValueByKey()
         {
-            var v = ImmutableJsonValue.FromDictionary(MakeDictionary(100, 200, 300));
+            var v = LdValue.FromDictionary(MakeDictionary(100, 200, 300));
             var d = v.AsDictionary<int>();
             Assert.True(d.ContainsKey("2"));
             Assert.Equal(200, d["2"]);
@@ -341,7 +341,7 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void DictionaryCanBeEnumerated()
         {
-            var v = ImmutableJsonValue.FromDictionary(MakeDictionary(100, 200, 300));
+            var v = LdValue.FromDictionary(MakeDictionary(100, 200, 300));
             var d = v.AsDictionary<int>();
             Assert.Equal(3, d.Count);
             Assert.Equal(new string[] { "1", "2", "3" }, new List<string>(d.Keys).OrderBy(s => s));
@@ -357,9 +357,9 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void NonObjectValuesReturnEmptyDictionary()
         {
-            var values = new ImmutableJsonValue[]
+            var values = new LdValue[]
             {
-                ImmutableJsonValue.Null,
+                LdValue.Null,
                 aTrueBoolValue,
                 anIntValue,
                 aFloatValue,
@@ -405,26 +405,26 @@ namespace LaunchDarkly.Common.Tests
         public void IntAndFloatJTokensWithSameValueAreEqual()
         {
 #pragma warning disable 0618
-            Assert.Equal(ImmutableJsonValue.FromJToken(new JValue(2)),
-                ImmutableJsonValue.FromJToken(new JValue(2.0f)));
+            Assert.Equal(LdValue.FromJToken(new JValue(2)),
+                LdValue.FromJToken(new JValue(2.0f)));
 #pragma warning restore 0618
         }
 
         [Fact]
         public void ComplexTypeEqualityUsesDeepEqual()
         {
-            var o0 = ImmutableJsonValue.FromDictionary(new Dictionary<string, string> { { "a", "b" } });
-            var o1 = ImmutableJsonValue.FromDictionary(new Dictionary<string, string> { { "a", "b" } });
+            var o0 = LdValue.FromDictionary(new Dictionary<string, string> { { "a", "b" } });
+            var o1 = LdValue.FromDictionary(new Dictionary<string, string> { { "a", "b" } });
             Assert.Equal(o0, o1);
         }
 
         [Fact]
         public void TestJsonSerialization()
         {
-            Assert.Equal("null", JsonConvert.SerializeObject(ImmutableJsonValue.Null));
+            Assert.Equal("null", JsonConvert.SerializeObject(LdValue.Null));
             Assert.Equal("true", JsonConvert.SerializeObject(aTrueBoolValue));
             Assert.Equal("true", JsonConvert.SerializeObject(aTrueBoolValueFromJToken));
-            Assert.Equal("false", JsonConvert.SerializeObject(ImmutableJsonValue.Of(false)));
+            Assert.Equal("false", JsonConvert.SerializeObject(LdValue.Of(false)));
             Assert.Equal(someInt.ToString(), JsonConvert.SerializeObject(anIntValue));
             Assert.Equal(someInt.ToString(), JsonConvert.SerializeObject(anIntValueFromJToken));
             Assert.Equal(someFloat.ToString(), JsonConvert.SerializeObject(aFloatValue));
@@ -437,22 +437,22 @@ namespace LaunchDarkly.Common.Tests
         public void TestJsonDeserialization()
         {
             var json = "{\"a\":\"b\"}";
-            var actual = JsonConvert.DeserializeObject<ImmutableJsonValue>(json);
-            var expected = ImmutableJsonValue.FromDictionary(new Dictionary<string, string> { { "a", "b" } });
+            var actual = JsonConvert.DeserializeObject<LdValue>(json);
+            var expected = LdValue.FromDictionary(new Dictionary<string, string> { { "a", "b" } });
             Assert.Equal(expected, actual);
         }
 
         [Fact]
         public void TestJsonDeserializationOfNull()
         {
-            var v = JsonConvert.DeserializeObject<ImmutableJsonValue>("null");
+            var v = JsonConvert.DeserializeObject<LdValue>("null");
             Assert.Null(v.InnerValue);
         }
 
         [Fact]
         public void TestNullStringConstructorIsEquivalentToNullInstance()
         {
-            Assert.Equal(ImmutableJsonValue.Null, ImmutableJsonValue.Of(null));
+            Assert.Equal(LdValue.Null, LdValue.Of(null));
         }
 
         private static Dictionary<string, T> MakeDictionary<T>(params T[] values)

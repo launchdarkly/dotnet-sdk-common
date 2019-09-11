@@ -12,7 +12,7 @@ namespace LaunchDarkly.Common
     /// <summary>
     /// A type-safe standardized mechanism for converting between JSON and all of the value types
     /// supported by LaunchDarkly SDKs. Use the predefined <see cref="ValueTypes"/> instances. Unlike
-    /// the type conversions in <see cref="ImmutableJsonValue"/> which never throw exceptions, these
+    /// the type conversions in <see cref="LdValue"/> which never throw exceptions, these
     /// converters will throw a <see cref="ValueTypeException"/> if an incompatible type is requested,
     /// because the SDK evaluation methods need to be able to detect this condition.
     /// </summary>
@@ -57,14 +57,14 @@ namespace LaunchDarkly.Common
         /// However, these exceptions should not happen often.
         /// </para>
         /// </remarks>
-        public Func<ImmutableJsonValue, T> ValueFromJson { get; }
+        public Func<LdValue, T> ValueFromJson { get; }
 
         /// <summary>
         /// Function for converting the desired type to a JSON value.
         /// </summary>
-        public Func<T, ImmutableJsonValue> ValueToJson { get; }
+        public Func<T, LdValue> ValueToJson { get; }
 
-        internal ValueType(Func<ImmutableJsonValue, T> valueFromJson, Func<T, ImmutableJsonValue> valueToJson)
+        internal ValueType(Func<LdValue, T> valueFromJson, Func<T, LdValue> valueToJson)
         {
             ValueFromJson = valueFromJson;
             ValueToJson = valueToJson;
@@ -82,20 +82,20 @@ namespace LaunchDarkly.Common
                 }
                 return json.AsBool;
             },
-            value => ImmutableJsonValue.Of(value)
+            value => LdValue.Of(value)
         );
 
         // Note that Int uses Newtonsoft.Json's default behavior (round to nearest) for compatibility
-        // with .NET SDK 5.x, rather than ImmutableJsonValue's rounding behavior (round toward zero)
+        // with .NET SDK 5.x, rather than LdValue's rounding behavior (round toward zero)
         // which is consistent with the other strongly-typed SDKs.
         public static readonly ValueType<int> Int = new ValueType<int>(
             json => json.IsNumber? json.InnerValue.Value<int>() : throw new ValueTypeException(),
-            value => ImmutableJsonValue.Of(value)
+            value => LdValue.Of(value)
         );
 
         public static readonly ValueType<float> Float = new ValueType<float>(
             json => json.IsNumber ? json.AsFloat : throw new ValueTypeException(),
-            value => ImmutableJsonValue.Of(value)
+            value => LdValue.Of(value)
         );
 
         public static readonly ValueType<string> String = new ValueType<string>(
@@ -111,17 +111,17 @@ namespace LaunchDarkly.Common
                 }
                 return json.AsString;
             },
-            value => ImmutableJsonValue.Of(value)
+            value => LdValue.Of(value)
         );
 
-        internal static readonly ValueType<ImmutableJsonValue> Json = new ValueType<ImmutableJsonValue>(
+        internal static readonly ValueType<LdValue> Json = new ValueType<LdValue>(
             json => json,
             value => value
         );
 
         /// <summary>
         /// MutableJson exists to support the .NET SDK 5.x JsonVariation overload that uses JToken.
-        /// It converts to and from ImmutableJsonValue using unsafe methods that do <i>not</i> do a
+        /// It converts to and from LdValue using unsafe methods that do <i>not</i> do a
         /// deep copy for complex types, so the behavior is identical to the previous implementation.
         /// This was done to prevent unexpected performance penalties in applications that are
         /// currently using that method and do not expect a deep copy to happen as part of a flag
@@ -129,7 +129,7 @@ namespace LaunchDarkly.Common
         /// </summary>
         internal static readonly ValueType<JToken> MutableJson = new ValueType<JToken>(
             json => json.InnerValue,
-            value => ImmutableJsonValue.FromSafeValue(value)
+            value => LdValue.FromSafeValue(value)
         );
     }
 }
