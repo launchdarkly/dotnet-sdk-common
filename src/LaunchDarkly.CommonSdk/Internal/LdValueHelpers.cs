@@ -24,13 +24,13 @@ namespace LaunchDarkly.Common
                 {
                     switch (jv.Type)
                     {
-                        case JsonValueType.Null:
+                        case LdValueType.Null:
                             writer.WriteNull();
                             break;
-                        case JsonValueType.Bool:
+                        case LdValueType.Bool:
                             writer.WriteValue(jv.AsBool);
                             break;
-                        case JsonValueType.Number:
+                        case LdValueType.Number:
                             if (jv.IsInt)
                             {
                                 writer.WriteValue(jv.AsInt);
@@ -40,8 +40,25 @@ namespace LaunchDarkly.Common
                                 writer.WriteValue(jv.AsFloat);
                             }
                             break;
-                        case JsonValueType.String:
+                        case LdValueType.String:
                             writer.WriteValue(jv.AsString);
+                            break;
+                        case LdValueType.Array:
+                            writer.WriteStartArray();
+                            foreach (var v in jv.AsList(LdValue.Convert.Json))
+                            {
+                                WriteJson(writer, v, serializer);
+                            }
+                            writer.WriteEndArray();
+                            break;
+                        case LdValueType.Object:
+                            writer.WriteStartObject();
+                            foreach (var kv in jv.AsDictionary(LdValue.Convert.Json))
+                            {
+                                writer.WritePropertyName(kv.Key);
+                                WriteJson(writer, kv.Value, serializer);
+                            }
+                            writer.WriteEndObject();
                             break;
                         default:
                             // this shouldn't happen since all non-primitive types should have a JToken
@@ -70,121 +87,117 @@ namespace LaunchDarkly.Common
 
     // This struct wraps an existing JArray and makes it behave as an IReadOnlyList, with
     // transparent value conversion.
-    internal struct LdValueArrayConverter<T> : IReadOnlyList<T>
+    internal struct LdValueListConverter<T, U> : IReadOnlyList<U>
     {
-        private readonly JArray _array;
-        private readonly Func<LdValue, T> _converter;
+        private readonly IList<T> _source;
+        private readonly Func<T, U> _converter;
 
-        internal LdValueArrayConverter(JArray array, Func<LdValue, T> converter)
+        internal LdValueListConverter(IList<T> source, Func<T, U> converter)
         {
-            _array = array;
+            _source = source;
             _converter = converter;
         }
 
-        public T this[int index]
+        public U this[int index]
         {
             get
             {
-                if (_array is null || index < 0 || index >= _array.Count)
+                if (_source is null || index < 0 || index >= _source.Count)
                 {
                     throw new IndexOutOfRangeException();
                 }
-                return _converter(LdValue.FromSafeValue(_array[index]));
+                return _converter(_source[index]);
             }
         }
 
-        public int Count => _array is null ? 0 : _array.Count;
+        public int Count => _source is null ? 0 : _source.Count;
 
-        public IEnumerator<T> GetEnumerator()
-        {
-            if (_array is null)
-            {
-                return Enumerable.Empty<T>().GetEnumerator();
-            }
-            var conv = _converter;
-            return _array.Select<JToken, T>(v => conv(LdValue.FromSafeValue(v))).GetEnumerator();
-        }
+        public IEnumerator<U> GetEnumerator() =>
+            _source is null ? Enumerable.Empty<U>().GetEnumerator() :
+                _source.Select<T, U>(_converter).GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
         }
+
+        public override string ToString()
+        {
+            return "[" + string.Join(",", this) + "]";
+        }
     }
 
     // This struct wraps an existing JObject and makes it behave as an IReadOnlyDictionary, with
     // transparent value conversion.
-    internal struct LdValueObjectConverter<T> : IReadOnlyDictionary<string, T>
+    internal struct LdValueObjectConverter<T, U> : IReadOnlyDictionary<string, U>
     {
-        private readonly JObject _object;
-        private readonly Func<LdValue, T> _converter;
+        private readonly IDictionary<string, T> _source;
+        private readonly Func<T, U> _converter;
 
-        internal LdValueObjectConverter(JObject o, Func<LdValue, T> converter)
+        internal LdValueObjectConverter(IDictionary<string, T> source, Func<T, U> converter)
         {
-            _object = o;
+            _source = source;
             _converter = converter;
         }
 
-        public T this[string key]
+        public U this[string key]
         {
             get
             {
                 // Note that JObject[key] does *not* throw a KeyNotFoundException, but we should
-                if (_object is null || !_object.TryGetValue(key, out var v))
+                if (_source is null || !_source.TryGetValue(key, out var v))
                 {
                     throw new KeyNotFoundException();
                 }
-                return _converter(LdValue.FromSafeValue(v));
+                return _converter(v);
             }
         }
 
         public IEnumerable<string> Keys =>
-            _object is null ? Enumerable.Empty<string>() :
-            _object.Properties().Select(p => p.Name);
+            _source is null ? Enumerable.Empty<string>() : _source.Keys;
 
-        public IEnumerable<T> Values
-        {
-            get
-            {
-                if (_object is null)
-                {
-                    return Enumerable.Empty<T>();
-                }
-                var conv = _converter; // lambda can't use instance field
-                return _object.Properties().Select(p => conv(LdValue.FromSafeValue(p.Value)));
-            }
-        }
+        public IEnumerable<U> Values =>
+            _source is null ? Enumerable.Empty<U>() :
+                _source.Values.Select(_converter);
 
-        public int Count => _object is null ? 0 : _object.Count;
+        public int Count => _source is null ? 0 : _source.Count;
 
         public bool ContainsKey(string key) =>
-            !(_object is null) && _object.TryGetValue(key, out var ignore);
+            !(_source is null) && _source.TryGetValue(key, out var ignore);
 
-        public IEnumerator<KeyValuePair<string, T>> GetEnumerator()
+        public IEnumerator<KeyValuePair<string, U>> GetEnumerator()
         {
-            if (_object is null)
+            if (_source is null)
             {
-                return Enumerable.Empty<KeyValuePair<string, T>>().GetEnumerator();
+                return Enumerable.Empty<KeyValuePair<string, U>>().GetEnumerator();
             }
             var conv = _converter; // lambda can't use instance field
-            return _object.Properties().Select<JProperty, KeyValuePair<string, T>>(
-                p => new KeyValuePair<string, T>(p.Name, conv(LdValue.FromSafeValue(p.Value)))
+            return _source.Select<KeyValuePair<string, T>, KeyValuePair<string, U>>(
+                p => new KeyValuePair<string, U>(p.Key, conv(p.Value))
                 ).GetEnumerator();
         }
 
-        public bool TryGetValue(string key, out T value)
+        public bool TryGetValue(string key, out U value)
         {
-            if (!(_object is null) && _object.TryGetValue(key, out var v))
+            if (!(_source is null) && _source.TryGetValue(key, out var v))
             {
-                value = _converter(LdValue.FromSafeValue(v));
+                value = _converter(v);
                 return true;
             }
-            value = default(T);
+            value = default(U);
             return false;
         }
 
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
+        }
+
+        public override string ToString()
+        {
+            return "{" +
+                string.Join(",", this.Select(kv => "\"" + kv.Key + "\":" + kv.Value)) +
+                "}";
         }
     }
 }

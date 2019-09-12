@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using LaunchDarkly.Common;
@@ -13,7 +12,7 @@ namespace LaunchDarkly.Client
     /// <summary>
     /// Describes the type of a JSON value.
     /// </summary>
-    public enum JsonValueType
+    public enum LdValueType
     {
         /// <summary>
         /// The value is null.
@@ -63,17 +62,36 @@ namespace LaunchDarkly.Client
     /// be detected with <see cref="IsNull"/>. Whenever possible, <see cref="LdValue"/>
     /// stores primitive types within the struct rather than allocating an object on the heap.
     /// </para>
+    /// <para>
+    /// There are several ways to create an <see cref="LdValue"/>. For primitive types,
+    /// use the various overloads of "Of" such as <see cref="Of(bool)"/>; these are very efficient
+    /// since they do not allocate any objects on the heap. For arrays and objects (dictionaries),
+    /// use <see cref="ArrayFrom(IEnumerable{LdValue})"/>, <see cref="ArrayOf(LdValue[])"/>,
+    /// <see cref="ObjectFrom(IReadOnlyDictionary{string, LdValue})"/>, or the corresponding
+    /// methods in the type-specific <see cref="Convert"/> instances.
+    /// </para>
+    /// <para>
+    /// To convert to other types, there are the "As" properties such as 
+    /// use the various overloads of "Of" such as <see cref="Of(bool)"/>; these are very efficient
+    /// since they do not allocate any objects on the heap. For arrays and objects (dictionaries),
+    /// use <see cref="AsList{T}(LdValue.Converter{T})"/> or <see cref="AsDictionary{T}(LdValue.Converter{T})"/>.
+    /// </para>
+    /// <para>
+    /// Currently, there is also the option of converting to or from the <see cref="Newtonsoft.Json"/>
+    /// type <see cref="JToken"/>. However, those methods may be removed in the future in order to avoid
+    /// this third-party API dependency.
+    /// </para>
     /// </remarks>
     [JsonConverter(typeof(LdValueSerializer))]
     public struct LdValue : IEquatable<LdValue>
     {
         #region Private fields
 
-        private static readonly LdValue _nullInstance = new LdValue(JsonValueType.Null, null);
+        private static readonly LdValue _nullInstance = new LdValue(LdValueType.Null, null);
         private static readonly JToken _jsonFalse = new JValue(false);
         private static readonly JToken _jsonTrue = new JValue(true);
         private static readonly JToken _jsonIntZero = new JValue(0);
-        private static readonly JToken _jsonFloatZero = new JValue(0);
+        private static readonly JToken _jsonDoubleZero = new JValue((double)0);
         private static readonly JToken _jsonStringEmpty = new JValue("");
 
         // Often, LdValue wraps an existing JToken. In that case, it will be in _wrappedJTokenValue,
@@ -82,12 +100,13 @@ namespace LaunchDarkly.Client
         // heap. In that case, _type will indicate the type, and the value will be in _boolValue, _intValue,
         // etc. If we ever need to convert these primitives to a JToken, InnerValue will lazily create this and
         // keep it in _synthesizedJTokenValue (which is only used by InnerValue).
-        private readonly JsonValueType _type;
+        private readonly LdValueType _type;
         private readonly JToken _wrappedJTokenValue; // is never null unless _type is Null
         private readonly bool _boolValue;
-        private readonly int _intValue;
-        private readonly float _floatValue;
+        private readonly double _doubleValue; // all numbers are stored as double
         private readonly string _stringValue;
+        private readonly IList<LdValue> _arrayValue; // will be IImmutableList in the future, but we don't have System.Collections.Immutables yet
+        private readonly IDictionary<string, LdValue> _objectValue; // same
         private volatile JToken _synthesizedJTokenValue; // see InnerValue
 
         #endregion
@@ -104,26 +123,54 @@ namespace LaunchDarkly.Client
         #region Internal/private constructors, factory, and properties
 
         // Constructor from an existing JToken
-        private LdValue(JsonValueType type, JToken value)
+        private LdValue(LdValueType type, JToken value)
         {
             _type = type;
             _wrappedJTokenValue = value;
             _boolValue = false;
-            _intValue = 0;
-            _floatValue = 0;
+            _doubleValue = 0;
             _stringValue = null;
+            _arrayValue = null;
+            _objectValue = null;
             _synthesizedJTokenValue = null;
         }
 
         // Constructor from a primitive type
-        private LdValue(JsonValueType type, bool boolValue, int intValue, float floatValue, string stringValue)
+        private LdValue(LdValueType type, bool boolValue, double doubleValue, string stringValue)
         {
             _type = type;
             _wrappedJTokenValue = null;
             _boolValue = boolValue;
-            _intValue = intValue;
-            _floatValue = floatValue;
+            _doubleValue = doubleValue;
             _stringValue = stringValue;
+            _arrayValue = null;
+            _objectValue = null;
+            _synthesizedJTokenValue = null;
+        }
+
+        // Constructor from a read-only list
+        private LdValue(IList<LdValue> list)
+        {
+            _type = LdValueType.Array;
+            _arrayValue = list;
+            _wrappedJTokenValue = null;
+            _boolValue = false;
+            _doubleValue = 0;
+            _stringValue = null;
+            _objectValue = null;
+            _synthesizedJTokenValue = null;
+        }
+
+        // Constructor from a read-only dictionary
+        private LdValue(IDictionary<string, LdValue> dict)
+        {
+            _type = LdValueType.Object;
+            _objectValue = dict;
+            _wrappedJTokenValue = null;
+            _boolValue = false;
+            _doubleValue = 0;
+            _stringValue = null;
+            _arrayValue = null;
             _synthesizedJTokenValue = null;
         }
 
@@ -147,15 +194,16 @@ namespace LaunchDarkly.Client
         {
             get
             {
-                if (Type == JsonValueType.Null)
+                if (Type == LdValueType.Null)
                 {
                     return null;
                 }
+                // Were we created to wrap a JToken in the first place?
                 if (!(_wrappedJTokenValue is null))
                 {
                     return _wrappedJTokenValue;
                 }
-                // This is a primitive type; perhaps we already converted it to a JToken?
+                // Perhaps we already converted our value to a JToken?
                 if (!(_synthesizedJTokenValue is null))
                 {
                     return _synthesizedJTokenValue;
@@ -164,27 +212,43 @@ namespace LaunchDarkly.Client
                 JToken value = null;
                 switch (Type)
                 {
-                    case JsonValueType.Bool:
+                    case LdValueType.Bool:
                         value = _boolValue ? _jsonTrue : _jsonFalse;
                         break;
-                    case JsonValueType.Number:
-                        if (_intValue != 0)
+                    case LdValueType.Number:
+                        if (IsInt)
                         {
-                            value = new JValue(_intValue);
-                        }
-                        else if (_floatValue != 0)
-                        {
-                            value = new JValue(_floatValue);
+                            value = _doubleValue == 0 ? _jsonIntZero : new JValue((int)_doubleValue);
                         }
                         else
                         {
-                            value = _jsonIntZero;
+                            value = _doubleValue == 0 ? _jsonDoubleZero : new JValue(_doubleValue);
                         }
                         break;
-                    case JsonValueType.String:
+                    case LdValueType.String:
                         // _stringValue should never be null in this case because we would have
                         // stored the type as Null
                         value = _stringValue.Length == 0 ? _jsonStringEmpty : new JValue(_stringValue);
+                        break;
+                    case LdValueType.Array:
+                        var a = new JArray();
+                        foreach (var item in _arrayValue)
+                        {
+#pragma warning disable 0618
+                            a.Add(item.AsJToken());
+#pragma warning restore 0618
+                        }
+                        value = a;
+                        break;
+                    case LdValueType.Object:
+                        var o = new JObject();
+                        foreach (var e in _objectValue)
+                        {
+#pragma warning disable 0618
+                            o.Add(e.Key, e.Value.AsJToken());
+#pragma warning restore 0618
+                        }
+                        value = 0;
                         break;
                 }
                 _synthesizedJTokenValue = value;
@@ -227,15 +291,15 @@ namespace LaunchDarkly.Client
                     return Of(value.Value<bool>()); // this uses static instances for true and false
                 case JTokenType.Integer:
                 case JTokenType.Float:
-                    return new LdValue(JsonValueType.Number, value);
+                    return new LdValue(LdValueType.Number, value);
                 case JTokenType.String:
                     // JToken can unfortunately claim that the type is string but actually have a null in it.
                     var s = value.Value<string>();
-                    return s is null ? _nullInstance : new LdValue(JsonValueType.String, value);
+                    return s is null ? _nullInstance : new LdValue(LdValueType.String, value);
                 case JTokenType.Array:
-                    return new LdValue(JsonValueType.Array, value);
+                    return new LdValue(LdValueType.Array, value);
                 case JTokenType.Object:
-                    return new LdValue(JsonValueType.Object, value);
+                    return new LdValue(LdValueType.Object, value);
                 // JTokenType also defines a few nonstandard types like TimeSpan, which can only be created
                 // programmatically - we will never see them in parsed input. These are meaningless in
                 // LaunchDarkly logic, which only supports standard JSON types, so we will convert them
@@ -290,162 +354,97 @@ namespace LaunchDarkly.Client
         /// <summary>
         /// Initializes an <see cref="LdValue"/> from a boolean value.
         /// </summary>
-        /// <remarks>
-        /// This method will not create any objects on the heap.
-        /// </remarks>
         /// <param name="value">the initial value</param>
         /// <returns>a struct that wraps the value</returns>
         public static LdValue Of(bool value) =>
-            new LdValue(JsonValueType.Bool, value, 0, 0, null);
+            new LdValue(LdValueType.Bool, value, 0, null);
 
         /// <summary>
-        /// Initializes an <see cref="LdValue"/> from an integer value.
+        /// Initializes an <see cref="LdValue"/> from an <see langword="int"/> value.
         /// </summary>
-        /// <remarks>
-        /// This method will not create any objects on the heap unless you later call <see cref="AsJToken"/>.
-        /// </remarks>
         /// <param name="value">the initial value</param>
         /// <returns>a struct that wraps the value</returns>
         public static LdValue Of(int value) =>
-            new LdValue(JsonValueType.Number, false, value, 0, null);
+            new LdValue(LdValueType.Number, false, value, null);
 
         /// <summary>
-        /// Initializes an <see cref="LdValue"/> from a float value.
+        /// Initializes an <see cref="LdValue"/> from a <see langword="long"/> value.
         /// </summary>
-        /// <remarks>
-        /// This method will not create any objects on the heap unless you later call <see cref="AsJToken"/>.
-        /// </remarks>
+        /// <param name="value">the initial value</param>
+        /// <returns>a struct that wraps the value</returns>
+        public static LdValue Of(long value) =>
+            new LdValue(LdValueType.Number, false, value, null);
+
+        /// <summary>
+        /// Initializes an <see cref="LdValue"/> from a <see langword="float"/> value.
+        /// </summary>
         /// <param name="value">the initial value</param>
         /// <returns>a struct that wraps the value</returns>
         public static LdValue Of(float value) =>
-            new LdValue(JsonValueType.Number, false, 0, value, null);
+            new LdValue(LdValueType.Number, false, value, null);
+
+        /// <summary>
+        /// Initializes an <see cref="LdValue"/> from a <see langword="double"/> value.
+        /// </summary>
+        /// <param name="value">the initial value</param>
+        /// <returns>a struct that wraps the value</returns>
+        public static LdValue Of(double value) =>
+            new LdValue(LdValueType.Number, false, value, null);
 
         /// <summary>
         /// Initializes an <see cref="LdValue"/> from a string value.
         /// </summary>
         /// <remarks>
-        /// A null string reference will be stored as <see cref="Null"/> rather than as a string. For a
-        /// non-null string, this method will not create any additional objects on the heap unless you
-        /// later call <see cref="AsJToken"/>.
+        /// A null string reference will be stored as <see cref="Null"/> rather than as a string.
         /// </remarks>
         /// <param name="value">the initial value</param>
         /// <returns>a struct that wraps the value</returns>
         public static LdValue Of(string value) =>
-            value is null ? Null : new LdValue(JsonValueType.String, false, 0, 0, value);
-
-        /// <summary>
-        /// Initializes an <see cref="LdValue"/> as an array, from a sequence of booleans.
-        /// </summary>
-        /// <param name="arrayValue">a sequence of booleans</param>
-        /// <returns>a struct representing a JSON array</returns>
-        public static LdValue FromValues(IEnumerable<bool> arrayValue) =>
-            FromEnumerable(arrayValue, (bool b) => Of(b));
-
-        /// <summary>
-        /// Initializes an <see cref="LdValue"/> as an array, from a sequence of ints.
-        /// </summary>
-        /// <param name="arrayValue">a sequence of ints</param>
-        /// <returns>a struct representing a JSON array</returns>
-        public static LdValue FromValues(IEnumerable<int> arrayValue) =>
-            FromEnumerable(arrayValue, (int n) => Of(n));
-
-        /// <summary>
-        /// Initializes an <see cref="LdValue"/> as an array, from a sequence of floats.
-        /// </summary>
-        /// <param name="arrayValue">a sequence of floats</param>
-        /// <returns>a struct representing a JSON array</returns>
-        public static LdValue FromValues(IEnumerable<float> arrayValue) =>
-            FromEnumerable(arrayValue, (float f) => Of(f));
-
-        /// <summary>
-        /// Initializes an <see cref="LdValue"/> from a sequence of strings.
-        /// </summary>
-        /// <param name="arrayValue">a sequence of strings</param>
-        /// <returns>a struct representing a JSON array</returns>
-        public static LdValue FromValues(IEnumerable<string> arrayValue) =>
-            FromEnumerable(arrayValue, (string s) => Of(s));
+            value is null ? Null : new LdValue(LdValueType.String, false, 0, value);
 
         /// <summary>
         /// Initializes an <see cref="LdValue"/> as an array, from a sequence of JSON values.
         /// </summary>
-        /// <param name="arrayValue">a sequence of values</param>
+        /// <remarks>
+        /// To create an array from values of some other type, use <see cref="Converter{T}.ArrayFrom(IEnumerable{T})"/>
+        /// </remarks>
+        /// <example>
+        /// <code>
+        ///     var listOfValues = new List&lt;LdValue&gt; { LdValue.Of(1), LdValue.Of("x") };
+        ///     var arrayValue = LdValue.ArrayFrom(listOfValues);
+        /// </code>
+        /// </example>
+        /// <param name="values">a sequence of values</param>
+        /// <returns>a struct representing a JSON array, or <see cref="Null"/> if the parameter was null</returns>
+        public static LdValue ArrayFrom(IEnumerable<LdValue> values) =>
+            Convert.Json.ArrayFrom(values);
+
+        /// <summary>
+        /// Initializes an <see cref="LdValue"/> as an array, from a sequence of JSON values.
+        /// </summary>
+        /// <remarks>
+        /// To create an array from values of some other type, use <see cref="Converter{T}.ArrayOf(T[])"/>
+        /// </remarks>
+        /// <example>
+        /// <code>
+        ///     var arrayValue = LdValue.ArrayFrom(LdValue.Of("a"), LdValue.Of("b"));
+        /// </code>
+        /// </example>
+        /// <param name="values">any number of values</param>
         /// <returns>a struct representing a JSON array</returns>
-        public static LdValue FromValues(IEnumerable<LdValue> arrayValue) =>
-            FromEnumerable(arrayValue, v => v);
-
-        private static LdValue FromEnumerable<T>(IEnumerable<T> values, Func<T, LdValue> convert)
-        {
-            if (values is null)
-            {
-                return Null;
-            }
-            var a = new JArray();
-            foreach (var item in values)
-            {
-                a.Add(convert(item).InnerValue);
-            }
-            return FromSafeValue(a);
-        }
+        public static LdValue ArrayOf(params LdValue[] values) =>
+            Convert.Json.ArrayOf(values);
 
         /// <summary>
-        /// Initializes an <see cref="LdValue"/> as a JSON object, from a dictionary
-        /// containing booleans.
+        /// Initializes an <see cref="LdValue"/> as a JSON object, from a dictionary.
         /// </summary>
-        /// <param name="dictionary">a dictionary of strings to booleans</param>
-        /// <returns>a struct representing a JSON object</returns>
-        public static LdValue FromDictionary(IReadOnlyDictionary<string, bool> dictionary) =>
-            FromDictionaryInternal(dictionary, (bool b) => Of(b));
-
-        /// <summary>
-        /// Initializes an <see cref="LdValue"/> as a JSON object, from a dictionary
-        /// containing ints.
-        /// </summary>
-        /// <param name="dictionary">a dictionary of strings to ints</param>
-        /// <returns>a struct representing a JSON object</returns>
-        public static LdValue FromDictionary(IReadOnlyDictionary<string, int> dictionary) =>
-            FromDictionaryInternal(dictionary, (int n) => Of(n));
-
-        /// <summary>
-        /// Initializes an <see cref="LdValue"/> as a JSON object, from a dictionary
-        /// containing floats.
-        /// </summary>
-        /// <param name="dictionary">a dictionary of strings to floats</param>
-        /// <returns>a struct representing a JSON object</returns>
-        public static LdValue FromDictionary(IReadOnlyDictionary<string, float> dictionary) =>
-            FromDictionaryInternal(dictionary, (float f) => Of(f));
-
-        /// <summary>
-        /// Initializes an <see cref="LdValue"/> as a JSON object, from a dictionary
-        /// containing strings.
-        /// </summary>
-        /// <param name="dictionary">a dictionary of strings to strings</param>
-        /// <returns>a struct representing a JSON object</returns>
-        public static LdValue FromDictionary(IReadOnlyDictionary<string, string> dictionary) =>
-            FromDictionaryInternal(dictionary, (string s) => Of(s));
-
-        /// <summary>
-        /// Initializes an <see cref="LdValue"/> as a JSON object, from a dictionary
-        /// containing JSON values.
-        /// </summary>
-        /// <param name="dictionary">a dictionary of strings to JSON values</param>
-        /// <returns>a struct representing a JSON object</returns>
-        public static LdValue FromDictionary(IReadOnlyDictionary<string, LdValue> dictionary) =>
-            FromDictionaryInternal(dictionary, v => v);
-
-        private static LdValue FromDictionaryInternal<T>(IReadOnlyDictionary<string, T> dictionary,
-            Func<T, LdValue> convert)
-        {
-            if (dictionary is null)
-            {
-                return Null;
-            }
-            var o = new JObject();
-            foreach (var e in dictionary)
-            {
-                o.Add(e.Key, convert(e.Value).InnerValue);
-            }
-            return FromSafeValue(o);
-        }
+        /// <remarks>
+        /// To use a dictionary with values of some other type, use <see cref="Converter{T}.ObjectFrom"/>.
+        /// </remarks>
+        /// <param name="dictionary">a dictionary with string keys and values of the specified type</param>
+        /// <returns>a struct representing a JSON object, or <see cref="Null"/> if the parameter was null</returns>
+        public static LdValue ObjectFrom(IReadOnlyDictionary<string, LdValue> dictionary) =>
+            Convert.Json.ObjectFrom(dictionary);
 
         #endregion
 
@@ -454,17 +453,17 @@ namespace LaunchDarkly.Client
         /// <summary>
         /// The type of the JSON value.
         /// </summary>
-        public JsonValueType Type => _type;
+        public LdValueType Type => _type;
 
         /// <summary>
         /// True if the wrapped value is <see langword="null"/>.
         /// </summary>
-        public bool IsNull => Type == JsonValueType.Null;
+        public bool IsNull => Type == LdValueType.Null;
 
         /// <summary>
         /// True if the wrapped value is numeric.
         /// </summary>
-        public bool IsNumber => Type == JsonValueType.Number;
+        public bool IsNumber => Type == LdValueType.Number;
 
         /// <summary>
         /// True if the wrapped value is an integer.
@@ -478,13 +477,24 @@ namespace LaunchDarkly.Client
         public bool IsInt => IsNumber && (AsFloat == (float)AsInt);
 
         /// <summary>
+        /// True if the wrapped value is a string.
+        /// </summary>
+        public bool IsString => Type == LdValueType.String;
+
+        /// <summary>
         /// Gets the boolean value if this is a boolean.
         /// </summary>
         /// <remarks>
+        /// <para>
         /// If the value is <see langword="null"/> or is not a boolean, this returns <see langword="false"/>.
         /// It will never throw an exception.
+        /// </para>
+        /// <para>
+        /// This is equivalent to calling <see cref="Converter{T}.ToType(LdValue)"/> on
+        /// <see cref="LdValue.Convert.Bool"/>.
+        /// </para>
         /// </remarks>
-        public bool AsBool => Type == JsonValueType.Bool &&
+        public bool AsBool => Type == LdValueType.Bool &&
             (_wrappedJTokenValue is null ? _boolValue : _wrappedJTokenValue.Value<bool>());
 
         /// <summary>
@@ -496,8 +506,12 @@ namespace LaunchDarkly.Client
         /// It will never throw an exception. To get a JSON representation of the value as a string, use
         /// <see cref="ToJsonString"/> instead.
         /// </para>
+        /// <para>
+        /// This is equivalent to calling <see cref="Converter{T}.ToType(LdValue)"/> on
+        /// <see cref="LdValue.Convert.String"/>.
+        /// </para>
         /// </remarks>
-        public string AsString => Type == JsonValueType.String ?
+        public string AsString => Type == LdValueType.String ?
             (_wrappedJTokenValue is null ? _stringValue : _wrappedJTokenValue.Value<string>()) : null;
 
         /// <summary>
@@ -509,49 +523,78 @@ namespace LaunchDarkly.Client
         /// never throw an exception.
         /// </para>
         /// <para>
-        /// If the value is a number but not an integer, it will be rounded toward zero (truncated).
-        /// This is consistent with C# casting behavior, and with other LaunchDarkly SDKs that have
-        /// strong typing, but it is different from the default behavior of <see cref="Newtonsoft.Json"/>
-        /// which is to round to the nearest integer.
+        /// If the value is a number but not an integer, it will be rounded to the nearest integer.
+        /// This is consistent with the behavior of <c>IntVariation</c> in .NET SDK 5.x, and rounding in
+        /// <see cref="Newtonsoft.Json"/>, but it is different from C# casting behavior and the behavior
+        /// of other LaunchDarkly SDKs, which round toward zero. This will be changed in a future version
+        /// to always round toward zero. If in doubt, call <see cref="AsFloat"/> or <see cref="AsDouble"/>
+        /// and do the rounding yourself.
+        /// </para>
+        /// <para>
+        /// This is equivalent to calling <see cref="Converter{T}.ToType(LdValue)"/> on
+        /// <see cref="LdValue.Convert.Int"/>.
         /// </para>
         /// </remarks>
-        public int AsInt
-        {
-            get
-            {
-                if (Type == JsonValueType.Number)
-                {
-                    if (_wrappedJTokenValue is null)
-                    {
-                        // we stored a primitive int or float - it's whichever one is nonzero, if any
-                        return _floatValue == 0 ? _intValue : (int)_floatValue;
-                    }
-                    return _wrappedJTokenValue.Type == JTokenType.Integer ?
-                        _wrappedJTokenValue.Value<int>() : (int)_wrappedJTokenValue.Value<float>();
-                }
-                return 0;
-            }
-        }
+        public int AsInt => (int)Math.Round(AsDouble, MidpointRounding.ToEven);
+
+        /// <summary>
+        /// Gets the value as an <see langword="long"/> if it is numeric.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// If the value is <see langword="null"/> or is not numeric, this returns zero. It will
+        /// never throw an exception.
+        /// </para>
+        /// <para>
+        /// If the value is a number but not an integer, it will be rounded to the nearest integer.
+        /// This is consistent with the behavior of <c>IntVariation</c> in .NET SDK 5.x, and rounding in
+        /// <see cref="Newtonsoft.Json"/>, but it is different from C# casting behavior and the behavior
+        /// of other LaunchDarkly SDKs, which round toward zero. This will be changed in a future version
+        /// to always round toward zero. If in doubt, call <see cref="AsFloat"/> or <see cref="AsDouble"/>
+        /// and do the rounding yourself.
+        /// </para>
+        /// <para>
+        /// This is equivalent to calling <see cref="Converter{T}.ToType(LdValue)"/> on
+        /// <see cref="LdValue.Convert.Long"/>.
+        /// </para>
+        /// </remarks>
+        public long AsLong => (long)Math.Round(AsDouble, MidpointRounding.ToEven);
 
         /// <summary>
         /// Gets the value as an <see langword="float"/> if it is numeric.
         /// </summary>
         /// <remarks>
-        /// If the value is <see langword="null"/> or is not numeric, this returns zero. It will never throw an exception.
+        /// <para>
+        /// If the value is <see langword="null"/> or is not numeric, this returns zero. It will never
+        /// throw an exception.
+        /// </para>
+        /// <para>
+        /// This is equivalent to calling <see cref="Converter{T}.ToType(LdValue)"/> on
+        /// <see cref="LdValue.Convert.Float"/>.
+        /// </para>
         /// </remarks>
-        public float AsFloat
+        public float AsFloat => (float)AsDouble;
+
+        /// <summary>
+        /// Gets the value as an <see langword="double"/> if it is numeric.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// If the value is <see langword="null"/> or is not numeric, this returns zero. It will never
+        /// throw an exception.
+        /// </para>
+        /// <para>
+        /// This is equivalent to calling <see cref="Converter{T}.ToType(LdValue)"/> on
+        /// <see cref="LdValue.Convert.Double"/>.
+        /// </para>
+        /// </remarks>
+        public double AsDouble
         {
             get
             {
-                if (Type == JsonValueType.Number)
+                if (Type == LdValueType.Number)
                 {
-                    if (_wrappedJTokenValue is null)
-                    {
-                        // we stored a primitive int or float - it's whichever one is nonzero, if any
-                        return _intValue == 0 ? _floatValue : (float)_intValue;
-                    }
-                    return _wrappedJTokenValue.Type == JTokenType.Float ?
-                        _wrappedJTokenValue.Value<float>() : (float)_wrappedJTokenValue.Value<int>();
+                    return _wrappedJTokenValue is null ? _doubleValue : _wrappedJTokenValue.Value<double>();
                 }
                 return 0;
             }
@@ -566,10 +609,12 @@ namespace LaunchDarkly.Client
         /// </summary>
         /// <remarks>
         /// <para>
-        /// The type parameter can be any of the types supported by <see cref="Value{T}"/>, and
-        /// the conversion rules are the same: for instance, if it is <see langword="bool"/>,
-        /// each array element will be converted with <see cref="AsBool"/>. If the value is not a
-        /// JSON array at all, an empty list is returned. This method will never throw an exception.
+        /// The first parameter is one of the type converters from <see cref="Convert"/>, or your own
+        /// implementation of <see cref="Converter{T}"/> for some type.
+        /// </para>
+        /// <para>
+        /// If the value is not a JSON array at all, an empty list is returned. This method will
+        /// never throw an exception.
         /// </para>
         /// <para>
         /// This is an efficient method because it does not copy values to a new list, but returns
@@ -578,20 +623,29 @@ namespace LaunchDarkly.Client
         /// </remarks>
         /// <typeparam name="T">the element type</typeparam>
         /// <returns>an array of elements of the specified type</returns>
-        public IReadOnlyList<T> AsList<T>() =>
-            (_wrappedJTokenValue is JArray a) ?
-                new LdValueArrayConverter<T>(a, v => v.Value<T>()) :
-                new LdValueArrayConverter<T>(null, null);
+        public IReadOnlyList<T> AsList<T>(Converter<T> desiredType)
+        {
+            if (_type == LdValueType.Array)
+            {
+                if (!(_arrayValue is null))
+                {
+                    return new LdValueListConverter<LdValue, T>(_arrayValue, desiredType.ToType);
+                }
+                else if (_wrappedJTokenValue is JArray a)
+                {
+                    return new LdValueListConverter<JToken, T>(a, v => desiredType.ToType(LdValue.FromSafeValue(v)));
+                }
+            }
+            return new LdValueListConverter<T, T>(null, null);
+        }
 
         /// <summary>
         /// Converts the value to a read-only dictionary.
         /// </summary>
         /// <remarks>
         /// <para>
-        /// The type parameter can be any of the types supported by <see cref="Value{T}"/>, and
-        /// the conversion rules are the same: for instance, if it is <see langword="bool"/>,
-        /// the value of each key-value pair will be converted with <see cref="AsBool"/>. If this is not
-        /// a JSON object at all, an empty dictionary is returned. This method will never throw an exception.
+        /// The first parameter is one of the type converters from <see cref="Convert"/>, or your own
+        /// implementation of <see cref="Converter{T}"/> for some type.
         /// </para>
         /// <para>
         /// This is an efficient method because it does not copy values to a new dictionary, but returns
@@ -599,13 +653,20 @@ namespace LaunchDarkly.Client
         /// </para>
         /// </remarks>
         /// <returns>a read-only dictionary</returns>
-        public IReadOnlyDictionary<string, T> AsDictionary<T>()
+        public IReadOnlyDictionary<string, T> AsDictionary<T>(Converter<T> desiredType)
         {
-            if (_wrappedJTokenValue is JObject o)
+            if (_type == LdValueType.Object)
             {
-                return new LdValueObjectConverter<T>(o, v => v.Value<T>());
+                if (!(_objectValue is null))
+                {
+                    return new LdValueObjectConverter<LdValue, T>(_objectValue, desiredType.ToType);
+                }
+                else if (_wrappedJTokenValue is JObject o)
+                {
+                    return new LdValueObjectConverter<JToken, T>(o, v => desiredType.ToType(LdValue.FromSafeValue(v)));
+                }
             }
-            return new LdValueObjectConverter<T>(null, null);
+            return new LdValueObjectConverter<T, T>(null, null);
         }
 
         /// <summary>
@@ -641,47 +702,6 @@ namespace LaunchDarkly.Client
         }
 
         /// <summary>
-        /// Converts the value to the desired type.
-        /// </summary>
-        /// <remarks>
-        /// <para>
-        /// This method only works for primitive types: the type parameter can only be
-        /// <see langword="bool"/>, <see langword="int"/>, <see langword="long"/>,
-        /// <see langword="float"/>, <see langword="double"/>, or <see langword="string"/>
-        /// (or <see cref="LdValue"/>, which returns the value unchanged. Type
-        /// conversion behavior is consistent with the <see cref="LdValue"/>
-        /// properties like <see cref="AsBool"/>, <see cref="AsInt"/>, etc. Any type that
-        /// cannot be converted will return <c>default(T)</c> rather than throwing an exception.
-        /// </para>
-        /// </remarks>
-        /// <typeparam name="T">the desired type</typeparam>
-        /// <returns>the value</returns>
-        public T Value<T>()
-        {
-            if (typeof(T) == typeof(bool))
-            {
-                return (T)(object)AsBool; // odd double cast is necessary due to C# generics
-            }
-            else if (typeof(T) == typeof(int) || typeof(T) == typeof(long))
-            {
-                return (T)(object)AsInt;
-            }
-            else if (typeof(T) == typeof(float) || typeof(T) == typeof(double))
-            {
-                return (T)(object)AsFloat;
-            }
-            else if (typeof(T) == typeof(string))
-            {
-                return (T)(object)AsString;
-            }
-            else if (typeof(T) == typeof(LdValue))
-            {
-                return (T)(object)this;
-            }
-            return default(T);
-        }
-
-        /// <summary>
         /// Converts the value to its JSON encoding.
         /// </summary>
         /// <remarks>
@@ -711,17 +731,22 @@ namespace LaunchDarkly.Client
             }
             switch (Type)
             {
-                case JsonValueType.Null:
+                case LdValueType.Null:
                     return true;
-                case JsonValueType.Bool:
+                case LdValueType.Bool:
                     return AsBool == o.AsBool;
-                case JsonValueType.Number:
-                    return AsFloat == o.AsFloat; // don't worry about ints because you can't lose precision going from int to float
-                case JsonValueType.String:
+                case LdValueType.Number:
+                    return AsDouble == o.AsDouble; // don't worry about ints because you can't lose precision going from int to double
+                case LdValueType.String:
                     return AsString.Equals(o.AsString);
+                case LdValueType.Array:
+                    return AsList(Convert.Json).SequenceEqual(o.AsList(Convert.Json));
+                case LdValueType.Object:
+                    var d0 = AsDictionary(Convert.Json);
+                    var d1 = AsDictionary(Convert.Json);
+                    return d0.Count == d1.Count && d0.All(kv => kv.Value.Equals(d1[kv.Key]));
                 default:
-                    // array and object types always have a wrapped JToken
-                    return JToken.DeepEquals(_wrappedJTokenValue, o._wrappedJTokenValue);
+                    return false;
             }
         }
 
@@ -730,17 +755,30 @@ namespace LaunchDarkly.Client
         {
             switch (Type)
             {
-                case JsonValueType.Null:
+                case LdValueType.Null:
                     return 0;
-                case JsonValueType.Bool:
+                case LdValueType.Bool:
                     return AsBool.GetHashCode();
-                case JsonValueType.Number:
+                case LdValueType.Number:
                     return AsFloat.GetHashCode();
-                case JsonValueType.String:
+                case LdValueType.String:
                     return AsString.GetHashCode();
+                case LdValueType.Array:
+                    int ah = 0;
+                    foreach (var item in AsList(Convert.Json))
+                    {
+                        ah = ah * 23 + item.GetHashCode();
+                    }
+                    return ah;
+                case LdValueType.Object:
+                    int oh = 0;
+                    foreach (var kv in AsDictionary(Convert.Json))
+                    {
+                        oh = (oh * 23 + kv.Key.GetHashCode()) * 23 + kv.Value.GetHashCode();
+                    }
+                    return oh;
                 default:
-                    // array and object types always have a wrapped JToken
-                    return _wrappedJTokenValue.GetHashCode();
+                    return 0;
             }
         }
 
@@ -751,6 +789,243 @@ namespace LaunchDarkly.Client
         public override string ToString()
         {
             return ToJsonString();
+        }
+
+        #endregion
+
+        #region Inner types
+
+        /// <summary>
+        /// Defines a conversion between <see cref="LdValue"/> and some other type.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Besides converting individual values, <see cref="Converter{T}"/> provides factory methods
+        /// like <see cref="ArrayOf"/> which transform a collection of the specified type to the
+        /// corresponding <see cref="LdValue"/> complex type.
+        /// </para>
+        /// <para>
+        /// There are type-specific instances of this class for commonly used types in
+        /// <see cref="LdValue.Convert"/>, but you can also implement your own.
+        /// </para>
+        /// </remarks>
+        /// <typeparam name="T">the type to convert from/to</typeparam>
+        public abstract class Converter<T>
+        {
+            /// <summary>
+            /// Converts a value of the specified type to an <see cref="LdValue"/>.
+            /// </summary>
+            /// <remarks>
+            /// This method should never throw an exception; if for some reason the value is invalid,
+            /// it should return <see cref="LdValue.Null"/>.
+            /// </remarks>
+            /// <param name="valueOfType">a value of this type</param>
+            /// <returns>an <see cref="LdValue"/></returns>
+            abstract public LdValue FromType(T valueOfType);
+
+            /// <summary>
+            /// Converts an <see cref="LdValue"/> to a value of the specified type.
+            /// </summary>
+            /// <remarks>
+            /// This method should never throw an exception; if the conversion cannot be done, it
+            /// should return <c>default(T)</c>.
+            /// </remarks>
+            /// <param name="jsonValue">an <see cref="LdValue"/></param>
+            /// <returns>a value of this type</returns>
+            abstract public T ToType(LdValue jsonValue);
+
+            /// <summary>
+            /// Initializes an <see cref="LdValue"/> as an array, from a sequence of this type.
+            /// </summary>
+            /// <remarks>
+            /// Values are copied, so subsequent changes to the source values do not affect the array.
+            /// </remarks>
+            /// <example>
+            /// <code>
+            ///     var listOfInts = new List&lt;int&gt; { 1, 2, 3 };
+            ///     var arrayValue = LdValue.Convert.Int.ArrayFrom(arrayOfInts);
+            /// </code>
+            /// </example>
+            /// <param name="values">a sequence of elements of the specified type</param>
+            /// <returns>a struct representing a JSON array, or <see cref="LdValue.Null"/> if the
+            /// parameter was null</returns>
+            public LdValue ArrayFrom(IEnumerable<T> values)
+            {
+                if (values is null)
+                {
+                    return Null;
+                }
+                var list = new List<LdValue>(values.Count());
+                foreach (var value in values)
+                {
+                    list.Add(FromType(value));
+                }
+                return new LdValue(list);
+            }
+
+            /// <summary>
+            /// Initializes an <see cref="LdValue"/> as an array, from a sequence of this type.
+            /// </summary>
+            /// <remarks>
+            /// Values are copied, so subsequent changes to the source values do not affect the array.
+            /// </remarks>
+            /// <example>
+            /// <code>
+            ///     var arrayValue = LdValue.Convert.Int.ArrayOf(1, 2, 3);
+            /// </code>
+            /// </example>
+            /// <param name="values">any number of elements of the specified type</param>
+            /// <returns>a struct representing a JSON array</returns>
+            public LdValue ArrayOf(params T[] values)
+            {
+                return ArrayFrom(values);
+            }
+
+            /// <summary>
+            /// Initializes an <see cref="LdValue"/> as a JSON object, from a dictionary containing
+            /// values of this type.
+            /// </summary>
+            /// <remarks>
+            /// Values are copied, so subsequent changes to the source values do not affect the array.
+            /// </remarks>
+            /// <example>
+            /// <code>
+            ///     var dictionaryOfInts = new Dictionary&lt;string, int&gt; { { "a", 1 }, { "b", 2 } };
+            ///     var objectValue = LdValue.Convert.Int.ObjectFrom(dictionaryOfInts);
+            /// </code>
+            /// </example>
+            /// <param name="dictionary">a dictionary with string keys and values of the specified type</param>
+            /// <returns>a struct representing a JSON object, or <see cref="LdValue.Null"/> if the
+            /// parameter was null</returns>
+            public LdValue ObjectFrom(IReadOnlyDictionary<string, T> dictionary)
+            {
+                if (dictionary is null)
+                {
+                    return Null;
+                }
+                var d = new Dictionary<string, LdValue>(dictionary.Count);
+                foreach (var e in dictionary)
+                {
+                    d[e.Key] = FromType(e.Value);
+                }
+                return new LdValue(d);
+            }
+        }
+
+        /// <summary>
+        /// Predefined instances of <see cref="Converter{T}"/> for commonly used types.
+        /// </summary>
+        /// <remarks>
+        /// These are mostly useful for methods that convert <see cref="LdValue"/> to or from a
+        /// collection of some type, such as <see cref="Converter{T}.ArrayOf(T[])"/> and
+        /// <see cref="LdValue.AsList{T}(Converter{T})"/>.
+        /// </remarks>
+        public static class Convert
+        {
+            /// <summary>
+            /// A <see cref="Converter{T}"/> for the <see langword="bool"/> type.
+            /// </summary>
+            /// <remarks>
+            /// Its behavior is consistent with <see cref="LdValue.Of(bool)"/> and
+            /// <see cref="LdValue.AsBool"/>.
+            /// </remarks>
+            public static readonly Converter<bool> Bool = new ConverterImpl<bool>(
+                v => LdValue.Of(v),
+                j => j.AsBool
+            );
+
+            /// <summary>
+            /// A <see cref="Converter{T}"/> for the <see langword="int"/> type.
+            /// </summary>
+            /// <remarks>
+            /// Its behavior is consistent with <see cref="LdValue.Of(int)"/> and
+            /// <see cref="LdValue.AsInt"/>.
+            /// </remarks>
+            public static readonly Converter<int> Int = new ConverterImpl<int>(
+                v => LdValue.Of(v),
+                j => j.AsInt
+            );
+
+            /// <summary>
+            /// A <see cref="Converter{T}"/> for the <see langword="long"/> type.
+            /// </summary>
+            /// <remarks>
+            /// Its behavior is consistent with <see cref="LdValue.Of(long)"/> and
+            /// <see cref="LdValue.AsLong"/>.
+            /// </remarks>
+            public static readonly Converter<long> Long = new ConverterImpl<long>(
+                v => LdValue.Of(v),
+                j => j.AsInt
+            );
+
+            /// <summary>
+            /// A <see cref="Converter{T}"/> for the <see langword="float"/> type.
+            /// </summary>
+            /// <remarks>
+            /// Its behavior is consistent with <see cref="LdValue.Of(float)"/> and
+            /// <see cref="LdValue.AsFloat"/>.
+            /// </remarks>
+            public static readonly Converter<float> Float = new ConverterImpl<float>(
+                v => LdValue.Of(v),
+                j => j.AsFloat
+            );
+
+            /// <summary>
+            /// A <see cref="Converter{T}"/> for the <see langword="double"/> type.
+            /// </summary>
+            /// <remarks>
+            /// Its behavior is consistent with <see cref="LdValue.Of(double)"/> and
+            /// <see cref="LdValue.AsDouble"/>.
+            /// </remarks>
+            public static readonly Converter<double> Double = new ConverterImpl<double>(
+                v => LdValue.Of(v),
+                j => j.AsDouble
+            );
+
+            /// <summary>
+            /// A <see cref="Converter{T}"/> for the <see cref="string"/> type.
+            /// </summary>
+            /// <remarks>
+            /// Its behavior is consistent with <see cref="LdValue.Of(string)"/> and
+            /// <see cref="LdValue.AsString"/>.
+            /// </remarks>
+            public static readonly Converter<string> String = new ConverterImpl<string>(
+                v => LdValue.Of(v),
+                j => j.AsString
+            );
+
+            /// <summary>
+            /// A <see cref="Converter{T}"/> that indicates the value is an <see cref="LdValue"/>
+            /// and does not need to be converted.
+            /// </summary>
+            public static readonly Converter<LdValue> Json = new ConverterImpl<LdValue>(
+                v => v,
+                j => j
+            );
+
+            /// <summary>
+            /// Used internally by SDK methods that have to deal with JToken values. Not exposed to applications.
+            /// </summary>
+            internal static readonly Converter<JToken> UnsafeJToken = new ConverterImpl<JToken>(
+                LdValue.FromSafeValue,
+                j => j.InnerValue
+            );
+        }
+
+        private sealed class ConverterImpl<T> : Converter<T>
+        {
+            private readonly Func<T, LdValue> _fromTypeFn;
+            private readonly Func<LdValue, T> _toTypeFn;
+
+            internal ConverterImpl(Func<T, LdValue> fromTypeFn,
+                Func<LdValue, T> toTypeFn)
+            {
+                _fromTypeFn = fromTypeFn;
+                _toTypeFn = toTypeFn;
+            }
+
+            public override LdValue FromType(T valueOfType) => _fromTypeFn(valueOfType);
+            public override T ToType(LdValue jsonValue) => _toTypeFn(jsonValue);
         }
 
         #endregion

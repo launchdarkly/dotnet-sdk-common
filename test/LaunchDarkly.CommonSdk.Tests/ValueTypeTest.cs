@@ -14,8 +14,8 @@ namespace LaunchDarkly.Common.Tests
         private static readonly LdValue jsonInt = LdValue.Of(jsonIntValue);
         private static readonly LdValue jsonFloat = LdValue.Of(jsonFloatValue);
         private static readonly LdValue jsonString = LdValue.Of(jsonStringValue);
-        private static readonly LdValue jsonArray = LdValue.FromValues(new string[] { "item" });
-        private static readonly LdValue jsonObject = LdValue.FromDictionary(new Dictionary<string, string> { { "a", "b" } });
+        private static readonly LdValue jsonArray = LdValue.Convert.String.ArrayOf("item");
+        private static readonly LdValue jsonObject = LdValue.Convert.String.ObjectFrom(new Dictionary<string, string> { { "a", "b" } });
 
         [Fact]
         public void BoolFromJson()
@@ -47,8 +47,10 @@ namespace LaunchDarkly.Common.Tests
         public void IntFromJsonFloatRoundsToNearestInt()
         {
             Assert.Equal(2, ValueTypes.Int.ValueFromJson(LdValue.Of(2.25f)));
+            Assert.Equal(2, ValueTypes.Int.ValueFromJson(LdValue.Of(2.5f))); // Newtonsoft rounds down from midpoint
             Assert.Equal(3, ValueTypes.Int.ValueFromJson(LdValue.Of(2.75f)));
             Assert.Equal(-2, ValueTypes.Int.ValueFromJson(LdValue.Of(-2.25f)));
+            Assert.Equal(-2, ValueTypes.Int.ValueFromJson(LdValue.Of(-2.5f)));
             Assert.Equal(-3, ValueTypes.Int.ValueFromJson(LdValue.Of(-2.75f)));
         }
 
@@ -127,7 +129,7 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void JsonFromJson()
         {
-            Assert.Same(jsonObject.InnerValue, ValueTypes.Json.ValueFromJson(jsonObject).InnerValue);
+            Assert.Equal(jsonObject, ValueTypes.Json.ValueFromJson(jsonObject));
         }
 
         [Fact]
@@ -139,19 +141,20 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void JsonToJson()
         {
-            Assert.Same(jsonObject.InnerValue, ValueTypes.Json.ValueToJson(jsonObject).InnerValue);
+            Assert.Equal(jsonObject, ValueTypes.Json.ValueToJson(jsonObject));
         }
 
         [Fact]
         public void JsonFromMutableJson()
         {
-            Assert.Same(jsonObject.InnerValue, ValueTypes.MutableJson.ValueToJson(jsonObject.InnerValue).InnerValue);
+            var j = jsonString.InnerValue;
+            Assert.Equal(jsonString, ValueTypes.MutableJson.ValueToJson(j));
         }
 
         [Fact]
         public void JsonToMutableJson()
         {
-            Assert.Same(jsonObject.InnerValue, ValueTypes.MutableJson.ValueFromJson(jsonObject));
+            Assert.Equal(jsonString.InnerValue, ValueTypes.MutableJson.ValueFromJson(jsonString));
         }
         
         private void VerifyConversionError<T>(ValueType<T> type, LdValue[] badValues)
