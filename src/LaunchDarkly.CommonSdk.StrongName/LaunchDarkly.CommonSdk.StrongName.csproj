@@ -11,7 +11,9 @@
     <Copyright>Copyright 2018 LaunchDarkly</Copyright>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="..\LaunchDarkly.CommonSdk\*.cs" Exclude="..\LaunchDarkly.CommonSdk\AssemblyInfo.cs" />
+    <Compile Include="..\LaunchDarkly.CommonSdk\Internal\*.cs" />
+    <Compile Include="..\LaunchDarkly.CommonSdk\Public\*.cs" />
+    <Compile Include="..\LaunchDarkly.CommonSdk\PublicDeprecated\*.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Common.Logging" Version="3.4.1" />
