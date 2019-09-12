@@ -248,7 +248,7 @@ namespace LaunchDarkly.Client
                             o.Add(e.Key, e.Value.AsJToken());
 #pragma warning restore 0618
                         }
-                        value = 0;
+                        value = o;
                         break;
                 }
                 _synthesizedJTokenValue = value;
