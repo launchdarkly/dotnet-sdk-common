@@ -196,7 +196,8 @@ namespace LaunchDarkly.Client
         /// and will be removed in a future version. See remarks on <see cref="User"/>.
         /// </para>
         /// <para>
-        /// Also, in a future version this will be changed to an immutable dictionary.
+        /// Also, in a future version this will be changed to an immutable dictionary, whose values will be
+        /// <see cref="LdValue"/>.
         /// </para>
         /// </remarks>
         [JsonProperty(PropertyName = "custom", NullValueHandling = NullValueHandling.Ignore)]
@@ -219,6 +220,7 @@ namespace LaunchDarkly.Client
         [JsonIgnore]
         public ISet<string> PrivateAttributeNames { get; set; }
 
+        [Obsolete("This method has been moved to the Operator class in .NET, and is not used in Xamarin")]
         internal JToken GetValueForEvaluation(string attribute)
         {
             switch (attribute)
