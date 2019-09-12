@@ -85,8 +85,8 @@ namespace LaunchDarkly.Common
         }
     }
 
-    // This struct wraps an existing JArray and makes it behave as an IReadOnlyList, with
-    // transparent value conversion.
+    // This struct simply represents a list of T as a list of U, without doing any
+    // copying, using a conversion function.
     internal struct LdValueListConverter<T, U> : IReadOnlyList<U>
     {
         private readonly IList<T> _source;
@@ -127,14 +127,14 @@ namespace LaunchDarkly.Common
         }
     }
 
-    // This struct wraps an existing JObject and makes it behave as an IReadOnlyDictionary, with
-    // transparent value conversion.
-    internal struct LdValueObjectConverter<T, U> : IReadOnlyDictionary<string, U>
+    // This struct simply represents a dictionary of <string, T> as a dictionary of
+    // <string, U>, without doing any copying, using a conversion function.
+    internal struct LdValueDictionaryConverter<T, U> : IReadOnlyDictionary<string, U>
     {
         private readonly IDictionary<string, T> _source;
         private readonly Func<T, U> _converter;
 
-        internal LdValueObjectConverter(IDictionary<string, T> source, Func<T, U> converter)
+        internal LdValueDictionaryConverter(IDictionary<string, T> source, Func<T, U> converter)
         {
             _source = source;
             _converter = converter;

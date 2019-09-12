@@ -659,14 +659,14 @@ namespace LaunchDarkly.Client
             {
                 if (!(_objectValue is null))
                 {
-                    return new LdValueObjectConverter<LdValue, T>(_objectValue, desiredType.ToType);
+                    return new LdValueDictionaryConverter<LdValue, T>(_objectValue, desiredType.ToType);
                 }
                 else if (_wrappedJTokenValue is JObject o)
                 {
-                    return new LdValueObjectConverter<JToken, T>(o, v => desiredType.ToType(LdValue.FromSafeValue(v)));
+                    return new LdValueDictionaryConverter<JToken, T>(o, v => desiredType.ToType(LdValue.FromSafeValue(v)));
                 }
             }
-            return new LdValueObjectConverter<T, T>(null, null);
+            return new LdValueDictionaryConverter<T, T>(null, null);
         }
 
         /// <summary>
