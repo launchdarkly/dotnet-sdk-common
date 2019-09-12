@@ -346,10 +346,14 @@ namespace LaunchDarkly.Common.Tests
                 LdValue.Convert.Bool.ObjectFrom(MakeDictionary(true, false)).AsDictionary(LdValue.Convert.Bool));
             AssertDictsEqual(MakeDictionary(1, 2),
                 LdValue.Convert.Int.ObjectFrom(MakeDictionary(1, 2)).AsDictionary(LdValue.Convert.Int));
+            AssertDictsEqual(MakeDictionary(1L, 2L),
+                LdValue.Convert.Long.ObjectFrom(MakeDictionary(1L, 2L)).AsDictionary(LdValue.Convert.Long));
             AssertDictsEqual(MakeDictionary(1.0f, 2.0f),
                 LdValue.Convert.Float.ObjectFrom(MakeDictionary(1.0f, 2.0f)).AsDictionary(LdValue.Convert.Float));
             AssertDictsEqual(MakeDictionary(1.0d, 2.0d),
                 LdValue.Convert.Double.ObjectFrom(MakeDictionary(1.0d, 2.0d)).AsDictionary(LdValue.Convert.Double));
+            AssertDictsEqual(MakeDictionary("a", "b"),
+                LdValue.Convert.String.ObjectFrom(MakeDictionary("a", "b")).AsDictionary(LdValue.Convert.String));
             AssertDictsEqual(MakeDictionary(anIntValue, aStringValue),
                 LdValue.Convert.Json.ObjectFrom(MakeDictionary(anIntValue, aStringValue)).AsDictionary(LdValue.Convert.Json));
             Assert.Equal(LdValue.Null, LdValue.Convert.String.ObjectFrom((IReadOnlyDictionary<string, string>)null));
@@ -479,6 +483,24 @@ namespace LaunchDarkly.Common.Tests
             var actual = JsonConvert.DeserializeObject<LdValue>(json);
             var expected = LdValue.Convert.String.ObjectFrom(new Dictionary<string, string> { { "a", "b" } });
             Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public void TestValueToJToken()
+        {
+#pragma warning disable 0618
+            Assert.Null(LdValue.Null.AsJToken());
+            Assert.Equal(new JValue(true), LdValue.Of(true).AsJToken());
+            Assert.Equal(new JValue(1), LdValue.Of(1).AsJToken());
+            Assert.Equal(new JValue(1L), LdValue.Of(1L).AsJToken());
+            Assert.Equal(new JValue(1.0f), LdValue.Of(1.0f).AsJToken());
+            Assert.Equal(new JValue(1.0d), LdValue.Of(1.0d).AsJToken());
+            Assert.Equal(new JValue("x"), LdValue.Of("x").AsJToken());
+            Assert.True(JToken.DeepEquals(new JArray { new JValue(1), new JValue(2) },
+                LdValue.Convert.Int.ArrayOf(1, 2).AsJToken()));
+            Assert.True(JToken.DeepEquals(new JObject { { "a", new JValue(1) } },
+                LdValue.Convert.Int.ObjectFrom(new Dictionary<string, int> { { "a", 1 } }).AsJToken()));
+#pragma warning restore 0618
         }
 
         [Fact]
