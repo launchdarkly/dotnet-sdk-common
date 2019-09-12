@@ -153,21 +153,21 @@ namespace LaunchDarkly.Common.Tests
         }
 
         private void TestCustomAttribute<T>(T value,
-            Func<IUserBuilder, string, T, IUserBuilderCanMakeAttributePrivate> setter)
+            Func<IUserBuilder, string, T, IUserBuilderCanMakeAttributePrivate> setter, LdValue.Converter<T> converter)
         {
             var user0 = setter(User.Builder(key), "foo", value).Build();
-            Assert.Equal<object>(value, user0.Custom["foo"].Value<T>());
+            Assert.Equal(value, converter.ToType(user0.Custom["foo"]));
             Assert.Empty(user0.PrivateAttributeNames);
 
             var user1 = setter(User.Builder(key), "bar", value).AsPrivateAttribute().Build();
-            Assert.Equal<object>(value, user1.Custom["bar"].Value<T>());
+            Assert.Equal(value, converter.ToType(user1.Custom["bar"]));
             Assert.Equal(new HashSet<string> { "bar" }, user1.PrivateAttributeNames);
         }
 
         [Fact]
         public void BuilderCanSetJsonCustomAttribute()
         {
-            var value = LdValue.FromValues(new int[] { 1, 2 });
+            var value = LdValue.Convert.Int.ArrayOf(1, 2);
             var user0 = User.Builder(key).Custom("foo", value).Build();
             Assert.Equal(value, user0.Custom["foo"]);
             Assert.Equal(0, user0.PrivateAttributeNames.Count);
@@ -180,25 +180,25 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void BuilderCanSetBoolCustomAttribute()
         {
-            TestCustomAttribute<bool>(true, (b, n, v) => b.Custom(n, v));
+            TestCustomAttribute<bool>(true, (b, n, v) => b.Custom(n, v), LdValue.Convert.Bool);
         }
 
         [Fact]
         public void BuilderCanSetStringCustomAttribute()
         {
-            TestCustomAttribute<string>("x", (b, n, v) => b.Custom(n, v));
+            TestCustomAttribute<string>("x", (b, n, v) => b.Custom(n, v), LdValue.Convert.String);
         }
 
         [Fact]
         public void BuilderCanSetIntCustomAttribute()
         {
-            TestCustomAttribute<int>(3, (b, n, v) => b.Custom(n, v));
+            TestCustomAttribute<int>(3, (b, n, v) => b.Custom(n, v), LdValue.Convert.Int);
         }
 
         [Fact]
         public void BuilderCanSetFloatCustomAttribute()
         {
-            TestCustomAttribute<float>(1.5f, (b, n, v) => b.Custom(n, v));
+            TestCustomAttribute<float>(1.5f, (b, n, v) => b.Custom(n, v), LdValue.Convert.Float);
         }
         
         [Fact]

@@ -29,6 +29,16 @@ All notable changes to `LaunchDarkly.CommonSdk` will be documented in this file.
 ### Fixed:
 - No longer assumes that we are overriding the `HttpMessageHandler` (if it is null in the configuration, just use the default `HttpClient` constructor). This is important for Xamarin.
 
+## [2.6.0] - 2019-09-12
+### Added:
+- Value type `LdValue`, to be used in place of `JToken` whenever possible.
+
+### Changed:
+- All event-related code except for public properties now uses `LdValue`.
+
+### Removed:
+- Internal helper type `ValueType`, unnecessary now because we can use `LdValue.Convert`.
+
 ## [2.5.1] - 2019-08-30
 ### Fixed:
 - Many improvements to XML documentation comments.
