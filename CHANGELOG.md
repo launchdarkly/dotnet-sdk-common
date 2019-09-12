@@ -29,6 +29,10 @@ All notable changes to `LaunchDarkly.CommonSdk` will be documented in this file.
 ### Fixed:
 - No longer assumes that we are overriding the `HttpMessageHandler` (if it is null in the configuration, just use the default `HttpClient` constructor). This is important for Xamarin.
 
+## [2.6.1] - 2019-09-12
+### Fixed:
+- A packaging error made the `LaunchDarkly.CommonSdk.StrongName` package unusable in 2.6.0.
+
 ## [2.6.0] - 2019-09-12
 ### Added:
 - Value type `LdValue`, to be used in place of `JToken` whenever possible.
