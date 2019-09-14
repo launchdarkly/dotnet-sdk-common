@@ -2,6 +2,17 @@
 
 All notable changes to `LaunchDarkly.CommonSdk` will be documented in this file. For full release notes for the projects that depend on this project, see their respective changelogs. This file describes changes only to the common code. This project adheres to [Semantic Versioning](http://semver.org).
 
+## [4.0.0] - 2019-09-13
+### Added:
+- `LdValue` now has methods for converting to and from complex types (list, dictionary).
+
+### Changed:
+- `ImmutableJsoValue` is now called `LdValue`.
+- All public APIs now use `ImmutableJsonValue` instead of `JToken`.
+ 
+### Removed:
+- Public `ImmutableJsonValue` methods and properties that refer to `JToken`, `JObject`, or `JArray`.
+
 ## [3.1.0] - 2019-08-30
 ### Added:
 - `SetOffline` method in `IEventProcessor`/`DefaultEventProcessor`.
