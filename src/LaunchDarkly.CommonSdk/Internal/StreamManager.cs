@@ -181,16 +181,16 @@ namespace LaunchDarkly.Common
 
         private void OnError(object sender, EventSource.ExceptionEventArgs e)
         {
+            var ex = _config.TranslateHttpException(e.Exception);
             Log.ErrorFormat("Encountered EventSource error: {0}",
-                e.Exception,
-                Util.ExceptionMessage(e.Exception));
-            if (e.Exception is EventSource.EventSourceServiceUnsuccessfulResponseException)
+                Util.ExceptionMessage(ex));
+            if (ex is EventSource.EventSourceServiceUnsuccessfulResponseException respEx)
             {
-                int status = ((EventSource.EventSourceServiceUnsuccessfulResponseException)e.Exception).StatusCode;
+                int status = respEx.StatusCode;
                 Log.Error(Util.HttpErrorMessage(status, "streaming connection", "will retry"));
                 if (!Util.IsHttpErrorRecoverable(status))
                 {
-                    _initTask.TrySetException(e.Exception); // sends this exception to the client if we haven't already started up
+                    _initTask.TrySetException(ex); // sends this exception to the client if we haven't already started up
                     ((IDisposable)this).Dispose();
                 }
             }

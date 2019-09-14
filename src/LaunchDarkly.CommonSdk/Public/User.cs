@@ -7,25 +7,36 @@ using Newtonsoft.Json;
 namespace LaunchDarkly.Client
 {
     /// <summary>
-    /// A <c>User</c> object contains specific attributes of a user browsing your site. These attributes may
-    /// affect the values of feature flags evaluated for that user.
+    /// Attributes of a user for whom you are evaluating feature flags.
     /// </summary>
     /// <remarks>
-    /// The only mandatory property is the <c>Key</c>, which must uniquely identify each user. For authenticated
-    /// users, this may be a username or e-mail address. For anonymous users, this could be an IP address or session ID.
-    ///
-    /// Besides the mandatory <c>Key</c>, <c>User</c> supports two kinds of optional attributes: interpreted
-    /// attributes (e.g. <c>IpAddress</c> and <c>Country</c>) and custom attributes. LaunchDarkly can parse
-    /// interpreted attributes and attach meaning to them. For example, from an <c>IpAddress</c>,
-    /// LaunchDarkly can do a geo IP lookup and determine the user's country.
-    ///
+    /// <para>
+    /// <see cref="User"/> contains any user-specific properties that may be used in feature flag
+    /// configurations to produce different flag variations for different users. You may define
+    /// these properties however you wish.
+    /// </para>
+    /// <para>
+    /// The only mandatory property is the <see cref="Key"/>, which must uniquely identify each user.
+    /// For authenticated users, this may be a username or e-mail address. For anonymous users,
+    /// this could be an IP address or session ID.
+    /// </para>
+    /// <para>
+    /// Besides the mandatory key, <see cref="User"/> supports two kinds of optional attributes:
+    /// interpreted attributes (e.g. <see cref="IPAddress"/> and <see cref="Country"/>) and custom
+    /// attributes. LaunchDarkly can parse interpreted attributes and attach meaning to them. For
+    /// example, from an <see cref="IPAddress"/>, LaunchDarkly can do a geo IP lookup and determine
+    /// the user's country.
+    /// </para>
+    /// <para>
     /// Custom attributes are not parsed by LaunchDarkly. They can be used in custom rules-- for example, a
     /// custom attribute such as "customer_ranking" can be used to launch a feature to the top 10% of users
-    /// on a site.
-    /// 
+    /// on a site. Custom attributes can have values of any type supported by JSON.
+    /// </para>
+    /// <para>
     /// Instances of <c>User</c> are immutable once created. They can be created with the factory method
     /// <see cref="User.WithKey(string)"/>, or using a builder pattern with <see cref="User.Builder(string)"/>
     /// or <see cref="User.Builder(User)"/>.
+    /// </para>
     /// </remarks>
     public class User : IEquatable<User>
     {
@@ -39,7 +50,7 @@ namespace LaunchDarkly.Client
         private readonly string _avatar;
         private readonly string _email;
         private readonly bool _anonymous;
-        internal readonly ImmutableDictionary<string, ImmutableJsonValue> _custom;
+        internal readonly ImmutableDictionary<string, LdValue> _custom;
         internal readonly ImmutableHashSet<string> _privateAttributeNames;
 
         /// <summary>
@@ -49,14 +60,17 @@ namespace LaunchDarkly.Client
         public string Key => _key;
 
         /// <summary>
-        /// The secondary key for a user. This affects
-        /// <a href="https://docs.launchdarkly.com/docs/targeting-users#section-targeting-rules-based-on-user-attributes">feature flag targeting</a>
-        /// as follows: if you have chosen to bucket users by a specific attribute, the secondary key (if set)
-        /// is used to further distinguish between users who are otherwise identical according to that attribute.
+        /// The secondary key for a user, which can be used in
+        /// <see href="https://docs.launchdarkly.com/docs/targeting-users#section-targeting-rules-based-on-user-attributes">feature flag targeting</see>.
         /// </summary>
+        /// <remarks>
+        /// The use of the secondary key in targeting is as follows: if you have chosen to bucket users by a
+        /// specific attribute, the secondary key (if set) is used to further distinguish between users who are
+        /// otherwise identical according to that attribute.
+        /// </remarks>
         [JsonProperty(PropertyName = "secondary", NullValueHandling = NullValueHandling.Ignore)]
         public string SecondaryKey => _secondary;
-
+        
         /// <summary>
         /// The IP address of the user.
         /// </summary>
@@ -109,29 +123,29 @@ namespace LaunchDarkly.Client
         /// Custom attributes for the user.
         /// </summary>
         [JsonProperty(PropertyName = "custom", NullValueHandling = NullValueHandling.Ignore)]
-        public IImmutableDictionary<string, ImmutableJsonValue> Custom => _custom;
+        public IImmutableDictionary<string, LdValue> Custom => _custom;
 
         /// <summary>
         /// Used internally to track which attributes are private.
         /// </summary>
         [JsonIgnore]
         public IImmutableSet<string> PrivateAttributeNames => _privateAttributeNames;
-        
+
         /// <summary>
-        /// Creates a <see cref="UserBuilder"/> for constructing a user object using a fluent syntax.
+        /// Creates an <see cref="IUserBuilder"/> for constructing a user object using a fluent syntax.
         /// </summary>
         /// <remarks>
-        /// This is the only method for building a <c>User</c> if you are setting properties
-        /// besides the <c>Key</c>. The <c>UserBuilder</c> has methods for setting any number of
-        /// properties, after which you call <see cref="UserBuilder.Build"/> to get the resulting
-        /// <c>User</c> instance.
+        /// This is the only method for building a <see cref="User"/> if you are setting properties
+        /// besides the <see cref="User.Key"/>. The <see cref="IUserBuilder"/> has methods for setting
+        /// any number of properties, after which you call <see cref="IUserBuilder.Build"/> to get the
+        /// resulting <see cref="User"/> instance.
         /// </remarks>
         /// <example>
         /// <code>
         ///     var user = User.Builder("my-key").Name("Bob").Email("test@example.com").Build();
         /// </code>
         /// </example>
-        /// <param name="key">a <c>string</c> that uniquely identifies a user</param>
+        /// <param name="key">a <see langword="string"/> that uniquely identifies a user</param>
         /// <returns>a builder object</returns>
         public static IUserBuilder Builder(string key)
         {
@@ -139,13 +153,13 @@ namespace LaunchDarkly.Client
         }
 
         /// <summary>
-        /// Creates a <see cref="UserBuilder"/> for constructing a user object, with its initial
+        /// Creates an <see cref="IUserBuilder"/> for constructing a user object, with its initial
         /// properties copied from an existeing user.
         /// </summary>
         /// <remarks>
-        /// This is the same as calling <c>User.Build(fromUser.Key)</c> and then calling the
-        /// <c>UserBuilder</c> methods to set each of the individual properties from their current
-        /// values in <c>fromUser</c>. Modifying the builder does not affect the original <c>User</c>.
+        /// This is the same as calling <c>User.Builder(fromUser.Key)</c> and then calling the
+        /// <see cref="IUserBuilder"/> methods to set each of the individual properties from their current
+        /// values in <c>fromUser</c>. Modifying the builder does not affect the original <see cref="User"/>.
         /// </remarks>
         /// <example>
         /// <code>
@@ -164,7 +178,7 @@ namespace LaunchDarkly.Client
         private User(string key)
         {
             _key = key;
-            _custom = ImmutableDictionary.Create<string, ImmutableJsonValue>();
+            _custom = ImmutableDictionary.Create<string, LdValue>();
             _privateAttributeNames = ImmutableHashSet.Create<string>();
         }
         
@@ -174,7 +188,7 @@ namespace LaunchDarkly.Client
         [JsonConstructor]
         public User(string key, string secondaryKey, string ip, string country, string firstName,
                     string lastName, string name, string avatar, string email, bool? anonymous,
-                    ImmutableDictionary<string, ImmutableJsonValue> custom, ImmutableHashSet<string> privateAttributeNames)
+                    ImmutableDictionary<string, LdValue> custom, ImmutableHashSet<string> privateAttributeNames)
         {
             _key = key;
             _secondary = secondaryKey;
@@ -186,25 +200,21 @@ namespace LaunchDarkly.Client
             _avatar = avatar;
             _email = email;
             _anonymous = anonymous.HasValue && anonymous.Value;
-            _custom = custom ?? ImmutableDictionary.Create<string, ImmutableJsonValue>();
+            _custom = custom ?? ImmutableDictionary.Create<string, LdValue>();
             _privateAttributeNames = privateAttributeNames ?? ImmutableHashSet.Create<string>();
         }
 
         /// <summary>
         /// Creates a user with the given key.
         /// </summary>
-        /// <param name="key">a <c>string</c> that uniquely identifies a user</param>
-        /// <returns>a <c>User</c> instance</returns>
+        /// <param name="key">a <see langword="string"/> that uniquely identifies a user</param>
+        /// <returns>a <see cref="User"/> instance</returns>
         public static User WithKey(string key)
         {
             return new User(key);
         }
         
-        /// <summary>
-        /// Tests for equality with another object by comparing all fields of the User.
-        /// </summary>
-        /// <param name="obj"></param>
-        /// <returns>true if the object is a User and all fields are equal</returns>
+        /// <inheritdoc/>
         public override bool Equals(object obj)
         {
             if (obj is User u)
@@ -214,11 +224,7 @@ namespace LaunchDarkly.Client
             return false;
         }
 
-        /// <summary>
-        /// Tests for equality with another User by comparing all fields of the User.
-        /// </summary>
-        /// <param name="u"></param>
-        /// <returns>true if all fields are equal</returns>
+        /// <inheritdoc/>
         public bool Equals(User u)
         {
             if (u == null)
@@ -244,12 +250,7 @@ namespace LaunchDarkly.Client
                 PrivateAttributeNames.SetEquals(u.PrivateAttributeNames);
         }
 
-        /// <summary>
-        /// Computes a hash code for a User. Note that for performance reasons, the Custom and
-        /// PrivateAttributeNames properties are not used in this computation, even though they
-        /// are used in Equals.
-        /// </summary>
-        /// <returns>a hash code</returns>
+        /// <inheritdoc/>
         public override int GetHashCode()
         {
             var hashBuilder = Util.Hash()

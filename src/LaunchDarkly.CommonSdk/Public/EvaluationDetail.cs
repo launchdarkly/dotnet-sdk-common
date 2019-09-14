@@ -29,7 +29,7 @@ namespace LaunchDarkly.Client
 
         /// <summary>
         /// The index of the returned value within the flag's list of variations, e.g. 0 for the first variation -
-        /// or <c>null</c> if the default value was returned.
+        /// or <see langword="null"/> if the default value was returned.
         /// </summary>
         public int? VariationIndex => _variationIndex;
 
@@ -56,7 +56,7 @@ namespace LaunchDarkly.Client
             _reason = reason;
         }
 
-        /// <see cref="object.Equals(object)"/>
+        /// <inheritdoc/>
         public override bool Equals(object obj)
         {
             if (obj is EvaluationDetail<T> o)
@@ -67,7 +67,7 @@ namespace LaunchDarkly.Client
             return false;
         }
 
-        /// <see cref="object.GetHashCode()"/>
+        /// <inheritdoc/>
         public override int GetHashCode()
         {
             return Util.Hash().With(Value).With(VariationIndex).With(Reason).Value;
@@ -76,7 +76,7 @@ namespace LaunchDarkly.Client
 
     /// <summary>
     /// Describes the reason that a flag evaluation produced a particular value. Subclasses of
-    /// EvaluationReason describe specific reasons.
+    /// <see cref="EvaluationReason"/> describe specific reasons.
     /// </summary>
     [JsonConverter(typeof(EvaluationReasonConverter))]
     public abstract class EvaluationReason
@@ -94,7 +94,7 @@ namespace LaunchDarkly.Client
             _kind = kind;
         }
 
-        /// <see cref="object.ToString()"/>
+        /// <inheritdoc/>
         public override string ToString()
         {
             return Kind.ToString();
@@ -271,7 +271,7 @@ namespace LaunchDarkly.Client
                 _errorKind = errorKind;
             }
 
-            /// <see cref="object.Equals(object)"/>
+            /// <inheritdoc/>
             public override bool Equals(object obj)
             {
                 if (obj is Error o)
@@ -281,13 +281,13 @@ namespace LaunchDarkly.Client
                 return false;
             }
 
-            /// <see cref="object.GetHashCode()"/>
+            /// <inheritdoc/>
             public override int GetHashCode()
             {
                 return ErrorKind.GetHashCode();
             }
 
-            /// <see cref="object.ToString()"/>
+            /// <inheritdoc/>
             public override string ToString()
             {
                 return Kind + "(" + ErrorKind + ")";
@@ -352,7 +352,7 @@ namespace LaunchDarkly.Client
         /// </summary>
         FLAG_NOT_FOUND,
         /// <summary>
-        /// Indicates that the caller passed <c>null</c> for the user parameter, or the user lacked a key.
+        /// Indicates that the caller passed <see langword="null"/> for the user parameter, or the user lacked a key.
         /// </summary>
         USER_NOT_SPECIFIED,
         /// <summary>
@@ -361,8 +361,8 @@ namespace LaunchDarkly.Client
         /// </summary>
         MALFORMED_FLAG,
         /// <summary>
-        /// Indicates that the result value was not of the requested type, e.g. you requested a <c>bool</c>
-        /// but the value was an <c>int</c>.
+        /// Indicates that the result value was not of the requested type, e.g. you requested a <see langword="bool"/>
+        /// but the value was an <see langword="int"/>.
         /// </summary>
         WRONG_TYPE,
         /// <summary>
