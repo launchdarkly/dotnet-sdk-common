@@ -2,7 +2,9 @@
 
 All notable changes to `LaunchDarkly.CommonSdk` will be documented in this file. For full release notes for the projects that depend on this project, see their respective changelogs. This file describes changes only to the common code. This project adheres to [Semantic Versioning](http://semver.org).
 
-## [4.0.0] - 2019-09-13
+## [4.0.1] - 2019-09-13
+_The 4.0.0 release was broken._
+
 ### Added:
 - `LdValue` now has methods for converting to and from complex types (list, dictionary).
 
