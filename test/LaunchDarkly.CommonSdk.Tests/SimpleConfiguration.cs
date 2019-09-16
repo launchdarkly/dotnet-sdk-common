@@ -29,10 +29,9 @@ namespace LaunchDarkly.Common.Tests
         internal bool DiagnosticOptOut { get; set; }
         internal string WrapperName { get; set; }
         internal string WrapperVersion { get; set; }
-        internal Dictionary<String, Object> DiagnosticConfigPayload { get; set; } = new Dictionary<String, Object>();
         internal IDiagnosticStore DiagnosticStore { get; set; }
 
-        string IHttpRequestConfiguration.HttpAuthorizationKey => SdkKey;
+        string IHttpRequestConfiguration.HttpAuthorizationKey { get { return SdkKey; } }
         Uri IEventProcessorConfiguration.EventsUri => EventsUri;
         TimeSpan IStreamManagerConfiguration.ReadTimeout => ReadTimeout;
         TimeSpan IStreamManagerConfiguration.ReconnectTime => ReconnectTime;
@@ -53,7 +52,6 @@ namespace LaunchDarkly.Common.Tests
         bool IEventProcessorConfiguration.DiagnosticOptOut => DiagnosticOptOut;
         string IHttpRequestConfiguration.WrapperName => WrapperName;
         string IHttpRequestConfiguration.WrapperVersion => WrapperVersion;
-        Dictionary<String, Object> IEventProcessorConfiguration.DiagnosticConfigPayload => DiagnosticConfigPayload;
         IDiagnosticStore IEventProcessorConfiguration.DiagnosticStore => DiagnosticStore;
    }
 }

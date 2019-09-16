@@ -42,6 +42,14 @@ namespace LaunchDarkly.Common
             return (long) (dateTime - UnixEpoch).TotalMilliseconds;
         }
 
+        internal static T Clamp<T>(T value, T min, T max)
+            where T : IComparable
+        {
+            if (value.CompareTo(min) < 0) return min;
+            if (value.CompareTo(max) > 0) return max;
+            return value;
+        }
+
         internal static string ExceptionMessage(Exception e)
         {
             var msg = e.Message;

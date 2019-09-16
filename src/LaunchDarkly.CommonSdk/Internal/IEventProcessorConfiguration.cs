@@ -9,7 +9,6 @@ namespace LaunchDarkly.Common
     internal interface IEventProcessorConfiguration
     {
         bool AllAttributesPrivate { get; }
-        Dictionary<String, Object> DiagnosticConfigPayload { get; }
         bool DiagnosticOptOut { get; }
         TimeSpan DiagnosticRecordingInterval { get; }
         IDiagnosticStore DiagnosticStore { get; }

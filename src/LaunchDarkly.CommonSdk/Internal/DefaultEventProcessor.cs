@@ -48,22 +48,19 @@ namespace LaunchDarkly.Common
             {
                 _diagnosticStore = config.DiagnosticStore;
 
-                Dictionary<string, Object> _lastStats = _diagnosticStore.LastStats;
-                if (_lastStats != null) {
-                    _dispatcher.SendDiagnosticEventAsync(JsonConvert.SerializeObject(_lastStats, Formatting.None));
+                Dictionary<string, Object> LastStats = _diagnosticStore.LastStats;
+                if (LastStats != null) {
+                    _dispatcher.SendDiagnosticEventAsync(JsonConvert.SerializeObject(LastStats, Formatting.None));
                 }
 
-                if (_diagnosticStore.SendInitEvent) {
-                    InitDiagnosticEvent _initEvent = new InitDiagnosticEvent(Util.GetUnixTimestampMillis(DateTime.Now), _diagnosticStore.DiagnosticId, config.DiagnosticConfigPayload);
-                    _dispatcher.SendDiagnosticEventAsync(JsonConvert.SerializeObject(_initEvent, Formatting.None));
+                Dictionary<string, Object> InitEvent = _diagnosticStore.InitEvent;
+                if (InitEvent != null) {
+                    _dispatcher.SendDiagnosticEventAsync(JsonConvert.SerializeObject(InitEvent, Formatting.None));
                 }
 
-                DateTime _dataSince = _diagnosticStore.DataSince;
-                TimeSpan _initialDelay = config.DiagnosticRecordingInterval.Subtract(DateTime.Now.Subtract(_dataSince));
-                TimeSpan _safeDelay = _initialDelay >= TimeSpan.Zero && _initialDelay <= config.DiagnosticRecordingInterval ? _initialDelay :
-                                      _initialDelay < TimeSpan.Zero ? TimeSpan.Zero :
-                                      config.DiagnosticRecordingInterval;
-                _diagnosticTimer = new Timer(DoDiagnosticSend, null, _safeDelay, config.DiagnosticRecordingInterval);
+                TimeSpan InitialDelay = config.DiagnosticRecordingInterval - (DateTimeOffset.Now - _diagnosticStore.DataSince);
+                TimeSpan SafeDelay = Util.Clamp(InitialDelay, TimeSpan.Zero, config.DiagnosticRecordingInterval);
+                _diagnosticTimer = new Timer(DoDiagnosticSend, null, SafeDelay, config.DiagnosticRecordingInterval);
             }
             else
             {
