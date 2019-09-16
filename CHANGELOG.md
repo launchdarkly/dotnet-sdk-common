@@ -2,6 +2,20 @@
 
 For full release notes for the projects that depend on this project, see their respective changelogs. This file describes changes only to the common code. This project adheres to [Semantic Versioning](http://semver.org).
 
+## [2.6.1] - 2019-09-12
+### Fixed:
+- A packaging error made the `LaunchDarkly.CommonSdk.StrongName` package unusable in 2.6.0.
+
+## [2.6.0] - 2019-09-12
+### Added:
+- Value type `LdValue`, to be used in place of `JToken` whenever possible.
+
+### Changed:
+- All event-related code except for public properties now uses `LdValue`.
+
+### Removed:
+- Internal helper type `ValueType`, unnecessary now because we can use `LdValue.Convert`.
+
 ## [2.5.1] - 2019-08-30
 ### Fixed:
 - Many improvements to XML documentation comments.
