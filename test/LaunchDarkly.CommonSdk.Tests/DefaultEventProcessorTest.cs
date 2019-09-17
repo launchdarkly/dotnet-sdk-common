@@ -7,6 +7,7 @@ using WireMock.Logging;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 using WireMock.Server;
+using Moq;
 using Xunit;
 
 namespace LaunchDarkly.Common.Tests
@@ -453,6 +454,44 @@ namespace LaunchDarkly.Common.Tests
             VerifyRecoverableHttpError(500);
         }
 
+        [Fact]
+        public void DiagnosticStoreIgnoredWhenOptedOut() {
+            _config.DiagnosticOptOut = true;
+            // strict mock fails if anything is accessed without an expectation set.
+            Mock<IDiagnosticStore> _mockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
+            _config.DiagnosticStore = _mockDiagnosticStore.Object;
+            _ep = MakeProcessor(_config);
+        }
+
+        [Fact]
+        public void DiagnosticStoreCreateEventGivenEventsInQueueCount() {
+            Mock<IDiagnosticStore> _mockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
+            _mockDiagnosticStore.Setup(diagStore => diagStore.LastStats).Returns((Dictionary<string, object>)null);
+            _mockDiagnosticStore.Setup(diagStore => diagStore.InitEvent).Returns((Dictionary<string, object>)null);
+            _mockDiagnosticStore.Setup(diagStore => diagStore.DataSince).Returns((DateTime)DateTime.Now);
+            _mockDiagnosticStore.Setup(diagStore => diagStore.CreateEventAndReset(It.IsAny<long>())).Returns(new Dictionary<string, object>());
+            _config.DiagnosticStore = _mockDiagnosticStore.Object;
+            _ep = MakeProcessor(_config);
+
+            IFlagEventProperties flag1 = new FlagEventPropertiesBuilder("flagkey1").Version(11).TrackEvents(true).Build();
+            var value = LdValue.Of("value");
+            FeatureRequestEvent fe1 = EventFactory.Default.NewFeatureRequestEvent(flag1, _user,
+                new EvaluationDetail<LdValue>(value, 1, null), LdValue.Null);
+            _ep.SendEvent(fe1);
+
+            // Not flushing events, but assuring that fe1 has been processed by the main event loop before proceeding.
+            ((DefaultEventProcessor)_ep).WaitUntilInactive();
+            ((DefaultEventProcessor)_ep).DoDiagnosticSend(null);
+            // Again not flushing events, but ensuring the main event loop has processed the diagnostic event trigger.
+            ((DefaultEventProcessor)_ep).WaitUntilInactive();
+            _mockDiagnosticStore.Verify(diagStore => diagStore.CreateEventAndReset(2), Times.Once(), "Diagnostic store's CreateEventAndReset should be called with the number of events currently in the buffer before sending diagnostic event");
+        }
+
+        [Fact]
+        public void DiagnosticStoreLastStatsSentToDiagnosticUri() {
+            
+        }
+
         private void VerifyUnrecoverableHttpError(int status)
         {
             _ep = MakeProcessor(_config);
@@ -601,6 +640,12 @@ namespace LaunchDarkly.Common.Tests
         private void PrepareResponse(IResponseBuilder resp)
         {
             _server.Given(Request.Create().WithPath(EventsUriPath).UsingPost())
+                .RespondWith(resp);
+            _server.ResetLogEntries();
+        }
+
+        private void PrepareDiagnosticResponse(IResponseBuilder resp) {
+            _server.Given(Request.Create().WithPath(DiagnosticUriPath).UsingPost())
                 .RespondWith(resp);
             _server.ResetLogEntries();
         }

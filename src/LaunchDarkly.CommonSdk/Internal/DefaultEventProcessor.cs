@@ -58,7 +58,7 @@ namespace LaunchDarkly.Common
                     _dispatcher.SendDiagnosticEventAsync(JsonConvert.SerializeObject(InitEvent, Formatting.None));
                 }
 
-                TimeSpan InitialDelay = config.DiagnosticRecordingInterval - (DateTimeOffset.Now - _diagnosticStore.DataSince);
+                TimeSpan InitialDelay = config.DiagnosticRecordingInterval - (DateTime.Now - _diagnosticStore.DataSince);
                 TimeSpan SafeDelay = Util.Clamp(InitialDelay, TimeSpan.Zero, config.DiagnosticRecordingInterval);
                 _diagnosticTimer = new Timer(DoDiagnosticSend, null, SafeDelay, config.DiagnosticRecordingInterval);
             }
@@ -151,7 +151,8 @@ namespace LaunchDarkly.Common
             SubmitMessage(new FlushUsersMessage());
         }
 
-        private void DoDiagnosticSend(object StateInfo)
+        // exposed for testing 
+        internal void DoDiagnosticSend(object StateInfo)
         {
             SubmitMessage(new DiagnosticMessage());
         }
@@ -317,8 +318,11 @@ namespace LaunchDarkly.Common
         {
             if (_diagnosticStore != null) {
                 long EventsInQueue = buffer.GetEventsInQueueCount();
-                Dictionary<String, Object> stats = _diagnosticStore.GetStatsAndReset(EventsInQueue);
-                SendDiagnosticEventAsync(JsonConvert.SerializeObject(stats, Formatting.None));
+                Dictionary<String, Object> Stats = _diagnosticStore.CreateEventAndReset(EventsInQueue);
+                if (Stats != null)
+                {
+                    SendDiagnosticEventAsync(JsonConvert.SerializeObject(Stats, Formatting.None));
+                }
             }
         }
 

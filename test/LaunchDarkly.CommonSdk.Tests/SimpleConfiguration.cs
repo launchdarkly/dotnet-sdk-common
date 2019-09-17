@@ -31,7 +31,7 @@ namespace LaunchDarkly.Common.Tests
         internal string WrapperVersion { get; set; }
         internal IDiagnosticStore DiagnosticStore { get; set; }
 
-        string IHttpRequestConfiguration.HttpAuthorizationKey { get { return SdkKey; } }
+        string IHttpRequestConfiguration.HttpAuthorizationKey => SdkKey;
         Uri IEventProcessorConfiguration.EventsUri => EventsUri;
         TimeSpan IStreamManagerConfiguration.ReadTimeout => ReadTimeout;
         TimeSpan IStreamManagerConfiguration.ReconnectTime => ReconnectTime;
