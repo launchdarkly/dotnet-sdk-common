@@ -30,6 +30,7 @@ namespace LaunchDarkly.Common.Tests
             _server = FluentMockServer.Start();
             _config.EventsUri = new Uri(_server.Urls[0]);
             _config.EventFlushInterval = TimeSpan.FromMilliseconds(-1);
+            _config.DiagnosticRecordingInterval = TimeSpan.FromMinutes(5);
         }
 
         void IDisposable.Dispose()
@@ -489,7 +490,7 @@ namespace LaunchDarkly.Common.Tests
 
         [Fact]
         public void DiagnosticStoreLastStatsSentToDiagnosticUri() {
-            
+
         }
 
         private void VerifyUnrecoverableHttpError(int status)
