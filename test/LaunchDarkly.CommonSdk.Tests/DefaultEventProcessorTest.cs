@@ -27,6 +27,7 @@ namespace LaunchDarkly.Common.Tests
         {
             _server = FluentMockServer.Start();
             _config.EventsUri = new Uri(_server.Urls[0]);
+            _config.EventFlushInterval = TimeSpan.FromMinutes(1);
         }
 
         void IDisposable.Dispose()
