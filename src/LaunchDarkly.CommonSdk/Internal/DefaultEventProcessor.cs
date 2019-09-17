@@ -372,7 +372,8 @@ namespace LaunchDarkly.Common
                     {
                         IndexEvent ie = new IndexEvent(e.CreationDate, e.User);
                         buffer.AddEvent(ie);
-                    } else if (!(e is IdentifyEvent))
+                    }
+                    else if (_diagnosticStore != null && !(e is IdentifyEvent))
                     {
                        _diagnosticStore.IncrementDeduplicatedUsers();
                     }
