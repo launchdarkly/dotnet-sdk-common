@@ -67,8 +67,6 @@ namespace LaunchDarkly.Common
                 _diagnosticStore = null;
                 _diagnosticTimer = null;
             }
-            _stopped = new AtomicBoolean(false);
-            _inputCapacityExceeded = new AtomicBoolean(false);
         }
 
         void IEventProcessor.SendEvent(Event eventToLog)
