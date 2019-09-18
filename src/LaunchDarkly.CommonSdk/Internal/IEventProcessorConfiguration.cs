@@ -12,10 +12,12 @@ namespace LaunchDarkly.Common
         bool DiagnosticOptOut { get; }
         TimeSpan DiagnosticRecordingInterval { get; }
         IDiagnosticStore DiagnosticStore { get; }
+        string DiagnosticUriPath { get; }
         int EventCapacity { get; }
         TimeSpan EventFlushInterval { get; }
         int EventSamplingInterval { get; }
         Uri EventsUri { get; }
+        string EventsUriPath { get; }
         TimeSpan HttpClientTimeout { get; }
         bool InlineUsersInEvents { get; }
         ISet<string> PrivateAttributeNames { get; }

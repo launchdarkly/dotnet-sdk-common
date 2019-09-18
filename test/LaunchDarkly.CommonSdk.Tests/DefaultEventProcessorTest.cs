@@ -29,7 +29,9 @@ namespace LaunchDarkly.Common.Tests
         {
             _server = FluentMockServer.Start();
             _config.EventsUri = new Uri(_server.Urls[0]);
+            _config.EventsUriPath = EventsUriPath;
             _config.EventFlushInterval = TimeSpan.FromMilliseconds(-1);
+            _config.DiagnosticUriPath = DiagnosticUriPath;
             _config.DiagnosticRecordingInterval = TimeSpan.FromMinutes(5);
         }
 
@@ -45,7 +47,7 @@ namespace LaunchDarkly.Common.Tests
         private IEventProcessor MakeProcessor(SimpleConfiguration config)
         {
             return new DefaultEventProcessor(config, new TestUserDeduplicator(),
-                Util.MakeHttpClient(config, SimpleClientEnvironment.Instance), EventsUriPath, DiagnosticUriPath);
+                Util.MakeHttpClient(config, SimpleClientEnvironment.Instance));
         }
     
         [Fact]

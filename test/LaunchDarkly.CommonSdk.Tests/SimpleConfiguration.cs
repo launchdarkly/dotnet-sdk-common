@@ -12,6 +12,8 @@ namespace LaunchDarkly.Common.Tests
         internal Uri BaseUri { get; set; }
         internal Uri EventsUri { get; set; }
         internal Uri StreamUri { get; set; }
+        internal string EventsUriPath { get; set; }
+        internal string DiagnosticUriPath { get; set; }
         internal bool Offline { get; set; }
         internal TimeSpan ReadTimeout { get; set; }
         internal TimeSpan ReconnectTime { get; set;  }
@@ -31,10 +33,20 @@ namespace LaunchDarkly.Common.Tests
         internal string WrapperVersion { get; set; }
         internal IDiagnosticStore DiagnosticStore { get; set; }
 
+        #region IHttpRequestConfiguration
+
         string IHttpRequestConfiguration.HttpAuthorizationKey => SdkKey;
+        HttpClientHandler IHttpRequestConfiguration.HttpClientHandler => HttpClientHandler;
+        string IHttpRequestConfiguration.WrapperName => WrapperName;
+        string IHttpRequestConfiguration.WrapperVersion => WrapperVersion;
+
+        #endregion
+
+        #region IEventProcessorConfiguration
+
         Uri IEventProcessorConfiguration.EventsUri => EventsUri;
-        TimeSpan IStreamManagerConfiguration.ReadTimeout => ReadTimeout;
-        TimeSpan IStreamManagerConfiguration.ReconnectTime => ReconnectTime;
+        string IEventProcessorConfiguration.EventsUriPath => EventsUriPath;
+        string IEventProcessorConfiguration.DiagnosticUriPath => DiagnosticUriPath;
         TimeSpan IEventProcessorConfiguration.ReadTimeout => ReadTimeout;
         TimeSpan IEventProcessorConfiguration.ReconnectTime => ReconnectTime;
         int IEventProcessorConfiguration.EventCapacity => EventCapacity;
@@ -45,14 +57,20 @@ namespace LaunchDarkly.Common.Tests
         int IEventProcessorConfiguration.UserKeysCapacity => UserKeysCapacity;
         TimeSpan IEventProcessorConfiguration.UserKeysFlushInterval => UserKeysFlushInterval;
         bool IEventProcessorConfiguration.InlineUsersInEvents => InlineUsersInEvents;
-        TimeSpan IStreamManagerConfiguration.HttpClientTimeout => HttpClientTimeout;
         TimeSpan IEventProcessorConfiguration.HttpClientTimeout => HttpClientTimeout;
-        HttpClientHandler IHttpRequestConfiguration.HttpClientHandler => HttpClientHandler;
         TimeSpan IEventProcessorConfiguration.DiagnosticRecordingInterval => DiagnosticRecordingInterval;
         bool IEventProcessorConfiguration.DiagnosticOptOut => DiagnosticOptOut;
-        string IHttpRequestConfiguration.WrapperName => WrapperName;
-        string IHttpRequestConfiguration.WrapperVersion => WrapperVersion;
         IDiagnosticStore IEventProcessorConfiguration.DiagnosticStore => DiagnosticStore;
+
+        #endregion
+
+        #region IStreamManagerConfiguration
+
+        TimeSpan IStreamManagerConfiguration.ReadTimeout => ReadTimeout;
+        TimeSpan IStreamManagerConfiguration.ReconnectTime => ReconnectTime;
+        TimeSpan IStreamManagerConfiguration.HttpClientTimeout => HttpClientTimeout;
         IDiagnosticStore IStreamManagerConfiguration.DiagnosticStore => DiagnosticStore;
+
+        #endregion
    }
 }

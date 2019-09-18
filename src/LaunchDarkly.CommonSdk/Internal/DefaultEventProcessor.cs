@@ -27,12 +27,12 @@ namespace LaunchDarkly.Common
         private AtomicBoolean _inputCapacityExceeded;
 
         internal DefaultEventProcessor(IEventProcessorConfiguration config,
-            IUserDeduplicator userDeduplicator, HttpClient httpClient, string eventsUriPath, string diagnosticUriPath)
+            IUserDeduplicator userDeduplicator, HttpClient httpClient)
         {
             _stopped = new AtomicBoolean(false);
             _inputCapacityExceeded = new AtomicBoolean(false);
             _messageQueue = new BlockingCollection<IEventMessage>(config.EventCapacity);
-            _dispatcher = new EventDispatcher(config, _messageQueue, userDeduplicator, httpClient, eventsUriPath, diagnosticUriPath, config.DiagnosticStore);
+            _dispatcher = new EventDispatcher(config, _messageQueue, userDeduplicator, httpClient, config.DiagnosticStore);
             _flushTimer = new Timer(DoBackgroundFlush, null, config.EventFlushInterval,
                 config.EventFlushInterval);
             if (userDeduplicator != null && userDeduplicator.FlushInterval.HasValue)
@@ -235,8 +235,6 @@ namespace LaunchDarkly.Common
             BlockingCollection<IEventMessage> messageQueue,
             IUserDeduplicator userDeduplicator,
             HttpClient httpClient,
-            string eventsUriPath,
-            string diagnosticUriPath,
             IDiagnosticStore diagnosticStore)
         {
             _config = config;
@@ -244,8 +242,8 @@ namespace LaunchDarkly.Common
             _userDeduplicator = userDeduplicator;
             _flushWorkersCounter = new CountdownEvent(1);
             _httpClient = httpClient;
-            _uri = new Uri(_config.EventsUri, eventsUriPath);
-            _diagnosticUri = new Uri(_config.EventsUri, diagnosticUriPath);
+            _uri = new Uri(_config.EventsUri, _config.EventsUriPath);
+            _diagnosticUri = new Uri(_config.EventsUri, _config.DiagnosticUriPath);
             _random = new Random();
 
             _httpClient.DefaultRequestHeaders.Add("X-LaunchDarkly-Event-Schema",
