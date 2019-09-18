@@ -166,6 +166,7 @@ namespace LaunchDarkly.Common
 
         private void OnOpen(object sender, EventSource.StateChangedEventArgs e)
         {
+            _config.DiagnosticStore.IncrementStreamReconnections();
             Log.Debug("Eventsource Opened");
         }
 

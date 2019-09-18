@@ -11,6 +11,7 @@ namespace LaunchDarkly.Common
         Dictionary<string, object> LastStats { get; }
         void IncrementDeduplicatedUsers();
         void IncrementDroppedEvents();
+        void IncrementStreamReconnections();
         Dictionary<string, object> CreateEventAndReset(long eventsInQueue);
     }
 }

@@ -53,5 +53,6 @@ namespace LaunchDarkly.Common.Tests
         string IHttpRequestConfiguration.WrapperName => WrapperName;
         string IHttpRequestConfiguration.WrapperVersion => WrapperVersion;
         IDiagnosticStore IEventProcessorConfiguration.DiagnosticStore => DiagnosticStore;
+        IDiagnosticStore IStreamManagerConfiguration.DiagnosticStore => DiagnosticStore;
    }
 }
