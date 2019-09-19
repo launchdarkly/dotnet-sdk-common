@@ -225,8 +225,6 @@ namespace LaunchDarkly.Common
         private readonly IUserDeduplicator _userDeduplicator;
         private readonly CountdownEvent _flushWorkersCounter;
         private readonly HttpClient _httpClient;
-        private readonly Uri _uri;
-        private readonly Uri _diagnosticUri;
         private readonly Random _random;
         private long _lastKnownPastTime;
         private volatile bool _disabled;
@@ -242,8 +240,6 @@ namespace LaunchDarkly.Common
             _userDeduplicator = userDeduplicator;
             _flushWorkersCounter = new CountdownEvent(1);
             _httpClient = httpClient;
-            _uri = new Uri(_config.EventsUri, _config.EventsUriPath);
-            _diagnosticUri = new Uri(_config.EventsUri, _config.DiagnosticUriPath);
             _random = new Random();
 
             _httpClient.DefaultRequestHeaders.Add("X-LaunchDarkly-Event-Schema",
@@ -542,11 +538,11 @@ namespace LaunchDarkly.Common
         private async Task SendEventsAsync(String jsonEvents, int count, CancellationToken token)
         {
             DefaultEventProcessor.Log.DebugFormat("Submitting {0} event(s) to {1} with json: {2}",
-                count, _uri.AbsoluteUri, jsonEvents);
+                count, _config.EventsUri.AbsoluteUri, jsonEvents);
             Stopwatch timer = new Stopwatch();
 
             using (var stringContent = new StringContent(jsonEvents, Encoding.UTF8, "application/json"))
-            using (var response = await _httpClient.PostAsync(_uri, stringContent, token))
+            using (var response = await _httpClient.PostAsync(_config.EventsUri, stringContent, token))
             {
                 timer.Stop();
                 DefaultEventProcessor.Log.DebugFormat("Event delivery took {0} ms, response status {1}",
@@ -575,7 +571,7 @@ namespace LaunchDarkly.Common
         internal async Task SendDiagnosticEventAsync(String jsonDiagnostic)
         {
             DefaultEventProcessor.Log.DebugFormat("Submitting diagnostic event to {0} with json: {1}",
-                _diagnosticUri.AbsoluteUri, jsonDiagnostic);
+                _config.DiagnosticUri.AbsoluteUri, jsonDiagnostic);
 
             for (var attempt = 0; attempt < 2; attempt++)
             {
@@ -591,7 +587,7 @@ namespace LaunchDarkly.Common
                         Stopwatch timer = new Stopwatch();
 
                         using (var stringContent = new StringContent(jsonDiagnostic, Encoding.UTF8, "application/json"))
-                        using (var response = await _httpClient.PostAsync(_diagnosticUri, stringContent, cts.Token))
+                        using (var response = await _httpClient.PostAsync(_config.DiagnosticUri, stringContent, cts.Token))
                         {
                             timer.Stop();
                             DefaultEventProcessor.Log.DebugFormat("Event delivery took {0} ms, response status {1}",

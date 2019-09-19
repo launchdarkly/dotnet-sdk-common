@@ -28,10 +28,9 @@ namespace LaunchDarkly.Common.Tests
         public DefaultEventProcessorTest()
         {
             _server = FluentMockServer.Start();
-            _config.EventsUri = new Uri(_server.Urls[0]);
-            _config.EventsUriPath = EventsUriPath;
+            _config.EventsUri = new Uri(new Uri(_server.Urls[0]), EventsUriPath);
             _config.EventFlushInterval = TimeSpan.FromMilliseconds(-1);
-            _config.DiagnosticUriPath = DiagnosticUriPath;
+            _config.DiagnosticUri = new Uri(new Uri(_server.Urls[0]), DiagnosticUriPath);
             _config.DiagnosticRecordingInterval = TimeSpan.FromMinutes(5);
         }
 

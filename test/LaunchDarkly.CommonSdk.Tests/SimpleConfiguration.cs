@@ -12,8 +12,6 @@ namespace LaunchDarkly.Common.Tests
         internal Uri BaseUri { get; set; }
         internal Uri EventsUri { get; set; }
         internal Uri StreamUri { get; set; }
-        internal string EventsUriPath { get; set; }
-        internal string DiagnosticUriPath { get; set; }
         internal bool Offline { get; set; }
         internal TimeSpan ReadTimeout { get; set; }
         internal TimeSpan ReconnectTime { get; set;  }
@@ -29,6 +27,7 @@ namespace LaunchDarkly.Common.Tests
         internal HttpClientHandler HttpClientHandler { get; set; } = new HttpClientHandler();
         internal TimeSpan DiagnosticRecordingInterval { get; set; }
         internal bool DiagnosticOptOut { get; set; }
+        internal Uri DiagnosticUri { get; set; }
         internal string WrapperName { get; set; }
         internal string WrapperVersion { get; set; }
         internal IDiagnosticStore DiagnosticStore { get; set; }
@@ -45,8 +44,6 @@ namespace LaunchDarkly.Common.Tests
         #region IEventProcessorConfiguration
 
         Uri IEventProcessorConfiguration.EventsUri => EventsUri;
-        string IEventProcessorConfiguration.EventsUriPath => EventsUriPath;
-        string IEventProcessorConfiguration.DiagnosticUriPath => DiagnosticUriPath;
         TimeSpan IEventProcessorConfiguration.ReadTimeout => ReadTimeout;
         TimeSpan IEventProcessorConfiguration.ReconnectTime => ReconnectTime;
         int IEventProcessorConfiguration.EventCapacity => EventCapacity;
@@ -60,6 +57,7 @@ namespace LaunchDarkly.Common.Tests
         TimeSpan IEventProcessorConfiguration.HttpClientTimeout => HttpClientTimeout;
         TimeSpan IEventProcessorConfiguration.DiagnosticRecordingInterval => DiagnosticRecordingInterval;
         bool IEventProcessorConfiguration.DiagnosticOptOut => DiagnosticOptOut;
+        Uri IEventProcessorConfiguration.DiagnosticUri => DiagnosticUri;
         IDiagnosticStore IEventProcessorConfiguration.DiagnosticStore => DiagnosticStore;
 
         #endregion
