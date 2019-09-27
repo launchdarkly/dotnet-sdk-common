@@ -19,7 +19,7 @@ namespace LaunchDarkly.Common.Tests
         private const string DiagnosticUriPath = "/post-diagnostic-here";
 
         private SimpleConfiguration _config = new SimpleConfiguration();
-        private IEventProcessor _ep;
+        private DefaultEventProcessor _ep;
         private FluentMockServer _server;
         private readonly User _user = User.Builder("userKey").Name("Red").Build();
         private readonly JToken _userJson = JToken.Parse("{\"key\":\"userKey\",\"name\":\"Red\"}");
@@ -43,7 +43,7 @@ namespace LaunchDarkly.Common.Tests
             }
         }
 
-        private IEventProcessor MakeProcessor(SimpleConfiguration config)
+        private DefaultEventProcessor MakeProcessor(SimpleConfiguration config)
         {
             return new DefaultEventProcessor(config, new TestUserDeduplicator(),
                 Util.MakeHttpClient(config, SimpleClientEnvironment.Instance));
@@ -482,10 +482,10 @@ namespace LaunchDarkly.Common.Tests
             _ep.SendEvent(fe1);
 
             // Not flushing events, but assuring that fe1 has been processed by the main event loop before proceeding.
-            ((DefaultEventProcessor)_ep).WaitUntilInactive();
-            ((DefaultEventProcessor)_ep).DoDiagnosticSend(null);
+            _ep.WaitUntilInactive();
+            _ep.DoDiagnosticSend(null);
             // Again not flushing events, but ensuring the main event loop has processed the diagnostic event trigger.
-            ((DefaultEventProcessor)_ep).WaitUntilInactive();
+            _ep.WaitUntilInactive();
             _mockDiagnosticStore.Verify(diagStore => diagStore.CreateEventAndReset(2), Times.Once(), "Diagnostic store's CreateEventAndReset should be called with the number of events currently in the buffer before sending diagnostic event");
         }
 
@@ -504,7 +504,7 @@ namespace LaunchDarkly.Common.Tests
 
             _ep.SendEvent(e);
             _ep.Flush();
-            ((DefaultEventProcessor)_ep).WaitUntilInactive();
+            _ep.WaitUntilInactive();
             foreach (LogEntry le in _server.LogEntries)
             {
                 Assert.True(false, "Should not have sent an HTTP request");
@@ -656,7 +656,7 @@ namespace LaunchDarkly.Common.Tests
         {
             PrepareResponse(resp);
             _ep.Flush();
-            ((DefaultEventProcessor)_ep).WaitUntilInactive();
+            _ep.WaitUntilInactive();
             return GetLastRequest();
         }
 

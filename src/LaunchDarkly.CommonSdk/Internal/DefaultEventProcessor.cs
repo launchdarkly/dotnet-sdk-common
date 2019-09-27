@@ -69,17 +69,17 @@ namespace LaunchDarkly.Common
             }
         }
 
-        void IEventProcessor.SendEvent(Event eventToLog)
+        public void SendEvent(Event eventToLog)
         {
             SubmitMessage(new EventMessage(eventToLog));
         }
 
-        void IEventProcessor.Flush()
+        public void Flush()
         {
             SubmitMessage(new FlushMessage());
         }
 
-        void IDisposable.Dispose()
+        public void Dispose()
         {
             Dispose(true);
             GC.SuppressFinalize(this);
@@ -100,7 +100,7 @@ namespace LaunchDarkly.Common
                     ShutdownMessage message = new ShutdownMessage();
                     SubmitMessage(message);
                     message.WaitForCompletion();
-                    ((IDisposable)_dispatcher).Dispose();
+                    _dispatcher.Dispose();
                     _messageQueue.CompleteAdding();
                     _messageQueue.Dispose();
                 }
