@@ -955,7 +955,7 @@ namespace LaunchDarkly.Client
             /// </remarks>
             public static readonly Converter<long> Long = new ConverterImpl<long>(
                 v => LdValue.Of(v),
-                j => j.AsInt
+                j => j.AsLong
             );
 
             /// <summary>

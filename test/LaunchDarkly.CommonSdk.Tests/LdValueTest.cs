@@ -460,6 +460,24 @@ namespace LaunchDarkly.Common.Tests
         }
 
         [Fact]
+        public void CanUseLongTypeForNumberGreaterThanMaxInt()
+        {
+            long n = (long)int.MaxValue + 1;
+            Assert.Equal(n, LdValue.Of(n).AsLong);
+            Assert.Equal(n, LdValue.Convert.Long.ToType(LdValue.Of(n)));
+            Assert.Equal(n, LdValue.Convert.Long.FromType(n).AsLong);
+        }
+
+        [Fact]
+        public void CanUseDoubleTypeForNumberGreaterThanMaxFloat()
+        {
+            double n = (double)float.MaxValue + 1;
+            Assert.Equal(n, LdValue.Of(n).AsDouble);
+            Assert.Equal(n, LdValue.Convert.Double.ToType(LdValue.Of(n)));
+            Assert.Equal(n, LdValue.Convert.Double.FromType(n).AsDouble);
+        }
+
+        [Fact]
         public void TestJsonSerialization()
         {
             Assert.Equal("null", JsonConvert.SerializeObject(LdValue.Null));
