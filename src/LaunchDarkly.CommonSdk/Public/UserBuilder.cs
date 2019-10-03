@@ -112,6 +112,18 @@ namespace LaunchDarkly.Client
         /// <param name="anonymous">true if the user is anonymous</param>
         /// <returns>the same builder</returns>
         IUserBuilder Anonymous(bool anonymous);
+
+        /// <summary>
+        /// Sets whether this user is anonymous, meaning that the user key will not appear on your LaunchDarkly dashboard.
+        /// </summary>
+        /// <remarks>
+        /// For historical reasons, the <c>anonymous</c> attribute is nullable, and flag rules may treat
+        /// <see langword="null"/> differently from <see langword="false"/>. This setter allows you to make
+        /// that distinction.
+        /// </remarks>
+        /// <param name="anonymous">true if the user is anonymous</param>
+        /// <returns>the same builder</returns>
+        IUserBuilder AnonymousOptional(bool? anonymous);
         
         /// <summary>
         /// Adds a custom attribute whose value is a JSON value of any kind.
@@ -238,7 +250,7 @@ namespace LaunchDarkly.Client
         private string _name;
         private string _avatar;
         private string _email;
-        private bool _anonymous;
+        private bool? _anonymous;
         private ImmutableDictionary<string, LdValue>.Builder _custom;
         private ImmutableHashSet<string>.Builder _privateAttributeNames;
 
@@ -327,6 +339,12 @@ namespace LaunchDarkly.Client
         }
         
         public IUserBuilder Anonymous(bool anonymous)
+        {
+            _anonymous = anonymous;
+            return this;
+        }
+
+        public IUserBuilder AnonymousOptional(bool? anonymous)
         {
             _anonymous = anonymous;
             return this;
@@ -442,6 +460,11 @@ namespace LaunchDarkly.Client
         public IUserBuilder Anonymous(bool anonymous)
         {
             return _builder.Anonymous(anonymous);
+        }
+
+        public IUserBuilder AnonymousOptional(bool? anonymous)
+        {
+            return _builder.AnonymousOptional(anonymous);
         }
 
         public IUserBuilderCanMakeAttributePrivate Custom(string name, LdValue value)

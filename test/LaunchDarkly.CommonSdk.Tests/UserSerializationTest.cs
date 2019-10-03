@@ -38,11 +38,11 @@ namespace LaunchDarkly.Common.Tests
         }
 
         [Fact]
-        public void SerializingAUserWithNoAnonymousSetYieldsAnonymousFalse()
+        public void SerializingAUserWithNoAnonymousSetYieldsAnonymousNull()
         {
             var user = User.WithKey(key);
             var json = JObject.FromObject(user);
-            Assert.Equal(new JValue(false), json["anonymous"]);
+            Assert.Null(json["anonymous"]);
         }
 
         [Fact]
@@ -51,6 +51,14 @@ namespace LaunchDarkly.Common.Tests
             var user = User.Builder(key).Anonymous(true).Build();
             var json = JObject.FromObject(user);
             Assert.Equal(new JValue(true), json["anonymous"]);
+        }
+
+        [Fact]
+        public void SerializingAUserWithAnonymousSetToFalseYieldsAnonymousFalse()
+        {
+            var user = User.Builder(key).Anonymous(false).Build();
+            var json = JObject.FromObject(user);
+            Assert.Equal(new JValue(false), json["anonymous"]);
         }
 
         [Theory]
