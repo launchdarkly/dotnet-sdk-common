@@ -142,7 +142,28 @@ namespace LaunchDarkly.Common.Tests
         public void BuilderCanSetAnonymousFalse()
         {
             var user = User.Builder(key).Anonymous(false).Build();
-            Assert.Null(user.Anonymous); // it's null rather than false so the JSON property won't appear
+            Assert.False(user.Anonymous);
+        }
+
+        [Fact]
+        public void BuilderCanSetAnonymousOptionalTrue()
+        {
+            var user = User.Builder(key).AnonymousOptional(true).Build();
+            Assert.True(user.Anonymous);
+        }
+
+        [Fact]
+        public void BuilderCanSetAnonymousOptionalFalse()
+        {
+            var user = User.Builder(key).AnonymousOptional(false).Build();
+            Assert.False(user.Anonymous);
+        }
+
+        [Fact]
+        public void BuilderCanSetAnonymousOptionalNull()
+        {
+            var user = User.Builder(key).AnonymousOptional(null).Build();
+            Assert.Null(user.Anonymous);
         }
 
         [Fact]

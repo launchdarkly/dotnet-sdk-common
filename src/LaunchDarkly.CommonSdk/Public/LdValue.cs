@@ -370,6 +370,13 @@ namespace LaunchDarkly.Client
         /// <summary>
         /// Initializes an <see cref="LdValue"/> from a <see langword="long"/> value.
         /// </summary>
+        /// <remarks>
+        /// Note that the LaunchDarkly service, and most of the SDKs, represent numeric values internally
+        /// in 64-bit floating-point, which has slightly less precision than a signed 64-bit
+        /// <see langword="long"/>; therefore, the full range of <see langword="long"/> values cannot be
+        /// accurately represented. If you need to set a user attribute to a numeric value with more
+        /// significant digits than will fit in a <see cref="double"/>, it is best to encode it as a string.
+        /// </remarks>
         /// <param name="value">the initial value</param>
         /// <returns>a struct that wraps the value</returns>
         public static LdValue Of(long value) =>
@@ -950,12 +957,21 @@ namespace LaunchDarkly.Client
             /// A <see cref="Converter{T}"/> for the <see langword="long"/> type.
             /// </summary>
             /// <remarks>
+            /// <para>
             /// Its behavior is consistent with <see cref="LdValue.Of(long)"/> and
             /// <see cref="LdValue.AsLong"/>.
+            /// </para>
+            /// <para>
+            /// Note that the LaunchDarkly service, and most of the SDKs, represent numeric values internally
+            /// in 64-bit floating-point, which has slightly less precision than a signed 64-bit
+            /// <see langword="long"/>; therefore, the full range of <see langword="long"/> values cannot be
+            /// accurately represented. If you need to set a user attribute to a numeric value with more
+            /// significant digits than will fit in a <see cref="double"/>, it is best to encode it as a string.
+            /// </para>
             /// </remarks>
             public static readonly Converter<long> Long = new ConverterImpl<long>(
                 v => LdValue.Of(v),
-                j => j.AsInt
+                j => j.AsLong
             );
 
             /// <summary>
