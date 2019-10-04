@@ -6,12 +6,12 @@ namespace LaunchDarkly.Common
     internal interface IDiagnosticStore {
         // Needed to schedule the first periodic diagnostic event delay
         DateTime DataSince { get; }
-        Dictionary<string, object> InitEvent { get; }
+        IReadOnlyDictionary<string, object> InitEvent { get; }
         // Saved periodic diagnostic event, used by mobile platforms
-        Dictionary<string, object> LastStats { get; }
+        IReadOnlyDictionary<string, object> LastStats { get; }
         void IncrementDeduplicatedUsers();
         void IncrementDroppedEvents();
         void IncrementStreamReconnections();
-        Dictionary<string, object> CreateEventAndReset(long eventsInQueue);
+        IReadOnlyDictionary<string, object> CreateEventAndReset(long eventsInQueue);
     }
 }

@@ -48,12 +48,12 @@ namespace LaunchDarkly.Common
             {
                 _diagnosticStore = config.DiagnosticStore;
 
-                Dictionary<string, Object> LastStats = _diagnosticStore.LastStats;
+                IReadOnlyDictionary<string, Object> LastStats = _diagnosticStore.LastStats;
                 if (LastStats != null) {
                     _dispatcher.SendDiagnosticEventAsync(JsonConvert.SerializeObject(LastStats, Formatting.None));
                 }
 
-                Dictionary<string, Object> InitEvent = _diagnosticStore.InitEvent;
+                IReadOnlyDictionary<string, Object> InitEvent = _diagnosticStore.InitEvent;
                 if (InitEvent != null) {
                     _dispatcher.SendDiagnosticEventAsync(JsonConvert.SerializeObject(InitEvent, Formatting.None));
                 }
@@ -100,7 +100,7 @@ namespace LaunchDarkly.Common
                     ShutdownMessage message = new ShutdownMessage();
                     SubmitMessage(message);
                     message.WaitForCompletion();
-                    _dispatcher.Dispose();
+                    ((IDisposable)_dispatcher).Dispose();
                     _messageQueue.CompleteAdding();
                     _messageQueue.Dispose();
                 }
@@ -312,7 +312,7 @@ namespace LaunchDarkly.Common
         {
             if (_diagnosticStore != null) {
                 long EventsInQueue = buffer.GetEventsInQueueCount();
-                Dictionary<String, Object> Stats = _diagnosticStore.CreateEventAndReset(EventsInQueue);
+                IReadOnlyDictionary<String, Object> Stats = _diagnosticStore.CreateEventAndReset(EventsInQueue);
                 if (Stats != null)
                 {
                     SendDiagnosticEventAsync(JsonConvert.SerializeObject(Stats, Formatting.None));
