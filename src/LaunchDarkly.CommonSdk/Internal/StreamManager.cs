@@ -27,6 +27,7 @@ namespace LaunchDarkly.Common
         private readonly TaskCompletionSource<bool> _initTask;
         private readonly EventSourceCreator _esCreator;
         private readonly EventSource.ExponentialBackoffWithDecorrelation _backOff;
+        private readonly IDiagnosticStore _diagnosticStore;
         private IEventSource _es;
         private int _initialized = UNINITIALIZED;
 
@@ -41,12 +42,13 @@ namespace LaunchDarkly.Common
         /// are in a unit test and want to mock out the event source.</param>
         public StreamManager(IStreamProcessor streamProcessor, StreamProperties streamProperties,
             IStreamManagerConfiguration config, ClientEnvironment clientEnvironment,
-            EventSourceCreator eventSourceCreator)
+            EventSourceCreator eventSourceCreator, IDiagnosticStore diagnosticStore)
         {
             _streamProcessor = streamProcessor;
             _streamProperties = streamProperties;
             _config = config;
             _clientEnvironment = clientEnvironment;
+            _diagnosticStore = diagnosticStore;
             _esCreator = eventSourceCreator ?? DefaultEventSourceCreator;
             _initTask = new TaskCompletionSource<bool>();
             _backOff = new EventSource.ExponentialBackoffWithDecorrelation(_config.ReconnectTime, TimeSpan.FromMilliseconds(30000));
@@ -166,7 +168,7 @@ namespace LaunchDarkly.Common
 
         private void OnOpen(object sender, EventSource.StateChangedEventArgs e)
         {
-            _config.DiagnosticStore.IncrementStreamReconnections();
+            _diagnosticStore.IncrementStreamReconnections();
             Log.Debug("Eventsource Opened");
         }
 

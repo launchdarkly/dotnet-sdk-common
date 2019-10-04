@@ -39,7 +39,7 @@ namespace LaunchDarkly.Common.Tests
         private StreamManager CreateManager()
         {
             return new StreamManager(_streamProcessor, _streamProperties, _config,
-                SimpleClientEnvironment.Instance, _eventSourceCreator.Create);
+                SimpleClientEnvironment.Instance, _eventSourceCreator.Create, null);
         }
 
         [Fact]

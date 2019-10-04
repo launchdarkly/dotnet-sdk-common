@@ -45,8 +45,12 @@ namespace LaunchDarkly.Common.Tests
 
         private DefaultEventProcessor MakeProcessor(SimpleConfiguration config)
         {
+            return MakeProcessor(config, null);
+        }
+
+        private DefaultEventProcessor MakeProcessor(SimpleConfiguration config, IDiagnosticStore diagnosticStore) {
             return new DefaultEventProcessor(config, new TestUserDeduplicator(),
-                Util.MakeHttpClient(config, SimpleClientEnvironment.Instance), null);
+                Util.MakeHttpClient(config, SimpleClientEnvironment.Instance), diagnosticStore);
         }
     
         [Fact]
@@ -457,23 +461,13 @@ namespace LaunchDarkly.Common.Tests
         }
 
         [Fact]
-        public void DiagnosticStoreIgnoredWhenOptedOut() {
-            _config.DiagnosticOptOut = true;
-            // strict mock fails if anything is accessed without an expectation set.
-            Mock<IDiagnosticStore> _mockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
-            _config.DiagnosticStore = _mockDiagnosticStore.Object;
-            _ep = MakeProcessor(_config);
-        }
-
-        [Fact]
         public void DiagnosticStoreCreateEventGivenEventsInQueueCount() {
             Mock<IDiagnosticStore> _mockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
             _mockDiagnosticStore.Setup(diagStore => diagStore.LastStats).Returns((Dictionary<string, object>)null);
             _mockDiagnosticStore.Setup(diagStore => diagStore.InitEvent).Returns((Dictionary<string, object>)null);
             _mockDiagnosticStore.Setup(diagStore => diagStore.DataSince).Returns((DateTime)DateTime.Now);
             _mockDiagnosticStore.Setup(diagStore => diagStore.CreateEventAndReset(It.IsAny<long>())).Returns(new Dictionary<string, object>());
-            _config.DiagnosticStore = _mockDiagnosticStore.Object;
-            _ep = MakeProcessor(_config);
+            _ep = MakeProcessor(_config, _mockDiagnosticStore.Object);
 
             IFlagEventProperties flag1 = new FlagEventPropertiesBuilder("flagkey1").Version(11).TrackEvents(true).Build();
             var value = LdValue.Of("value");

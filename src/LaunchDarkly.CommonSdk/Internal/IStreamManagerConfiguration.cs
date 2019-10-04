@@ -11,6 +11,5 @@ namespace LaunchDarkly.Common
         TimeSpan ReadTimeout { get; }
         TimeSpan ReconnectTime { get; }
         TimeSpan HttpClientTimeout { get; }
-        IDiagnosticStore DiagnosticStore { get; }
     }
 }
