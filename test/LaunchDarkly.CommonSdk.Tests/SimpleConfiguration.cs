@@ -58,7 +58,6 @@ namespace LaunchDarkly.Common.Tests
         TimeSpan IEventProcessorConfiguration.DiagnosticRecordingInterval => DiagnosticRecordingInterval;
         bool IEventProcessorConfiguration.DiagnosticOptOut => DiagnosticOptOut;
         Uri IEventProcessorConfiguration.DiagnosticUri => DiagnosticUri;
-        IDiagnosticStore IEventProcessorConfiguration.DiagnosticStore => DiagnosticStore;
 
         #endregion
 

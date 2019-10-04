@@ -11,7 +11,6 @@ namespace LaunchDarkly.Common
         bool AllAttributesPrivate { get; }
         bool DiagnosticOptOut { get; }
         TimeSpan DiagnosticRecordingInterval { get; }
-        IDiagnosticStore DiagnosticStore { get; }
         Uri DiagnosticUri { get; }
         int EventCapacity { get; }
         TimeSpan EventFlushInterval { get; }

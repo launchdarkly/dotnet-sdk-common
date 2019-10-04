@@ -27,14 +27,15 @@ namespace LaunchDarkly.Common
         private AtomicBoolean _inputCapacityExceeded;
 
         internal DefaultEventProcessor(IEventProcessorConfiguration config,
-            IUserDeduplicator userDeduplicator, HttpClient httpClient)
+            IUserDeduplicator userDeduplicator, HttpClient httpClient, IDiagnosticStore diagnosticStore)
         {
             _stopped = new AtomicBoolean(false);
             _inputCapacityExceeded = new AtomicBoolean(false);
             _messageQueue = new BlockingCollection<IEventMessage>(config.EventCapacity);
-            _dispatcher = new EventDispatcher(config, _messageQueue, userDeduplicator, httpClient, config.DiagnosticStore);
+            _dispatcher = new EventDispatcher(config, _messageQueue, userDeduplicator, httpClient, diagnosticStore);
             _flushTimer = new Timer(DoBackgroundFlush, null, config.EventFlushInterval,
                 config.EventFlushInterval);
+            _diagnosticStore = diagnosticStore;
             if (userDeduplicator != null && userDeduplicator.FlushInterval.HasValue)
             {
                 _flushUsersTimer = new Timer(DoUserKeysFlush, null, userDeduplicator.FlushInterval.Value,
@@ -44,10 +45,9 @@ namespace LaunchDarkly.Common
             {
                 _flushUsersTimer = null;
             }
-            if (!config.DiagnosticOptOut && config.DiagnosticStore != null)
-            {
-                _diagnosticStore = config.DiagnosticStore;
 
+            if (diagnosticStore != null)
+            {
                 IReadOnlyDictionary<string, Object> LastStats = _diagnosticStore.LastStats;
                 if (LastStats != null) {
                     _dispatcher.SendDiagnosticEventAsync(JsonConvert.SerializeObject(LastStats, Formatting.None));
@@ -64,7 +64,6 @@ namespace LaunchDarkly.Common
             }
             else
             {
-                _diagnosticStore = null;
                 _diagnosticTimer = null;
             }
         }
