@@ -19,7 +19,7 @@ namespace LaunchDarkly.Common
 
         private readonly BlockingCollection<IEventMessage> _messageQueue;
         private readonly EventDispatcher _dispatcher;
-        readonly IDiagnosticStore _diagnosticStore;
+        private readonly IDiagnosticStore _diagnosticStore;
         private readonly Timer _flushTimer;
         private readonly Timer _flushUsersTimer;
         private readonly Timer _diagnosticTimer;
