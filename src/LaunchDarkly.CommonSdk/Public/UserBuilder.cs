@@ -111,6 +111,18 @@ namespace LaunchDarkly.Client
         IUserBuilder Anonymous(bool anonymous);
 
         /// <summary>
+        /// Sets whether this user is anonymous, meaning that the user key will not appear on your LaunchDarkly dashboard.
+        /// </summary>
+        /// <remarks>
+        /// For historical reasons, the <c>anonymous</c> attribute is nullable, and flag rules may treat
+        /// <see langword="null"/> differently from <see langword="false"/>. This setter allows you to make
+        /// that distinction.
+        /// </remarks>
+        /// <param name="anonymous">true if the user is anonymous</param>
+        /// <returns>the same builder</returns>
+        IUserBuilder AnonymousOptional(bool? anonymous);
+
+        /// <summary>
         /// Adds a custom attribute whose value is a JSON value of any kind.
         /// </summary>
         /// <remarks>
@@ -258,7 +270,7 @@ namespace LaunchDarkly.Client
         private string _name;
         private string _avatar;
         private string _email;
-        private bool _anonymous;
+        private bool? _anonymous;
         private HashSet<string> _privateAttributeNames;
         private Dictionary<string, JToken> _custom;
 
@@ -278,7 +290,7 @@ namespace LaunchDarkly.Client
             _name = fromUser.Name;
             _avatar = fromUser.Avatar;
             _email = fromUser.Email;
-            _anonymous = fromUser.Anonymous.HasValue && fromUser.Anonymous.Value;
+            _anonymous = fromUser.Anonymous;
             _privateAttributeNames = fromUser.PrivateAttributeNames is null ? null :
                 new HashSet<string>(fromUser.PrivateAttributeNames);
             _custom = fromUser.Custom is null ? null :
@@ -300,7 +312,7 @@ namespace LaunchDarkly.Client
                 Name = _name,
                 Avatar = _avatar,
                 Email = _email,
-                Anonymous = _anonymous ? (bool?)true : null,
+                Anonymous = _anonymous,
                 PrivateAttributeNames = _privateAttributeNames is null ? null :
                     new HashSet<string>(_privateAttributeNames),
                 Custom = _custom is null ? new Dictionary<string, JToken>() :
@@ -364,6 +376,12 @@ namespace LaunchDarkly.Client
         }
         
         public IUserBuilder Anonymous(bool anonymous)
+        {
+            _anonymous = anonymous;
+            return this;
+        }
+
+        public IUserBuilder AnonymousOptional(bool? anonymous)
         {
             _anonymous = anonymous;
             return this;
@@ -484,6 +502,11 @@ namespace LaunchDarkly.Client
         public IUserBuilder Anonymous(bool anonymous)
         {
             return _builder.Anonymous(anonymous);
+        }
+
+        public IUserBuilder AnonymousOptional(bool? anonymous)
+        {
+            return _builder.AnonymousOptional(anonymous);
         }
 
         public IUserBuilderCanMakeAttributePrivate Custom(string name, LdValue value)
