@@ -131,10 +131,19 @@ namespace LaunchDarkly.Common.Tests
         }
 
         [Fact]
+        public void AnonymousOptionalDefaultsToNull()
+        {
+            var user = User.Builder(key).Build();
+            Assert.False(user.Anonymous);
+            Assert.Null(user.AnonymousOptional);
+        }
+
+        [Fact]
         public void BuilderCanSetAnonymousTrue()
         {
             var user = User.Builder(key).Anonymous(true).Build();
             Assert.True(user.Anonymous);
+            Assert.True(user.AnonymousOptional);
         }
 
         [Fact]
@@ -142,6 +151,31 @@ namespace LaunchDarkly.Common.Tests
         {
             var user = User.Builder(key).Anonymous(true).Anonymous(false).Build();
             Assert.False(user.Anonymous);
+            Assert.False(user.AnonymousOptional);
+        }
+
+        [Fact]
+        public void BuilderCanSetAnonymousOptionalTrue()
+        {
+            var user = User.Builder(key).AnonymousOptional(true).Build();
+            Assert.True(user.Anonymous);
+            Assert.True(user.AnonymousOptional);
+        }
+
+        [Fact]
+        public void BuilderCanSetAnonymousOptionalFalse()
+        {
+            var user = User.Builder(key).AnonymousOptional(false).Build();
+            Assert.False(user.Anonymous);
+            Assert.False(user.AnonymousOptional);
+        }
+
+        [Fact]
+        public void BuilderCanSetAnonymousOptionalNull()
+        {
+            var user = User.Builder(key).Anonymous(true).AnonymousOptional(null).Build();
+            Assert.False(user.Anonymous);
+            Assert.Null(user.AnonymousOptional);
         }
 
         [Fact]

@@ -2,6 +2,14 @@
 
 All notable changes to `LaunchDarkly.CommonSdk` will be documented in this file. For full release notes for the projects that depend on this project, see their respective changelogs. This file describes changes only to the common code. This project adheres to [Semantic Versioning](http://semver.org).
 
+## [4.1.0] - 2019-10-07
+### Added:
+- `IUserBuilder.AnonymousOptional` and `User.AnonymousOption` allow treating the `Anonymous` property as nullable (necessary for consistency with other SDKs). See note about this under Fixed.
+ 
+### Fixed:
+- `IUserBuilder` was incorrectly setting the user's `Anonymous` property to `null` even if it had been explicitly set to `false`. Null and false behave the same in terms of LaunchDarkly's user indexing behavior, but currently it is possible to create a feature flag rule that treats them differently. So `IUserBuilder.Anonymous(false)` now correctly sets it to `false`.
+- `LdValue.Convert.Long` was mistakenly converting to an `int` rather than a `long`. ([#32](https://github.com/launchdarkly/dotnet-sdk-common/issues/32))
+
 ## [4.0.1] - 2019-09-13
 _The 4.0.0 release was broken._
 
@@ -41,6 +49,14 @@ _The 4.0.0 release was broken._
 
 ### Fixed:
 - No longer assumes that we are overriding the `HttpMessageHandler` (if it is null in the configuration, just use the default `HttpClient` constructor). This is important for Xamarin.
+
+## [2.7.0] - 2019-10-03
+### Added:
+- `IUserBuilder.AnonymousOptional` allows setting the `Anonymous` property to `null` (necessary for consistency with other SDKs). See note about this under Fixed.
+ 
+### Fixed:
+- `IUserBuilder` was incorrectly setting the user's `Anonymous` property to `null` even if it had been explicitly set to `false`. Null and false behave the same in terms of LaunchDarkly's user indexing behavior, but currently it is possible to create a feature flag rule that treats them differently. So `IUserBuilder.Anonymous(false)` now correctly sets it to `false`, just as the deprecated method `UserExtensions.WithAnonymous(false)` would.
+- `LdValue.Convert.Long` was mistakenly converting to an `int` rather than a `long`. ([#32](https://github.com/launchdarkly/dotnet-sdk-common/issues/32))
 
 ## [2.6.1] - 2019-09-12
 ### Fixed:

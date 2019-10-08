@@ -49,7 +49,7 @@ namespace LaunchDarkly.Client
         private readonly string _name;
         private readonly string _avatar;
         private readonly string _email;
-        private readonly bool _anonymous;
+        private readonly bool? _anonymous;
         internal readonly ImmutableDictionary<string, LdValue> _custom;
         internal readonly ImmutableHashSet<string> _privateAttributeNames;
 
@@ -116,8 +116,21 @@ namespace LaunchDarkly.Client
         /// <summary>
         /// Whether or not the user is anonymous.
         /// </summary>
+        public bool Anonymous => _anonymous.HasValue && _anonymous.Value;
+
+        /// <summary>
+        /// Whether or not the user is anonymous, if that has been specified.
+        /// </summary>
+        /// <remarks>
+        /// Although the <see cref="Anonymous"/> property defaults to <see langword="false"/> in terms
+        /// of LaunchDarkly's user indexing behavior, for historical reasons <see langword="null"/>
+        /// (the property has not been explicitly set) may behave differently from being explicitly set
+        /// to <see langword="false"/>, if this property is referenced in a feature flag rule. This
+        /// property getter, and the corresponding setter in <see cref="IUserBuilder"/>, allow you to
+        /// treat the property as nullable.
+        /// </remarks>
         [JsonProperty(PropertyName = "anonymous", NullValueHandling = NullValueHandling.Ignore)]
-        public bool Anonymous => _anonymous;
+        public bool? AnonymousOptional => _anonymous;
 
         /// <summary>
         /// Custom attributes for the user.
@@ -199,7 +212,7 @@ namespace LaunchDarkly.Client
             _name = name;
             _avatar = avatar;
             _email = email;
-            _anonymous = anonymous.HasValue && anonymous.Value;
+            _anonymous = anonymous;
             _custom = custom ?? ImmutableDictionary.Create<string, LdValue>();
             _privateAttributeNames = privateAttributeNames ?? ImmutableHashSet.Create<string>();
         }
