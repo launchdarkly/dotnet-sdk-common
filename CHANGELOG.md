@@ -17,7 +17,7 @@ _The 4.0.0 release was broken._
 - `LdValue` now has methods for converting to and from complex types (list, dictionary).
 
 ### Changed:
-- `ImmutableJsoValue` is now called `LdValue`.
+- `ImmutableJsonValue` is now called `LdValue`.
 - All public APIs now use `ImmutableJsonValue` instead of `JToken`.
  
 ### Removed:
