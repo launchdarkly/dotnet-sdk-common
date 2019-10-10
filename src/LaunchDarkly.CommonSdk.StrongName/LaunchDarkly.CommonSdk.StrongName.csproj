@@ -14,6 +14,7 @@
     <Compile Include="..\LaunchDarkly.CommonSdk\Internal\*.cs" />
     <Compile Include="..\LaunchDarkly.CommonSdk\Public\*.cs" />
     <Compile Include="..\LaunchDarkly.CommonSdk\PublicDeprecated\*.cs" />
+    <Compile Include="..\LaunchDarkly.CommonSdk\PublicLogging\*.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Common.Logging" Version="3.4.1" />
