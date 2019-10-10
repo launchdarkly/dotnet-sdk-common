@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Version>2.7.0</Version>
+    <Version>2.8.0</Version>
     <TargetFrameworks>netstandard1.4;netstandard1.6;netstandard2.0;net45</TargetFrameworks>
     <PackageLicenseUrl>https://raw.githubusercontent.com/launchdarkly/dotnet-sdk-common/master/LICENSE</PackageLicenseUrl>
     <DebugType>portable</DebugType>
@@ -14,6 +14,7 @@
     <Compile Include="..\LaunchDarkly.CommonSdk\Internal\*.cs" />
     <Compile Include="..\LaunchDarkly.CommonSdk\Public\*.cs" />
     <Compile Include="..\LaunchDarkly.CommonSdk\PublicDeprecated\*.cs" />
+    <Compile Include="..\LaunchDarkly.CommonSdk\PublicLogging\*.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Common.Logging" Version="3.4.1" />
