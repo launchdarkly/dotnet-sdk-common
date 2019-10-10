@@ -21,9 +21,6 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Net.Http" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="NewFolder\" />
-  </ItemGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DocumentationFile>bin\Debug\$(TargetFramework)\LaunchDarkly.CommonSdk.xml</DocumentationFile>
   </PropertyGroup>
