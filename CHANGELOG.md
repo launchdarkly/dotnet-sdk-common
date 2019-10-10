@@ -2,6 +2,10 @@
 
 All notable changes to `LaunchDarkly.CommonSdk` will be documented in this file. For full release notes for the projects that depend on this project, see their respective changelogs. This file describes changes only to the common code. This project adheres to [Semantic Versioning](http://semver.org).
 
+## [4.2.0] - 2019-10-10
+### Added:
+- Added `LaunchDarkly.Logging.ConsoleAdapter` as a convenience for quickly enabling console logging; this is equivalent to `Common.Logging.Simple.ConsoleOutLoggerFactoryAdapter`, but the latter is not available on some platforms.
+
 ## [4.1.0] - 2019-10-07
 ### Added:
 - `IUserBuilder.AnonymousOptional` and `User.AnonymousOption` allow treating the `Anonymous` property as nullable (necessary for consistency with other SDKs). See note about this under Fixed.
