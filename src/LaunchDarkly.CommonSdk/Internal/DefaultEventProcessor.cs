@@ -22,12 +22,13 @@ namespace LaunchDarkly.Common
         private readonly IDiagnosticStore _diagnosticStore;
         private readonly Timer _flushTimer;
         private readonly Timer _flushUsersTimer;
-        private readonly Timer _diagnosticTimer;
+        private readonly TimeSpan _diagnosticRecordingInterval;
+        private Timer _diagnosticTimer;
         private AtomicBoolean _stopped;
         private AtomicBoolean _inputCapacityExceeded;
 
         internal DefaultEventProcessor(IEventProcessorConfiguration config,
-            IUserDeduplicator userDeduplicator, HttpClient httpClient, IDiagnosticStore diagnosticStore, bool diagnosticSendEnabled)
+            IUserDeduplicator userDeduplicator, HttpClient httpClient, IDiagnosticStore diagnosticStore, IDiagnosticDisabler diagnosticDisabler)
         {
             _stopped = new AtomicBoolean(false);
             _inputCapacityExceeded = new AtomicBoolean(false);
@@ -36,6 +37,7 @@ namespace LaunchDarkly.Common
             _flushTimer = new Timer(DoBackgroundFlush, null, config.EventFlushInterval,
                 config.EventFlushInterval);
             _diagnosticStore = diagnosticStore;
+            _diagnosticRecordingInterval = config.DiagnosticRecordingInterval;
             if (userDeduplicator != null && userDeduplicator.FlushInterval.HasValue)
             {
                 _flushUsersTimer = new Timer(DoUserKeysFlush, null, userDeduplicator.FlushInterval.Value,
@@ -48,7 +50,7 @@ namespace LaunchDarkly.Common
 
             if (diagnosticStore != null)
             {
-                if (diagnosticSendEnabled) {
+                if (diagnosticDisabler == null || !diagnosticDisabler.Disabled) {
                     IReadOnlyDictionary<string, Object> LastStats = _diagnosticStore.LastStats;
                     if (LastStats != null) {
                         _dispatcher.SendDiagnosticEventAsync(JsonConvert.SerializeObject(LastStats, Formatting.None));
@@ -61,6 +63,10 @@ namespace LaunchDarkly.Common
 
                     StartDiagnosticTimer();
                 }
+
+                if (diagnosticDisabler != null) {
+                    diagnosticDisabler.DisabledChanged += OnDisabledChanged;
+                }
             }
             else
             {
@@ -68,10 +74,25 @@ namespace LaunchDarkly.Common
             }
         }
 
+        private void OnDisabledChanged(object sender, DisabledChangedArgs args)
+        {
+            StopDiagnosticTimer();
+            if (!args.Disabled) {
+                StartDiagnosticTimer();
+            }
+        }
+
         private void StartDiagnosticTimer() {
-                TimeSpan InitialDelay = config.DiagnosticRecordingInterval - (DateTime.Now - _diagnosticStore.DataSince);
-                TimeSpan SafeDelay = Util.Clamp(InitialDelay, TimeSpan.Zero, config.DiagnosticRecordingInterval);
-                _diagnosticTimer = new Timer(DoDiagnosticSend, null, SafeDelay, config.DiagnosticRecordingInterval);
+                TimeSpan InitialDelay = _diagnosticRecordingInterval - (DateTime.Now - _diagnosticStore.DataSince);
+                TimeSpan SafeDelay = Util.Clamp(InitialDelay, TimeSpan.Zero, _diagnosticRecordingInterval);
+                _diagnosticTimer = new Timer(DoDiagnosticSend, null, SafeDelay, _diagnosticRecordingInterval);
+        }
+
+        private void StopDiagnosticTimer() {
+            if (_diagnosticTimer != null) {
+                _diagnosticTimer.Dispose();
+            }
+            _diagnosticTimer = null;
         }
 
         public void SendEvent(Event eventToLog)
