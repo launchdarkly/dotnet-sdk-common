@@ -30,6 +30,7 @@ namespace LaunchDarkly.Common
         private readonly IDiagnosticStore _diagnosticStore;
         private IEventSource _es;
         private int _initialized = UNINITIALIZED;
+        private long _esStarted;
 
         /// <summary>
         /// Constructs a StreamManager instance.
@@ -91,7 +92,10 @@ namespace LaunchDarkly.Common
 
             try
             {
-                Task.Run(() => _es.StartAsync());
+                Task.Run(() => {
+                    _esStarted = Util.GetUnixTimestampMillis(DateTime.Now);
+                    _es.StartAsync();
+                });
             }
             catch (Exception ex)
             {
@@ -115,6 +119,7 @@ namespace LaunchDarkly.Common
             await Task.Delay(sleepTime);
             try
             {
+                _esStarted = Util.GetUnixTimestampMillis(DateTime.Now);
                 await _es.StartAsync();
                 _backOff.ResetReconnectAttemptCount();
                 Log.Info("Reconnected to LaunchDarkly StreamProcessor");
@@ -166,10 +171,17 @@ namespace LaunchDarkly.Common
             }
         }
 
+        private void RecordStreamInit(bool failed) {
+            if (_diagnosticStore != null) {
+                _diagnosticStore.AddStreamInit(_esStarted, (int)(Util.GetUnixTimestampMillis(DateTime.Now) - _esStarted), failed);
+                _esStarted = Util.GetUnixTimestampMillis(DateTime.Now);
+            }
+        }
+
         private void OnOpen(object sender, EventSource.StateChangedEventArgs e)
         {
-            _diagnosticStore.IncrementStreamReconnections();
             Log.Debug("Eventsource Opened");
+            RecordStreamInit(false);
         }
 
         private void OnClose(object sender, EventSource.StateChangedEventArgs e)
@@ -191,6 +203,7 @@ namespace LaunchDarkly.Common
             {
                 int status = ((EventSource.EventSourceServiceUnsuccessfulResponseException)e.Exception).StatusCode;
                 Log.Error(Util.HttpErrorMessage(status, "streaming connection", "will retry"));
+                RecordStreamInit(true);
                 if (!Util.IsHttpErrorRecoverable(status))
                 {
                     _initTask.TrySetException(e.Exception); // sends this exception to the client if we haven't already started up

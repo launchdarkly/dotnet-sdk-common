@@ -11,7 +11,7 @@ namespace LaunchDarkly.Common
         IReadOnlyDictionary<string, object> LastStats { get; }
         void IncrementDeduplicatedUsers();
         void IncrementDroppedEvents();
-        void IncrementStreamReconnections();
+        void AddStreamInit(long timestamp, int durationMs, bool failed);
         IReadOnlyDictionary<string, object> CreateEventAndReset(long eventsInQueue);
     }
 }
