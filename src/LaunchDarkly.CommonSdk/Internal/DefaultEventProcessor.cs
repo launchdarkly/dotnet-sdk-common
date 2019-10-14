@@ -27,7 +27,7 @@ namespace LaunchDarkly.Common
         private AtomicBoolean _inputCapacityExceeded;
 
         internal DefaultEventProcessor(IEventProcessorConfiguration config,
-            IUserDeduplicator userDeduplicator, HttpClient httpClient, IDiagnosticStore diagnosticStore)
+            IUserDeduplicator userDeduplicator, HttpClient httpClient, IDiagnosticStore diagnosticStore, bool diagnosticSendEnabled)
         {
             _stopped = new AtomicBoolean(false);
             _inputCapacityExceeded = new AtomicBoolean(false);
@@ -48,24 +48,30 @@ namespace LaunchDarkly.Common
 
             if (diagnosticStore != null)
             {
-                IReadOnlyDictionary<string, Object> LastStats = _diagnosticStore.LastStats;
-                if (LastStats != null) {
-                    _dispatcher.SendDiagnosticEventAsync(JsonConvert.SerializeObject(LastStats, Formatting.None));
-                }
+                if (diagnosticSendEnabled) {
+                    IReadOnlyDictionary<string, Object> LastStats = _diagnosticStore.LastStats;
+                    if (LastStats != null) {
+                        _dispatcher.SendDiagnosticEventAsync(JsonConvert.SerializeObject(LastStats, Formatting.None));
+                    }
 
-                IReadOnlyDictionary<string, Object> InitEvent = _diagnosticStore.InitEvent;
-                if (InitEvent != null) {
-                    _dispatcher.SendDiagnosticEventAsync(JsonConvert.SerializeObject(InitEvent, Formatting.None));
-                }
+                    IReadOnlyDictionary<string, Object> InitEvent = _diagnosticStore.InitEvent;
+                    if (InitEvent != null) {
+                        _dispatcher.SendDiagnosticEventAsync(JsonConvert.SerializeObject(InitEvent, Formatting.None));
+                    }
 
-                TimeSpan InitialDelay = config.DiagnosticRecordingInterval - (DateTime.Now - _diagnosticStore.DataSince);
-                TimeSpan SafeDelay = Util.Clamp(InitialDelay, TimeSpan.Zero, config.DiagnosticRecordingInterval);
-                _diagnosticTimer = new Timer(DoDiagnosticSend, null, SafeDelay, config.DiagnosticRecordingInterval);
+                    StartDiagnosticTimer();
+                }
             }
             else
             {
                 _diagnosticTimer = null;
             }
+        }
+
+        private void StartDiagnosticTimer() {
+                TimeSpan InitialDelay = config.DiagnosticRecordingInterval - (DateTime.Now - _diagnosticStore.DataSince);
+                TimeSpan SafeDelay = Util.Clamp(InitialDelay, TimeSpan.Zero, config.DiagnosticRecordingInterval);
+                _diagnosticTimer = new Timer(DoDiagnosticSend, null, SafeDelay, config.DiagnosticRecordingInterval);
         }
 
         public void SendEvent(Event eventToLog)
