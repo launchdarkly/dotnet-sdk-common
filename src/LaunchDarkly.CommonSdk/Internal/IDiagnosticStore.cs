@@ -4,14 +4,45 @@ using System.Collections.Generic;
 namespace LaunchDarkly.Common
 {
     internal interface IDiagnosticStore {
-        // Needed to schedule the first periodic diagnostic event delay
+        /// <summary>
+        /// The last time the periodic data was reset for the current diagnosticId. This may be from
+        /// before the SDK initialized if periodic diagnostic data has been persisted from a
+        /// previous initialization, but the session was not considered ended (meaning the same
+        /// diagnostic id) when the current initialization occurred.
+        /// </summary>
         DateTime DataSince { get; }
+        /// <summary>
+        /// An event to be sent for a new diagnostic id. This field is only checked during
+        /// initialization of the event processor, and sent if so.
+        /// </summary>
         IReadOnlyDictionary<string, object> InitEvent { get; }
-        // Saved periodic diagnostic event, used by mobile platforms
+        /// <summary>
+        // Persisted periodic diagnostic data from a previous initialization. This should be set
+        // with the data from the previous diagnostic id if the initialization caused a switch of
+        // diagnostic id and there is periodic diagnostics data available.
+        /// </summary>
         IReadOnlyDictionary<string, object> LastStats { get; }
+        /// <summary>
+        // Called when the user deduplicator prevents a user from being index.
+        /// </summary>
         void IncrementDeduplicatedUsers();
+        /// <summary>
+        // Called when an event is dropped due to a full event buffer.
+        /// </summary>
         void IncrementDroppedEvents();
+        /// <summary>
+        // Called when a stream init completes
+        /// </summary>
+        /// <param name="timestamp">The time at which the stream began attempted initialization. </param>
+        /// <param name="durationMs">The duration in milliseconds of the stream initialization attempt. </param>
+        /// <param name="failed">True if the initialization failed, false otherwise. </param>
         void AddStreamInit(long timestamp, int durationMs, bool failed);
+        /// <summary>
+        /// Called to generate a periodic diagnostic event, resetting the store counts and stream
+        /// initializations.
+        /// </summary>
+        /// <param name="eventsInQueue">The current number of events in the event buffer</param>
+        /// <returns>A dictionary representing the periodic diagnostic event</returns>
         IReadOnlyDictionary<string, object> CreateEventAndReset(long eventsInQueue);
     }
 }
