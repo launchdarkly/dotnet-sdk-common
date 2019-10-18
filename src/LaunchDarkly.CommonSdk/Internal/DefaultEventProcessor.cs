@@ -541,7 +541,7 @@ namespace LaunchDarkly.Common
                 eventsOut.Count, _config.EventsUri.AbsoluteUri, jsonEvents);
             await SendWithRetry(_config.EventsUri, jsonEvents, true, async (response, duration) =>
             {
-                if (response != null)
+                if (response == null)
                 {
                     return;
                 }
