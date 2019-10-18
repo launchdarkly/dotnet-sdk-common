@@ -17,21 +17,21 @@ namespace LaunchDarkly.Common
         /// </summary>
         IReadOnlyDictionary<string, object> InitEvent { get; }
         /// <summary>
-        // Persisted periodic diagnostic data from a previous initialization. This should be set
-        // with the data from the previous diagnostic id if the initialization caused a switch of
-        // diagnostic id and there is periodic diagnostics data available.
+        /// Persisted periodic diagnostic data from a previous initialization. This should be set
+        /// with the data from the previous diagnostic id if the initialization caused a switch of
+        /// diagnostic id and there is periodic diagnostics data available.
         /// </summary>
         IReadOnlyDictionary<string, object> LastStats { get; }
         /// <summary>
-        // Called when the user deduplicator prevents a user from being index.
+        /// Called when the user deduplicator prevents a user from being index.
         /// </summary>
         void IncrementDeduplicatedUsers();
         /// <summary>
-        // Called when an event is dropped due to a full event buffer.
+        /// Called when an event is dropped due to a full event buffer.
         /// </summary>
         void IncrementDroppedEvents();
         /// <summary>
-        // Called when a stream init completes
+        /// Called when a stream init completes
         /// </summary>
         /// <param name="timestamp">The time at which the stream began attempted initialization. </param>
         /// <param name="durationMs">The duration in milliseconds of the stream initialization attempt. </param>
