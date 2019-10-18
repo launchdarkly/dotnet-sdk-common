@@ -5,8 +5,8 @@ namespace LaunchDarkly.Common
 {
     class DiagnosticId
     {
-        public readonly Guid diagnosticId;
-        public readonly string sdkKeySuffix;
+        internal readonly Guid diagnosticId;
+        internal readonly string sdkKeySuffix;
 
         internal DiagnosticId(string sdkKey, Guid diagnosticId)
         {

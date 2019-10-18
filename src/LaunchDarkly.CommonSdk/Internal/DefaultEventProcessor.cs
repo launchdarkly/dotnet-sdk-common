@@ -101,13 +101,13 @@ namespace LaunchDarkly.Common
         private void SendInitialDiagnostics()
         {
             _sentInitialDiagnostics.GetAndSet(true);
-            IReadOnlyDictionary<string, Object> LastStats = _diagnosticStore.LastStats;
+            IReadOnlyDictionary<string, object> LastStats = _diagnosticStore.LastStats;
             if (LastStats != null)
             {
                 _dispatcher.SendDiagnosticEventAsync(JsonConvert.SerializeObject(LastStats, Formatting.None));
             }
 
-            IReadOnlyDictionary<string, Object> InitEvent = _diagnosticStore.InitEvent;
+            IReadOnlyDictionary<string, object> InitEvent = _diagnosticStore.InitEvent;
             if (InitEvent != null)
             {
                 _dispatcher.SendDiagnosticEventAsync(JsonConvert.SerializeObject(InitEvent, Formatting.None));
@@ -358,7 +358,7 @@ namespace LaunchDarkly.Common
             if (_diagnosticStore != null)
             {
                 long EventsInQueue = buffer.GetEventsInQueueCount();
-                IReadOnlyDictionary<String, Object> Stats = _diagnosticStore.CreateEventAndReset(EventsInQueue);
+                IReadOnlyDictionary<string, object> Stats = _diagnosticStore.CreateEventAndReset(EventsInQueue);
                 if (Stats != null)
                 {
                     SendDiagnosticEventAsync(JsonConvert.SerializeObject(Stats, Formatting.None));
@@ -569,7 +569,7 @@ namespace LaunchDarkly.Common
             });
         }
 
-        private async Task SendWithRetry(Uri uri, String content, bool includeSchemaVersionHeader, Func<HttpResponseMessage, long, Task> onComplete)
+        private async Task SendWithRetry(Uri uri, string content, bool includeSchemaVersionHeader, Func<HttpResponseMessage, long, Task> onComplete)
         {
             const int maxAttempts = 2;
             for (var attempt = 0; attempt < maxAttempts; attempt++)
@@ -629,7 +629,7 @@ namespace LaunchDarkly.Common
             await onComplete(null, 0);
         }
 
-        internal async Task SendDiagnosticEventAsync(String jsonDiagnostic)
+        internal async Task SendDiagnosticEventAsync(string jsonDiagnostic)
         {
             DefaultEventProcessor.Log.DebugFormat("Submitting diagnostic event to {0} with json: {1}",
                 _config.DiagnosticUri.AbsoluteUri, jsonDiagnostic);
