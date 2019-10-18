@@ -2,10 +2,12 @@ using System;
 
 namespace LaunchDarkly.Common
 {
-    internal class DisabledChangedArgs : EventArgs {
+    internal class DisabledChangedArgs : EventArgs
+    {
         internal bool Disabled { get; }
 
-        DisabledChangedArgs(bool disabled) {
+        DisabledChangedArgs(bool disabled)
+        {
             Disabled = disabled;
         }
     }
@@ -15,7 +17,8 @@ namespace LaunchDarkly.Common
     /// events should be disabled. This is used for mobile platforms to disable diagnostic events
     /// when the application is in the background.
     /// </summary>
-    internal interface IDiagnosticDisabler {
+    internal interface IDiagnosticDisabler
+    {
         /// <summary>
         /// An Event listener to be called when the diagnostic event processor so switch from
         /// disabled to enabled or vice versa.

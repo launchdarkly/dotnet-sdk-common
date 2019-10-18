@@ -49,7 +49,8 @@ namespace LaunchDarkly.Common.Tests
             return MakeProcessor(config, null, null, null);
         }
     
-        private DefaultEventProcessor MakeProcessor(SimpleConfiguration config, IDiagnosticStore diagnosticStore, IDiagnosticDisabler diagnosticDisabler, CountdownEvent diagnosticCountdown) {
+        private DefaultEventProcessor MakeProcessor(SimpleConfiguration config, IDiagnosticStore diagnosticStore, IDiagnosticDisabler diagnosticDisabler, CountdownEvent diagnosticCountdown)
+        {
             return new DefaultEventProcessor(config, new TestUserDeduplicator(),
                 Util.MakeHttpClient(config, SimpleClientEnvironment.Instance), diagnosticStore, diagnosticDisabler, diagnosticCountdown);
         }
@@ -462,7 +463,8 @@ namespace LaunchDarkly.Common.Tests
         }
 
         [Fact]
-        public void DiagnosticStoreCreateEventGivenEventsInQueueCount() {
+        public void DiagnosticStoreCreateEventGivenEventsInQueueCount()
+        {
             Mock<IDiagnosticStore> MockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
             MockDiagnosticStore.Setup(diagStore => diagStore.LastStats).Returns((Dictionary<string, object>)null);
             MockDiagnosticStore.Setup(diagStore => diagStore.InitEvent).Returns((Dictionary<string, object>)null);
@@ -485,7 +487,8 @@ namespace LaunchDarkly.Common.Tests
         }
 
         [Fact]
-        public void DiagnosticStoreLastStatsSentToDiagnosticUri() {
+        public void DiagnosticStoreLastStatsSentToDiagnosticUri()
+        {
             Dictionary<string, object> Expected = new Dictionary<string, object>();
             Expected.Add("testKey", "testValue");
 
@@ -507,7 +510,8 @@ namespace LaunchDarkly.Common.Tests
         }
 
         [Fact]
-        public void DiagnosticStoreInitEventSentToDiagnosticUri() {
+        public void DiagnosticStoreInitEventSentToDiagnosticUri()
+        {
             Dictionary<string, object> Expected = new Dictionary<string, object>();
             Expected.Add("testKey", "testValue");
 
@@ -529,7 +533,8 @@ namespace LaunchDarkly.Common.Tests
         }
 
         [Fact]
-        public void DiagnosticDisablerDisablesInitialDiagnostics() {
+        public void DiagnosticDisablerDisablesInitialDiagnostics()
+        {
             Dictionary<string, object> TestDiagnostic = new Dictionary<string, object>();
             TestDiagnostic.Add("testKey", "testValue");
 
@@ -547,7 +552,8 @@ namespace LaunchDarkly.Common.Tests
         }
 
         [Fact]
-        public void DiagnosticDisablerEnabledInitialDiagnostics() {
+        public void DiagnosticDisablerEnabledInitialDiagnostics()
+        {
             Dictionary<string, object> Expected = new Dictionary<string, object>();
             Expected.Add("testKey", "testValue");
 
@@ -762,7 +768,8 @@ namespace LaunchDarkly.Common.Tests
             return FlushAndGetRequest(resp).BodyAsJson as JArray;
         }
 
-        private JObject GetLastDiagnostic() {
+        private JObject GetLastDiagnostic()
+        {
             return GetLastRequest().BodyAsJson as JObject;
         }
     }

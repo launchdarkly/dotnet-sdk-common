@@ -8,7 +8,8 @@ namespace LaunchDarkly.Common
         public readonly Guid diagnosticId;
         public readonly string sdkKeySuffix;
 
-        internal DiagnosticId(string sdkKey, Guid diagnosticId) {
+        internal DiagnosticId(string sdkKey, Guid diagnosticId)
+        {
             this.sdkKeySuffix = sdkKey.Substring(Math.Max(0, sdkKey.Length - 6));
             this.diagnosticId = diagnosticId;
         }

@@ -11,7 +11,8 @@ namespace LaunchDarkly.Common
     /// implementation stores until CreateEventAndReset is called to retrieve a full event including
     /// the collected data and diagnostic session identifier.
     /// </summary>
-    internal interface IDiagnosticStore {
+    internal interface IDiagnosticStore
+    {
         /// <summary>
         /// The last time the periodic data was reset for the current diagnosticId. This may be from
         /// before the SDK initialized if periodic diagnostic data has been persisted from a

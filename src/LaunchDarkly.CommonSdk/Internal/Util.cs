@@ -16,9 +16,11 @@ namespace LaunchDarkly.Common
                 { "User-Agent", env.UserAgentType + "/" + env.VersionString }
             };
 
-            if (config.WrapperName != null) {
+            if (config.WrapperName != null)
+            {
                 string wrapperVersion = "";
-                if (config.WrapperVersion != null) {
+                if (config.WrapperVersion != null)
+                {
                     wrapperVersion = "/" + config.WrapperVersion;
                 }
                 headers.Add("X-LaunchDarkly-Wrapper", config.WrapperName + config.WrapperVersion);

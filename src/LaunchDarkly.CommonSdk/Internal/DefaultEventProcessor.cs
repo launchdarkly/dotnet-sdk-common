@@ -355,7 +355,8 @@ namespace LaunchDarkly.Common
 
         private void sendAndResetDiagnostics(EventBuffer buffer)
         {
-            if (_diagnosticStore != null) {
+            if (_diagnosticStore != null)
+            {
                 long EventsInQueue = buffer.GetEventsInQueueCount();
                 IReadOnlyDictionary<String, Object> Stats = _diagnosticStore.CreateEventAndReset(EventsInQueue);
                 if (Stats != null)
@@ -581,7 +582,8 @@ namespace LaunchDarkly.Common
                 using (var cts = new CancellationTokenSource(_config.HttpClientTimeout))
                 {
                     request.Content = stringContent;
-                    if (includeSchemaVersionHeader) { 
+                    if (includeSchemaVersionHeader)
+                    {
                         request.Headers.Add("X-LaunchDarkly-Event-Schema", DefaultEventProcessor.CurrentSchemaVersion);
                     }
                     try
@@ -631,7 +633,8 @@ namespace LaunchDarkly.Common
                 _config.DiagnosticUri.AbsoluteUri, jsonDiagnostic);
             await SendWithRetry(_config.DiagnosticUri, jsonDiagnostic, false, async (response, duration) =>
             {
-                if (response != null) {
+                if (response != null)
+                {
                     DefaultEventProcessor.Log.DebugFormat("Diagnostic delivery took {0} ms, response status {1}",
                         duration, response.StatusCode);
                     if (!response.IsSuccessStatusCode)
@@ -675,7 +678,8 @@ namespace LaunchDarkly.Common
         {
             if (_events.Count >= _capacity)
             {
-                if (_diagnosticStore != null) {
+                if (_diagnosticStore != null)
+                {
                     _diagnosticStore.IncrementDroppedEvents();
                 }
                 if (!_exceededCapacity)
@@ -707,7 +711,8 @@ namespace LaunchDarkly.Common
             _summarizer.Clear();
         }
 
-        internal long GetEventsInQueueCount() {
+        internal long GetEventsInQueueCount()
+        {
             return _events.Count;
         }
     }
