@@ -29,7 +29,11 @@ namespace LaunchDarkly.Common
         private AtomicBoolean _inputCapacityExceeded;
 
         internal DefaultEventProcessor(IEventProcessorConfiguration config,
-            IUserDeduplicator userDeduplicator, HttpClient httpClient, IDiagnosticStore diagnosticStore, IDiagnosticDisabler diagnosticDisabler, CountdownEvent testDiagnosticCounter)
+            IUserDeduplicator userDeduplicator,
+            HttpClient httpClient,
+            IDiagnosticStore diagnosticStore,
+            IDiagnosticDisabler diagnosticDisabler,
+            CountdownEvent testDiagnosticCounter)
         {
             _stopped = new AtomicBoolean(false);
             _sentInitialDiagnostics = new AtomicBoolean(false);
