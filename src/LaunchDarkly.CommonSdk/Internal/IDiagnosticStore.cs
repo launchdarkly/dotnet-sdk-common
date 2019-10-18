@@ -3,23 +3,32 @@ using System.Collections.Generic;
 
 namespace LaunchDarkly.Common
 {
+    /// <summary>
+    /// This interface is for providing to the DefaultEventProcessor and StreamManager. It is
+    /// responsible for providing diagnostic data specific to the platform implementation for the
+    /// DefaultEventManager to send to LaunchDarkly. Periodic diagnostic events include data
+    /// collected during operation (stream initializations and counters) that the IDiagnosticStore
+    /// implementation stores until CreateEventAndReset is called to retrieve a full event including
+    /// the collected data and diagnostic session identifier.
+    /// </summary>
     internal interface IDiagnosticStore {
         /// <summary>
         /// The last time the periodic data was reset for the current diagnosticId. This may be from
         /// before the SDK initialized if periodic diagnostic data has been persisted from a
         /// previous initialization, but the session was not considered ended (meaning the same
-        /// diagnostic id) when the current initialization occurred.
+        /// diagnostic id) when the current initialization occurred. For the server SDK this will be
+        /// the time of initialization.
         /// </summary>
         DateTime DataSince { get; }
         /// <summary>
-        /// An event to be sent for a new diagnostic id. This field is only checked during
-        /// initialization of the event processor, and sent if so.
+        /// An event to be sent for a new diagnostic id, if the initialization represented a new
+        /// diagnostic id.
         /// </summary>
         IReadOnlyDictionary<string, object> InitEvent { get; }
         /// <summary>
         /// Persisted periodic diagnostic data from a previous initialization. This should be set
         /// with the data from the previous diagnostic id if the initialization caused a switch of
-        /// diagnostic id and there is periodic diagnostics data available.
+        /// diagnostic id and there is periodic diagnostics data available for the previous id.
         /// </summary>
         IReadOnlyDictionary<string, object> LastStats { get; }
         /// <summary>
