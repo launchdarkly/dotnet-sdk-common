@@ -30,7 +30,7 @@ namespace LaunchDarkly.Common
         private readonly IDiagnosticStore _diagnosticStore;
         private IEventSource _es;
         private int _initialized = UNINITIALIZED;
-        private volatile long _esStarted;
+        private long _esStarted;
 
         /// <summary>
         /// Constructs a StreamManager instance.
