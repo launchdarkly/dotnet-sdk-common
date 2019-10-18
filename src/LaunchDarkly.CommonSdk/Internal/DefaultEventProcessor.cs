@@ -543,25 +543,27 @@ namespace LaunchDarkly.Common
             {
                 if (response != null)
                 {
-                    DefaultEventProcessor.Log.DebugFormat("Event delivery took {0} ms, response status {1}",
-                        duration, response.StatusCode);
-                    if (response.IsSuccessStatusCode)
+                    return;
+                }
+
+                DefaultEventProcessor.Log.DebugFormat("Event delivery took {0} ms, response status {1}",
+                    duration, response.StatusCode);
+                if (response.IsSuccessStatusCode)
+                {
+                    DateTimeOffset? respDate = response.Headers.Date;
+                    if (respDate.HasValue)
                     {
-                        DateTimeOffset? respDate = response.Headers.Date;
-                        if (respDate.HasValue)
-                        {
-                            Interlocked.Exchange(ref _lastKnownPastTime,
-                                Util.GetUnixTimestampMillis(respDate.Value.DateTime));
-                        }
+                        Interlocked.Exchange(ref _lastKnownPastTime,
+                            Util.GetUnixTimestampMillis(respDate.Value.DateTime));
                     }
-                    else
+                }
+                else
+                {
+                    DefaultEventProcessor.Log.Error(Util.HttpErrorMessage((int)response.StatusCode,
+                        "event delivery", "some events were dropped"));
+                    if (!Util.IsHttpErrorRecoverable((int)response.StatusCode))
                     {
-                        DefaultEventProcessor.Log.Error(Util.HttpErrorMessage((int)response.StatusCode,
-                            "event delivery", "some events were dropped"));
-                        if (!Util.IsHttpErrorRecoverable((int)response.StatusCode))
-                        {
-                            _disabled = true;
-                        }
+                        _disabled = true;
                     }
                 }
             });
@@ -633,20 +635,22 @@ namespace LaunchDarkly.Common
                 _config.DiagnosticUri.AbsoluteUri, jsonDiagnostic);
             await SendWithRetry(_config.DiagnosticUri, jsonDiagnostic, false, async (response, duration) =>
             {
-                if (response != null)
-                {
-                    DefaultEventProcessor.Log.DebugFormat("Diagnostic delivery took {0} ms, response status {1}",
-                        duration, response.StatusCode);
-                    if (!response.IsSuccessStatusCode)
-                    {
-                        DefaultEventProcessor.Log.Warn(Util.HttpErrorMessage((int)response.StatusCode,
-                            "diagnostic delivery", "diagnostic dropped"));
-                    }
-                }
-
                 if (_testDiagnosticCounter != null)
                 {
                     _testDiagnosticCounter.Signal();
+                }
+
+                if (response == null)
+                {
+                    return;
+                }
+
+                DefaultEventProcessor.Log.DebugFormat("Diagnostic delivery took {0} ms, response status {1}",
+                    duration, response.StatusCode);
+                if (!response.IsSuccessStatusCode)
+                {
+                    DefaultEventProcessor.Log.Warn(Util.HttpErrorMessage((int)response.StatusCode,
+                        "diagnostic delivery", "diagnostic dropped"));
                 }
             });
         }
