@@ -38,6 +38,7 @@ namespace LaunchDarkly.Client
     /// or <see cref="User.Builder(User)"/>.
     /// </para>
     /// </remarks>
+    [JsonConverter(typeof(UserJsonSerializer))]
     public class User : IEquatable<User>
     {
         private readonly string _key;
@@ -52,6 +53,10 @@ namespace LaunchDarkly.Client
         private readonly bool? _anonymous;
         internal readonly ImmutableDictionary<string, LdValue> _custom;
         internal readonly ImmutableHashSet<string> _privateAttributeNames;
+
+        // Note that the JsonProperty/JsonIgnore attributes here are retained only for historical reasons
+        // because developers may expect to still see them; they are not actually used in serialization,
+        // since we're now using UserJsonSerializer rather than reflection for that.
 
         /// <summary>
         /// The unique key for the user.
@@ -116,6 +121,7 @@ namespace LaunchDarkly.Client
         /// <summary>
         /// Whether or not the user is anonymous.
         /// </summary>
+        [JsonIgnore]
         public bool Anonymous => _anonymous.HasValue && _anonymous.Value;
 
         /// <summary>
