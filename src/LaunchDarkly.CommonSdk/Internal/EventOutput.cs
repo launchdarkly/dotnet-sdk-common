@@ -84,11 +84,7 @@ namespace LaunchDarkly.Common
                             LdValueSerializer.Instance.WriteJson(me._jsonWriter, fe.LdValueDefault, me._jsonSerializer);
                         }
                         me.MaybeWriteString("prereqOf", fe.PrereqOf);
-                        if (fe.Reason != null)
-                        {
-                            me._jsonWriter.WritePropertyName("reason");
-                            me._jsonSerializer.Serialize(me._jsonWriter, fe.Reason);
-                        }
+                        me.WriteReason(fe.Reason);
                     });
                     break;
                 case IdentifyEvent ie:
@@ -274,6 +270,36 @@ namespace LaunchDarkly.Common
                     _jsonWriter.WriteValue(a);
                 }
                 _jsonWriter.WriteEndArray();
+            }
+            _jsonWriter.WriteEndObject();
+        }
+
+        private void WriteReason(EvaluationReason reason)
+        {
+            if (reason is null)
+            {
+                return;
+            }
+            _jsonWriter.WritePropertyName("reason");
+            _jsonWriter.WriteStartObject();
+            _jsonWriter.WritePropertyName("kind");
+            _jsonWriter.WriteValue(reason.Kind.ToString());
+            switch (reason)
+            {
+                case EvaluationReason.Error e:
+                    _jsonWriter.WritePropertyName("errorKind");
+                    _jsonWriter.WriteValue(e.ErrorKind.ToString());
+                    break;
+                case EvaluationReason.RuleMatch rm:
+                    _jsonWriter.WritePropertyName("ruleIndex");
+                    _jsonWriter.WriteValue(rm.RuleIndex);
+                    break;
+                case EvaluationReason.PrerequisiteFailed pf:
+                    _jsonWriter.WritePropertyName("prerequisiteKey");
+                    _jsonWriter.WriteValue(pf.PrerequisiteKey);
+                    break;
+                default:
+                    break;
             }
             _jsonWriter.WriteEndObject();
         }

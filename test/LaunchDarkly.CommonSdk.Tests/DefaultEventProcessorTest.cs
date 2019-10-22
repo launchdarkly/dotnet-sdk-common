@@ -132,6 +132,34 @@ namespace LaunchDarkly.Common.Tests
         }
 
         [Fact]
+        public void FeatureEventCanHaveReason()
+        {
+            _config.InlineUsersInEvents = true;
+            _ep = MakeProcessor(_config);
+            IFlagEventProperties flag = new FlagEventPropertiesBuilder("flagkey").Version(11).TrackEvents(true).Build();
+            var reasons = new EvaluationReason[]
+            {
+                EvaluationReason.Off.Instance,
+                EvaluationReason.Fallthrough.Instance,
+                EvaluationReason.TargetMatch.Instance,
+                new EvaluationReason.RuleMatch(1, "id"),
+                new EvaluationReason.PrerequisiteFailed("key"),
+                new EvaluationReason.Error(EvaluationErrorKind.WRONG_TYPE)
+            };
+            foreach (var reason in reasons)
+            {
+                FeatureRequestEvent fe = EventFactory.DefaultWithReasons.NewFeatureRequestEvent(flag, _user,
+                     new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, reason), LdValue.Null);
+                _ep.SendEvent(fe);
+
+                JArray output = FlushAndGetEvents(OkResponse());
+                Assert.Collection(output,
+                    item => CheckFeatureEvent(item, fe, flag, false, _userJson, reason),
+                    item => CheckSummaryEvent(item));
+            }
+        }
+
+        [Fact]
         public void UserDetailsAreScrubbedInFeatureEvent()
         {
             _config.AllAttributesPrivate = true;
@@ -502,7 +530,7 @@ namespace LaunchDarkly.Common.Tests
             TestUtil.AssertJsonEquals(userJson, o["user"]);
         }
 
-        private void CheckFeatureEvent(JToken t, FeatureRequestEvent fe, IFlagEventProperties flag, bool debug, JToken userJson)
+        private void CheckFeatureEvent(JToken t, FeatureRequestEvent fe, IFlagEventProperties flag, bool debug, JToken userJson, EvaluationReason reason = null)
         {
             JObject o = t as JObject;
             Assert.Equal(debug ? "debug" : "feature", (string)o["kind"]);
@@ -519,6 +547,7 @@ namespace LaunchDarkly.Common.Tests
             }
             TestUtil.AssertJsonEquals(fe.LdValue.InnerValue, o["value"]);
             CheckEventUserOrKey(o, fe, userJson);
+            Assert.Equal(reason, fe.Reason);
         }
 
         private void CheckCustomEvent(JToken t, CustomEvent e, JToken userJson)
