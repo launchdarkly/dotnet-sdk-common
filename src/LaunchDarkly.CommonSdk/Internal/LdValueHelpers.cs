@@ -10,61 +10,64 @@ namespace LaunchDarkly.Common
 {
     internal class LdValueSerializer : JsonConverter
     {
+        internal static readonly LdValueSerializer Instance = new LdValueSerializer();
+        
         // For values of primitive types that were not created from an existing JToken, this logic will
         // serialize them directly to JSON without ever allocating a JToken.
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
-            if (value is LdValue jv)
+            if (!(value is LdValue jv))
             {
-                if (jv.HasWrappedJToken)
+                throw new ArgumentException();
+            }
+            if (jv.HasWrappedJToken)
+            {
+                jv.InnerValue.WriteTo(writer);
+            }
+            else
+            {
+                switch (jv.Type)
                 {
-                    jv.InnerValue.WriteTo(writer);
-                }
-                else
-                {
-                    switch (jv.Type)
-                    {
-                        case LdValueType.Null:
-                            writer.WriteNull();
-                            break;
-                        case LdValueType.Bool:
-                            writer.WriteValue(jv.AsBool);
-                            break;
-                        case LdValueType.Number:
-                            if (jv.IsInt)
-                            {
-                                writer.WriteValue(jv.AsInt);
-                            }
-                            else
-                            {
-                                writer.WriteValue(jv.AsFloat);
-                            }
-                            break;
-                        case LdValueType.String:
-                            writer.WriteValue(jv.AsString);
-                            break;
-                        case LdValueType.Array:
-                            writer.WriteStartArray();
-                            foreach (var v in jv.AsList(LdValue.Convert.Json))
-                            {
-                                WriteJson(writer, v, serializer);
-                            }
-                            writer.WriteEndArray();
-                            break;
-                        case LdValueType.Object:
-                            writer.WriteStartObject();
-                            foreach (var kv in jv.AsDictionary(LdValue.Convert.Json))
-                            {
-                                writer.WritePropertyName(kv.Key);
-                                WriteJson(writer, kv.Value, serializer);
-                            }
-                            writer.WriteEndObject();
-                            break;
-                        default:
-                            // this shouldn't happen since all non-primitive types should have a JToken
-                            writer.WriteNull();
-                            break;
-                    }
+                    case LdValueType.Null:
+                        writer.WriteNull();
+                        break;
+                    case LdValueType.Bool:
+                        writer.WriteValue(jv.AsBool);
+                        break;
+                    case LdValueType.Number:
+                        if (jv.IsInt)
+                        {
+                            writer.WriteValue(jv.AsInt);
+                        }
+                        else
+                        {
+                            writer.WriteValue(jv.AsFloat);
+                        }
+                        break;
+                    case LdValueType.String:
+                        writer.WriteValue(jv.AsString);
+                        break;
+                    case LdValueType.Array:
+                        writer.WriteStartArray();
+                        foreach (var v in jv.AsList(LdValue.Convert.Json))
+                        {
+                            WriteJson(writer, v, serializer);
+                        }
+                        writer.WriteEndArray();
+                        break;
+                    case LdValueType.Object:
+                        writer.WriteStartObject();
+                        foreach (var kv in jv.AsDictionary(LdValue.Convert.Json))
+                        {
+                            writer.WritePropertyName(kv.Key);
+                            WriteJson(writer, kv.Value, serializer);
+                        }
+                        writer.WriteEndObject();
+                        break;
+                    default:
+                        // this shouldn't happen since all non-primitive types should have a JToken
+                        writer.WriteNull();
+                        break;
                 }
             }
         }

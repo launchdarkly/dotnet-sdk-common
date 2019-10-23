@@ -9,5 +9,10 @@ namespace LaunchDarkly.Common.Tests
         {
             Assert.True(JToken.DeepEquals(expected, actual), actual.ToString() + " should be " + expected.ToString());
         }
+
+        public static void AssertJsonEquals(string expected, string actual)
+        {
+            AssertJsonEquals(JObject.Parse(expected), JObject.Parse(actual));
+        }
     }
 }
