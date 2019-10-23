@@ -134,6 +134,34 @@ namespace LaunchDarkly.Common.Tests
         }
 
         [Fact]
+        public void FeatureEventCanHaveReason()
+        {
+            _config.InlineUsersInEvents = true;
+            _ep = MakeProcessor(_config);
+            IFlagEventProperties flag = new FlagEventPropertiesBuilder("flagkey").Version(11).TrackEvents(true).Build();
+            var reasons = new EvaluationReason[]
+            {
+                EvaluationReason.Off.Instance,
+                EvaluationReason.Fallthrough.Instance,
+                EvaluationReason.TargetMatch.Instance,
+                new EvaluationReason.RuleMatch(1, "id"),
+                new EvaluationReason.PrerequisiteFailed("key"),
+                new EvaluationReason.Error(EvaluationErrorKind.WRONG_TYPE)
+            };
+            foreach (var reason in reasons)
+            {
+                FeatureRequestEvent fe = EventFactory.DefaultWithReasons.NewFeatureRequestEvent(flag, _user,
+                     new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, reason), LdValue.Null);
+                _ep.SendEvent(fe);
+
+                JArray output = FlushAndGetEvents(OkResponse());
+                Assert.Collection(output,
+                    item => CheckFeatureEvent(item, fe, flag, false, _userJson, reason),
+                    item => CheckSummaryEvent(item));
+            }
+        }
+
+        [Fact]
         public void UserDetailsAreScrubbedInFeatureEvent()
         {
             _config.AllAttributesPrivate = true;
@@ -526,7 +554,7 @@ namespace LaunchDarkly.Common.Tests
             JObject o = t as JObject;
             Assert.Equal("identify", (string)o["kind"]);
             Assert.Equal(ie.CreationDate, (long)o["creationDate"]);
-            Assert.Equal(userJson, o["user"]);
+            TestUtil.AssertJsonEquals(userJson, o["user"]);
         }
 
         private void CheckIndexEvent(JToken t, Event sourceEvent, JToken userJson)
@@ -534,10 +562,10 @@ namespace LaunchDarkly.Common.Tests
             JObject o = t as JObject;
             Assert.Equal("index", (string)o["kind"]);
             Assert.Equal(sourceEvent.CreationDate, (long)o["creationDate"]);
-            Assert.Equal(userJson, o["user"]);
+            TestUtil.AssertJsonEquals(userJson, o["user"]);
         }
 
-        private void CheckFeatureEvent(JToken t, FeatureRequestEvent fe, IFlagEventProperties flag, bool debug, JToken userJson)
+        private void CheckFeatureEvent(JToken t, FeatureRequestEvent fe, IFlagEventProperties flag, bool debug, JToken userJson, EvaluationReason reason = null)
         {
             JObject o = t as JObject;
             Assert.Equal(debug ? "debug" : "feature", (string)o["kind"]);
@@ -552,8 +580,9 @@ namespace LaunchDarkly.Common.Tests
             {
                 Assert.Equal(fe.Variation, (int)o["variation"]);
             }
-            Assert.Equal(fe.Value.InnerValue, o["value"]);
+            TestUtil.AssertJsonEquals(fe.Value.InnerValue, o["value"]);
             CheckEventUserOrKey(o, fe, userJson);
+            Assert.Equal(reason, fe.Reason);
         }
 
         private void CheckCustomEvent(JToken t, CustomEvent e, JToken userJson)
@@ -561,7 +590,7 @@ namespace LaunchDarkly.Common.Tests
             JObject o = t as JObject;
             Assert.Equal("custom", (string)o["kind"]);
             Assert.Equal(e.Key, (string)o["key"]);
-            Assert.Equal(e.Data.InnerValue, o["data"]);
+            TestUtil.AssertJsonEquals(e.Data.InnerValue, o["data"]);
             CheckEventUserOrKey(o, e, userJson);
             if (e.MetricValue.HasValue)
             {
@@ -609,13 +638,13 @@ namespace LaunchDarkly.Common.Tests
             {
                 JObject fo = (o["features"] as JObject)[fe.Key] as JObject;
                 Assert.NotNull(fo);
-                Assert.Equal(fe.Default.InnerValue, fo["default"]);
+                TestUtil.AssertJsonEquals(fe.Default.InnerValue, fo["default"]);
                 JArray cs = fo["counters"] as JArray;
                 Assert.NotNull(cs);
                 Assert.Equal(1, cs.Count);
                 JObject c = cs[0] as JObject;
                 Assert.Equal(fe.Variation, c["variation"]);
-                Assert.Equal(fe.Value.InnerValue, c["value"]);
+                TestUtil.AssertJsonEquals(fe.Value.InnerValue, c["value"]);
                 Assert.Equal(fe.Version, (int)c["version"]);
                 Assert.Equal(1, (int)c["count"]);
             }

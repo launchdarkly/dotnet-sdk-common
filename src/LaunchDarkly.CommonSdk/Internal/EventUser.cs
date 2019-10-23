@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System.Collections.Immutable;
 using LaunchDarkly.Client;
 
@@ -7,58 +7,19 @@ namespace LaunchDarkly.Common
     /// <summary>
     /// Used internally to represent user data that is being serialized in an <see cref="Event"/>.
     /// </summary>
-    internal sealed class EventUser
+    internal struct EventUser
     {
-        /// <see cref="User.Key"/>
-        [JsonProperty(PropertyName = "key", NullValueHandling = NullValueHandling.Ignore)]
         public string Key { get; internal set; }
-
-        /// <see cref="User.SecondaryKey"/>
-        [JsonProperty(PropertyName = "secondary", NullValueHandling = NullValueHandling.Ignore)]
         public string SecondaryKey { get; internal set; }
-
-        /// <see cref="User.IPAddress"/>
-        [JsonProperty(PropertyName = "ip", NullValueHandling = NullValueHandling.Ignore)]
         public string IPAddress { get; internal set; }
-
-        /// <see cref="User.Country"/>
-        [JsonProperty(PropertyName = "country", NullValueHandling = NullValueHandling.Ignore)]
         public string Country { get; internal set; }
-
-        /// <see cref="User.FirstName"/>
-        [JsonProperty(PropertyName = "firstName", NullValueHandling = NullValueHandling.Ignore)]
         public string FirstName { get; internal set; }
-
-        /// <see cref="User.LastName"/>
-        [JsonProperty(PropertyName = "lastName", NullValueHandling = NullValueHandling.Ignore)]
         public string LastName { get; internal set; }
-
-        /// <see cref="User.Name"/>
-        [JsonProperty(PropertyName = "name", NullValueHandling = NullValueHandling.Ignore)]
         public string Name { get; internal set; }
-
-        /// <see cref="User.Avatar"/>
-        [JsonProperty(PropertyName = "avatar", NullValueHandling = NullValueHandling.Ignore)]
         public string Avatar { get; internal set; }
-
-        /// <see cref="User.Email"/>
-        [JsonProperty(PropertyName = "email", NullValueHandling = NullValueHandling.Ignore)]
         public string Email { get; internal set; }
-
-        /// <see cref="User.Anonymous"/>
-        [JsonProperty(PropertyName = "anonymous", NullValueHandling = NullValueHandling.Ignore)]
         public bool? Anonymous { get; internal set; }
-
-        /// <see cref="User.Custom"/>
-        [JsonProperty(PropertyName = "custom", NullValueHandling = NullValueHandling.Ignore)]
         public IImmutableDictionary<string, LdValue> Custom { get; internal set; }
-
-        /// <summary>
-        /// A list of attribute names that have been omitted from the event.
-        /// </summary>
-        // Note that this is a sorted set - LaunchDarkly doesn't care about the ordering, but
-        // having a defined order makes our test logic much simpler.
-        [JsonProperty(PropertyName = "privateAttrs", NullValueHandling = NullValueHandling.Ignore)]
         public ImmutableSortedSet<string> PrivateAttrs { get; set; }
 
         internal static EventUser FromUser(User user, IEventProcessorConfiguration config)
@@ -68,17 +29,19 @@ namespace LaunchDarkly.Common
         }
     }
 
-    internal sealed class EventUserBuilder
+    internal struct EventUserBuilder
     {
         private IEventProcessorConfiguration _config;
         private User _user;
-        private EventUser _result = new EventUser();
-        private ImmutableSortedSet<string>.Builder _privateAttrs = null;
+        private EventUser _result;
+        private ImmutableSortedSet<string>.Builder _privateAttrs;
 
         internal EventUserBuilder(User user, IEventProcessorConfiguration config)
         {
             _user = user;
             _config = config;
+            _result = new EventUser();
+            _privateAttrs = null;
         }
 
         internal EventUser Build()

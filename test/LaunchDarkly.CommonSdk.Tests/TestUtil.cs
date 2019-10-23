@@ -7,7 +7,8 @@ namespace LaunchDarkly.Common.Tests
     {
         public static void AssertJsonEquals(JToken expected, JToken actual)
         {
-            Assert.True(JToken.DeepEquals(expected, actual), actual.ToString() + " should be " + expected.ToString());
+            Assert.True(JToken.DeepEquals(expected, actual), actual is null ? "null" : actual.ToString() +
+                " should be " + expected is null ? "null" : expected.ToString());
         }
 
         public static void AssertJsonEquals(string expected, string actual)
