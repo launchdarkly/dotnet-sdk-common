@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using Xunit;
 using LaunchDarkly.Client;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace LaunchDarkly.Common.Tests
 {
@@ -83,12 +82,7 @@ namespace LaunchDarkly.Common.Tests
 
         private void AssertJsonEqual(string expectedString, string actualString)
         {
-            JToken expected = JsonConvert.DeserializeObject<JToken>(expectedString);
-            JToken actual = JsonConvert.DeserializeObject<JToken>(actualString);
-            if (!JToken.DeepEquals(expected, actual))
-            {
-                Assert.True(false, "JSON did not match: expected " + expectedString + ", got " + actualString);
-            }
+            Assert.Equal(LdValue.Parse(expectedString), LdValue.Parse(actualString));
         }
     }
 }

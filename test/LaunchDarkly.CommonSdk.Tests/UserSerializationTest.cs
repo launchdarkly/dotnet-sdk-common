@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using LaunchDarkly.Client;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Xunit;
 
 namespace LaunchDarkly.Common.Tests
@@ -29,9 +28,8 @@ namespace LaunchDarkly.Common.Tests
         public void CanDeserializeStringProperty(StringPropertyDesc p)
         {
             var value = "x";
-            var jsonObject = new JObject();
-            jsonObject.Add(p.Name, value);
-            var user = JsonConvert.DeserializeObject<User>(JsonConvert.SerializeObject(jsonObject));
+            var jsonObject = LdValue.BuildObject().Add(p.Name, value).Build();
+            var user = JsonConvert.DeserializeObject<User>(jsonObject.ToJsonString());
             Assert.Equal(value, p.Getter(user));
         }
 
@@ -81,8 +79,8 @@ namespace LaunchDarkly.Common.Tests
         {
             var value = "x";
             var user = p.Setter(User.Builder(key))(value).Build();
-            var json = JObject.Parse(JsonConvert.SerializeObject(user));
-            Assert.Equal(new JValue(value), json[p.Name]);
+            var json = LdValue.Parse(JsonConvert.SerializeObject(user));
+            Assert.Equal(LdValue.Of(value), json.Get(p.Name));
         }
 
         [Fact]
@@ -91,9 +89,9 @@ namespace LaunchDarkly.Common.Tests
             LdValue value1 = LdValue.Of("hi");
             LdValue value2 = LdValue.Of(2);
             var user = User.Builder(key).Custom("name1", value1).Custom("name2", value2).Build();
-            var json = JObject.Parse(JsonConvert.SerializeObject(user));
-            Assert.Equal(new JValue("hi"), json["custom"]["name1"]);
-            Assert.Equal(new JValue(2), json["custom"]["name2"]);
+            var json = LdValue.Parse(JsonConvert.SerializeObject(user));
+            Assert.Equal(LdValue.Of("hi"), json.Get("custom").Get("name1"));
+            Assert.Equal(LdValue.Of(2), json.Get("custom").Get("name2"));
         }
 
         [Fact]
@@ -103,8 +101,8 @@ namespace LaunchDarkly.Common.Tests
                 .Name("user-name").AsPrivateAttribute()
                 .Email("test@example.com").AsPrivateAttribute()
                 .Build();
-            var json = JObject.Parse(JsonConvert.SerializeObject(user));
-            var names = new List<string>((json["privateAttributeNames"] as JArray).Values<string>());
+            var json = LdValue.Parse(JsonConvert.SerializeObject(user));
+            var names = new List<string>(json.Get("privateAttributeNames").AsList(LdValue.Convert.String));
             names.Sort();
             Assert.Equal(new List<string> { "email", "name" }, names);
         }

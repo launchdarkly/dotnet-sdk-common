@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using LaunchDarkly.Client;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace LaunchDarkly.Common
 {
@@ -12,74 +11,128 @@ namespace LaunchDarkly.Common
     {
         internal static readonly LdValueSerializer Instance = new LdValueSerializer();
         
-        // For values of primitive types that were not created from an existing JToken, this logic will
-        // serialize them directly to JSON without ever allocating a JToken.
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
             if (!(value is LdValue jv))
             {
                 throw new ArgumentException();
             }
-            if (jv.HasWrappedJToken)
+            switch (jv.Type)
             {
-                jv.InnerValue.WriteTo(writer);
-            }
-            else
-            {
-                switch (jv.Type)
-                {
-                    case LdValueType.Null:
-                        writer.WriteNull();
-                        break;
-                    case LdValueType.Bool:
-                        writer.WriteValue(jv.AsBool);
-                        break;
-                    case LdValueType.Number:
-                        if (jv.IsInt)
-                        {
-                            writer.WriteValue(jv.AsInt);
-                        }
-                        else
-                        {
-                            writer.WriteValue(jv.AsFloat);
-                        }
-                        break;
-                    case LdValueType.String:
-                        writer.WriteValue(jv.AsString);
-                        break;
-                    case LdValueType.Array:
-                        writer.WriteStartArray();
-                        foreach (var v in jv.AsList(LdValue.Convert.Json))
-                        {
-                            WriteJson(writer, v, serializer);
-                        }
-                        writer.WriteEndArray();
-                        break;
-                    case LdValueType.Object:
-                        writer.WriteStartObject();
-                        foreach (var kv in jv.AsDictionary(LdValue.Convert.Json))
-                        {
-                            writer.WritePropertyName(kv.Key);
-                            WriteJson(writer, kv.Value, serializer);
-                        }
-                        writer.WriteEndObject();
-                        break;
-                    default:
-                        // this shouldn't happen since all non-primitive types should have a JToken
-                        writer.WriteNull();
-                        break;
-                }
+                case LdValueType.Null:
+                    writer.WriteNull();
+                    break;
+                case LdValueType.Bool:
+                    writer.WriteValue(jv.AsBool);
+                    break;
+                case LdValueType.Number:
+                    if (jv.IsInt)
+                    {
+                        writer.WriteValue(jv.AsInt);
+                    }
+                    else
+                    {
+                        writer.WriteValue(jv.AsFloat);
+                    }
+                    break;
+                case LdValueType.String:
+                    writer.WriteValue(jv.AsString);
+                    break;
+                case LdValueType.Array:
+                    writer.WriteStartArray();
+                    foreach (var v in jv.AsList(LdValue.Convert.Json))
+                    {
+                        WriteJson(writer, v, serializer);
+                    }
+                    writer.WriteEndArray();
+                    break;
+                case LdValueType.Object:
+                    writer.WriteStartObject();
+                    foreach (var kv in jv.AsDictionary(LdValue.Convert.Json))
+                    {
+                        writer.WritePropertyName(kv.Key);
+                        WriteJson(writer, kv.Value, serializer);
+                    }
+                    writer.WriteEndObject();
+                    break;
             }
         }
 
-        // Currently we always preserve the value in a JToken when parsing JSON. As long as JToken is exposed
-        // in the public API, there would be no point in using our own primitive value mechanism because we
-        // might need to get it as a JToken later at which point we'd be recreating that object. Once we are
-        // completely avoiding JToken conversions, we can change this method to discard the JToken for
-        // primitive types.
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
-            return LdValue.FromSafeValue(JToken.Load(reader));
+            return ReadValue(reader, reader.TokenType);
+        }
+
+        private LdValue ReadValue(JsonReader reader, JsonToken token)
+        {
+            switch (token)
+            {
+                case JsonToken.None:
+                    throw new JsonSerializationException();
+                
+                case JsonToken.Null:
+                case JsonToken.Undefined:
+                    return LdValue.Null;
+
+                case JsonToken.Boolean:
+                    return LdValue.Of((bool)reader.Value);
+
+                case JsonToken.Float:
+                case JsonToken.Integer:
+                    switch (reader.Value)
+                    {
+                        case int n:
+                            return LdValue.Of(n);
+                        case long n:
+                            return LdValue.Of(n);
+                        case float n:
+                            return LdValue.Of(n);
+                        case double n:
+                            return LdValue.Of(n);
+                        default:
+                            throw new JsonSerializationException();
+                    }
+
+                case JsonToken.String:
+                    return LdValue.Of((string)reader.Value);
+
+                case JsonToken.StartArray:
+                    var ab = LdValue.BuildArray();
+                    while (true)
+                    {
+                        reader.Read();
+                        var nextToken = reader.TokenType;
+                        if (nextToken == JsonToken.EndArray)
+                        {
+                            return ab.Build();
+                        }
+                        ab.Add(ReadValue(reader, nextToken));
+                    }
+
+                case JsonToken.StartObject:
+                    var ob = LdValue.BuildObject();
+                    while (true)
+                    {
+                        reader.Read();
+                        var nextToken = reader.TokenType;
+                        if (nextToken == JsonToken.EndObject)
+                        {
+                            return ob.Build();
+                        }
+                        if (nextToken != JsonToken.PropertyName)
+                        {
+                            throw new JsonSerializationException();
+                        }
+                        var key = reader.Value.ToString();
+                        reader.Read();
+                        ob.Add(key, ReadValue(reader, reader.TokenType));
+                    }
+
+                default:
+                    // all other token types are supposed to be used only for generating output, not returned
+                    // by the parser
+                    throw new JsonSerializationException();
+            }
         }
 
         public override bool CanConvert(Type objectType)

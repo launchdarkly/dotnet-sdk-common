@@ -1,7 +1,6 @@
 ﻿using System;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
-using Newtonsoft.Json.Linq;
 using LaunchDarkly.Common;
 
 namespace LaunchDarkly.Client
@@ -389,12 +388,12 @@ namespace LaunchDarkly.Client
 
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
-            JObject o = serializer.Deserialize<JObject>(reader);
-            if (o == null)
+            LdValue o = (LdValue)LdValueSerializer.Instance.ReadJson(reader, typeof(LdValue), LdValue.Null, serializer);
+            if (o.IsNull)
             {
                 return null;
             }
-            EvaluationReasonKind kind = o.GetValue("kind").ToObject<EvaluationReasonKind>();
+            EvaluationReasonKind kind = (EvaluationReasonKind)Enum.Parse(typeof(EvaluationReasonKind), o.Get("kind").AsString);
             switch (kind)
             {
                 case EvaluationReasonKind.OFF:
@@ -404,14 +403,14 @@ namespace LaunchDarkly.Client
                 case EvaluationReasonKind.TARGET_MATCH:
                     return EvaluationReason.TargetMatch.Instance;
                 case EvaluationReasonKind.RULE_MATCH:
-                    var index = (int)o.GetValue("ruleIndex");
-                    var id = (string)o.GetValue("ruleId");
+                    var index = o.Get("ruleIndex").AsInt;
+                    var id = o.Get("ruleId").AsString;
                     return new EvaluationReason.RuleMatch(index, id);
                 case EvaluationReasonKind.PREREQUISITE_FAILED:
-                    var key = (string)o.GetValue("prerequisiteKey");
+                    var key = o.Get("prerequisiteKey").AsString;
                     return new EvaluationReason.PrerequisiteFailed(key);
                 case EvaluationReasonKind.ERROR:
-                    var errorKind = o.GetValue("errorKind").ToObject<EvaluationErrorKind>();
+                    var errorKind = (EvaluationErrorKind)Enum.Parse(typeof(EvaluationErrorKind), o.Get("errorKind").AsString);
                     return new EvaluationReason.Error(errorKind);
             }
             throw new ArgumentException();

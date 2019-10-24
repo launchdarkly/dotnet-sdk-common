@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using LaunchDarkly.Client;
-using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
 using WireMock;
 using WireMock.Logging;
 using WireMock.RequestBuilders;
@@ -22,8 +22,8 @@ namespace LaunchDarkly.Common.Tests
         private IEventProcessor _ep;
         private FluentMockServer _server;
         private readonly User _user = User.Builder("userKey").Name("Red").Build();
-        private readonly JToken _userJson = JToken.Parse("{\"key\":\"userKey\",\"name\":\"Red\"}");
-        private readonly JToken _scrubbedUserJson = JToken.Parse("{\"key\":\"userKey\",\"privateAttrs\":[\"name\"]}");
+        private readonly LdValue _userJson = LdValue.Parse("{\"key\":\"userKey\",\"name\":\"Red\"}");
+        private readonly LdValue _scrubbedUserJson = LdValue.Parse("{\"key\":\"userKey\",\"privateAttrs\":[\"name\"]}");
 
         public DefaultEventProcessorTest()
         {
@@ -54,7 +54,7 @@ namespace LaunchDarkly.Common.Tests
             IdentifyEvent e = EventFactory.Default.NewIdentifyEvent(_user);
             _ep.SendEvent(e);
 
-            JArray output = FlushAndGetEvents(OkResponse());
+            var output = FlushAndGetEvents(OkResponse());
             Assert.Collection(output,
                 item => CheckIdentifyEvent(item, e, _userJson));
         }
@@ -67,7 +67,7 @@ namespace LaunchDarkly.Common.Tests
             IdentifyEvent e = EventFactory.Default.NewIdentifyEvent(_user);
             _ep.SendEvent(e);
 
-            JArray output = FlushAndGetEvents(OkResponse());
+            var output = FlushAndGetEvents(OkResponse());
             Assert.Collection(output,
                 item => CheckIdentifyEvent(item, e, _scrubbedUserJson));
         }
@@ -79,9 +79,9 @@ namespace LaunchDarkly.Common.Tests
             IdentifyEvent e = EventFactory.Default.NewIdentifyEvent(null);
             _ep.SendEvent(e);
 
-            JArray output = FlushAndGetEvents(OkResponse());
+            var output = FlushAndGetEvents(OkResponse());
             Assert.Collection(output,
-                item => CheckIdentifyEvent(item, e, null));
+                item => CheckIdentifyEvent(item, e, LdValue.Null));
         }
 
         [Fact]
@@ -93,10 +93,10 @@ namespace LaunchDarkly.Common.Tests
                 new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, null), LdValue.Null);
             _ep.SendEvent(fe);
 
-            JArray output = FlushAndGetEvents(OkResponse());
+            var output = FlushAndGetEvents(OkResponse());
             Assert.Collection(output,
                 item => CheckIndexEvent(item, fe, _userJson),
-                item => CheckFeatureEvent(item, fe, flag, false, null),
+                item => CheckFeatureEvent(item, fe, flag, false, LdValue.Null),
                 item => CheckSummaryEvent(item));
         }
 
@@ -110,10 +110,10 @@ namespace LaunchDarkly.Common.Tests
                 new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, null), LdValue.Null);
             _ep.SendEvent(fe);
 
-            JArray output = FlushAndGetEvents(OkResponse());
+            var output = FlushAndGetEvents(OkResponse());
             Assert.Collection(output,
                 item => CheckIndexEvent(item, fe, _scrubbedUserJson),
-                item => CheckFeatureEvent(item, fe, flag, false, null),
+                item => CheckFeatureEvent(item, fe, flag, false, LdValue.Null),
                 item => CheckSummaryEvent(item));
         }
 
@@ -127,7 +127,7 @@ namespace LaunchDarkly.Common.Tests
                 new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, null), LdValue.Null);
             _ep.SendEvent(fe);
 
-            JArray output = FlushAndGetEvents(OkResponse());
+            var output = FlushAndGetEvents(OkResponse());
             Assert.Collection(output,
                 item => CheckFeatureEvent(item, fe, flag, false, _userJson),
                 item => CheckSummaryEvent(item));
@@ -154,7 +154,7 @@ namespace LaunchDarkly.Common.Tests
                      new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, reason), LdValue.Null);
                 _ep.SendEvent(fe);
 
-                JArray output = FlushAndGetEvents(OkResponse());
+                var output = FlushAndGetEvents(OkResponse());
                 Assert.Collection(output,
                     item => CheckFeatureEvent(item, fe, flag, false, _userJson, reason),
                     item => CheckSummaryEvent(item));
@@ -172,7 +172,7 @@ namespace LaunchDarkly.Common.Tests
                 new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, null), LdValue.Null);
             _ep.SendEvent(fe);
 
-            JArray output = FlushAndGetEvents(OkResponse());
+            var output = FlushAndGetEvents(OkResponse());
             Assert.Collection(output,
                 item => CheckFeatureEvent(item, fe, flag, false, _scrubbedUserJson),
                 item => CheckSummaryEvent(item));
@@ -187,9 +187,9 @@ namespace LaunchDarkly.Common.Tests
                 new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, null), LdValue.Null);
             _ep.SendEvent(fe);
 
-            JArray output = FlushAndGetEvents(OkResponse());
+            var output = FlushAndGetEvents(OkResponse());
             Assert.Collection(output,
-                item => CheckFeatureEvent(item, fe, flag, false, null),
+                item => CheckFeatureEvent(item, fe, flag, false, LdValue.Null),
                 item => CheckSummaryEvent(item));
         }
 
@@ -203,7 +203,7 @@ namespace LaunchDarkly.Common.Tests
                 new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, null), LdValue.Null);
             _ep.SendEvent(fe);
 
-            JArray output = FlushAndGetEvents(OkResponse());
+            var output = FlushAndGetEvents(OkResponse());
             Assert.Collection(output,
                 item => CheckIndexEvent(item, fe, _userJson),
                 item => CheckSummaryEvent(item));
@@ -219,7 +219,7 @@ namespace LaunchDarkly.Common.Tests
                 new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, null), LdValue.Null);
             _ep.SendEvent(fe);
 
-            JArray output = FlushAndGetEvents(OkResponse());
+            var output = FlushAndGetEvents(OkResponse());
             Assert.Collection(output,
                 item => CheckIndexEvent(item, fe, _userJson),
                 item => CheckFeatureEvent(item, fe, flag, true, _userJson),
@@ -237,10 +237,10 @@ namespace LaunchDarkly.Common.Tests
                 new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, null), LdValue.Null);
             _ep.SendEvent(fe);
 
-            JArray output = FlushAndGetEvents(OkResponse());
+            var output = FlushAndGetEvents(OkResponse());
             Assert.Collection(output,
                 item => CheckIndexEvent(item, fe, _userJson),
-                item => CheckFeatureEvent(item, fe, flag, false, null),
+                item => CheckFeatureEvent(item, fe, flag, false, LdValue.Null),
                 item => CheckFeatureEvent(item, fe, flag, true, _userJson),
                 item => CheckSummaryEvent(item));
         }
@@ -274,7 +274,7 @@ namespace LaunchDarkly.Common.Tests
             _ep.SendEvent(fe);
 
             // Should get a summary event only, not a full feature event
-            JArray output = FlushAndGetEvents(OkResponse());
+            var output = FlushAndGetEvents(OkResponse());
             Assert.Collection(output,
                 item => CheckIndexEvent(item, fe, _userJson),
                 item => CheckSummaryEvent(item));
@@ -301,7 +301,7 @@ namespace LaunchDarkly.Common.Tests
             _ep.SendEvent(fe);
 
             // Should get a summary event only, not a full feature event
-            JArray output = FlushAndGetEvents(OkResponse());
+            var output = FlushAndGetEvents(OkResponse());
             Assert.Collection(output,
                 item => CheckIndexEvent(item, fe, _userJson),
                 item => CheckSummaryEvent(item));
@@ -322,11 +322,11 @@ namespace LaunchDarkly.Common.Tests
             _ep.SendEvent(fe1);
             _ep.SendEvent(fe2);
 
-            JArray output = FlushAndGetEvents(OkResponse());
+            var output = FlushAndGetEvents(OkResponse());
             Assert.Collection(output,
                 item => CheckIndexEvent(item, fe1, _userJson),
-                item => CheckFeatureEvent(item, fe1, flag1, false, null),
-                item => CheckFeatureEvent(item, fe2, flag2, false, null),
+                item => CheckFeatureEvent(item, fe1, flag1, false, LdValue.Null),
+                item => CheckFeatureEvent(item, fe2, flag2, false, LdValue.Null),
                 item => CheckSummaryEvent(item));
         }
 
@@ -346,7 +346,7 @@ namespace LaunchDarkly.Common.Tests
             _ep.SendEvent(fe1);
             _ep.SendEvent(fe2);
 
-            JArray output = FlushAndGetEvents(OkResponse());
+            var output = FlushAndGetEvents(OkResponse());
             Assert.Collection(output,
                 item => CheckIndexEvent(item, fe1, _userJson),
                 item => CheckSummaryEventCounters(item, fe1, fe2));
@@ -359,10 +359,10 @@ namespace LaunchDarkly.Common.Tests
             CustomEvent e = EventFactory.Default.NewCustomEvent("eventkey", _user, LdValue.Of(3), 1.5);
             _ep.SendEvent(e);
 
-            JArray output = FlushAndGetEvents(OkResponse());
+            var output = FlushAndGetEvents(OkResponse());
             Assert.Collection(output,
                 item => CheckIndexEvent(item, e, _userJson),
-                item => CheckCustomEvent(item, e, null));
+                item => CheckCustomEvent(item, e, LdValue.Null));
         }
         
         [Fact]
@@ -373,7 +373,7 @@ namespace LaunchDarkly.Common.Tests
             CustomEvent e = EventFactory.Default.NewCustomEvent("eventkey", _user, LdValue.Of(3), null);
             _ep.SendEvent(e);
 
-            JArray output = FlushAndGetEvents(OkResponse());
+            var output = FlushAndGetEvents(OkResponse());
             Assert.Collection(output,
                 item => CheckCustomEvent(item, e, _userJson));
         }
@@ -387,7 +387,7 @@ namespace LaunchDarkly.Common.Tests
             CustomEvent e = EventFactory.Default.NewCustomEvent("eventkey", _user, LdValue.Of(3), null);
             _ep.SendEvent(e);
 
-            JArray output = FlushAndGetEvents(OkResponse());
+            var output = FlushAndGetEvents(OkResponse());
             Assert.Collection(output,
                 item => CheckCustomEvent(item, e, _scrubbedUserJson));
         }
@@ -399,9 +399,9 @@ namespace LaunchDarkly.Common.Tests
             CustomEvent e = EventFactory.Default.NewCustomEvent("eventkey", null, LdValue.Of("data"), null);
             _ep.SendEvent(e);
 
-            JArray output = FlushAndGetEvents(OkResponse());
+            var output = FlushAndGetEvents(OkResponse());
             Assert.Collection(output,
-                item => CheckCustomEvent(item, e, null));
+                item => CheckCustomEvent(item, e, LdValue.Null));
         }
 
         [Fact]
@@ -414,7 +414,8 @@ namespace LaunchDarkly.Common.Tests
             PrepareResponse(OkResponse());
             _ep.Dispose();
 
-            JArray output = GetLastRequest().BodyAsJson as JArray;
+            var bodyStr = JsonConvert.SerializeObject(GetLastRequest().BodyAsJson);
+            var output = LdValue.Parse(bodyStr).AsList(LdValue.Convert.Json);
             Assert.Collection(output,
                 item => CheckIdentifyEvent(item, e, _userJson));
         }
@@ -449,7 +450,7 @@ namespace LaunchDarkly.Common.Tests
 
                 // We should have still held on to that event, so if we go online again and flush, it is sent.
                 ep.SetOffline(false);
-                JArray output = FlushAndGetEvents(OkResponse(), ep);
+                var output = FlushAndGetEvents(OkResponse(), ep);
                 Assert.Collection(output,
                     item => CheckIdentifyEvent(item, e, _userJson));
             }
@@ -544,109 +545,81 @@ namespace LaunchDarkly.Common.Tests
             Assert.NotNull(FlushAndGetRequest(OkResponse()));
         }
 
-        private JObject MakeUserJson(User user)
+        private LdValue MakeUserJson(User user)
         {
-            return JObject.FromObject(EventUser.FromUser(user, _config));
+            return LdValue.Parse(JsonConvert.SerializeObject(EventUser.FromUser(user, _config)));
         }
 
-        private void CheckIdentifyEvent(JToken t, IdentifyEvent ie, JToken userJson)
+        private void CheckIdentifyEvent(LdValue t, IdentifyEvent ie, LdValue userJson)
         {
-            JObject o = t as JObject;
-            Assert.Equal("identify", (string)o["kind"]);
-            Assert.Equal(ie.CreationDate, (long)o["creationDate"]);
-            TestUtil.AssertJsonEquals(userJson, o["user"]);
+            Assert.Equal(LdValue.Of("identify"), t.Get("kind"));
+            Assert.Equal(LdValue.Of(ie.CreationDate), t.Get("creationDate"));
+            Assert.Equal(userJson, t.Get("user"));
         }
 
-        private void CheckIndexEvent(JToken t, Event sourceEvent, JToken userJson)
+        private void CheckIndexEvent(LdValue t, Event sourceEvent, LdValue userJson)
         {
-            JObject o = t as JObject;
-            Assert.Equal("index", (string)o["kind"]);
-            Assert.Equal(sourceEvent.CreationDate, (long)o["creationDate"]);
-            TestUtil.AssertJsonEquals(userJson, o["user"]);
+            Assert.Equal(LdValue.Of("index"), t.Get("kind"));
+            Assert.Equal(LdValue.Of(sourceEvent.CreationDate), t.Get("creationDate"));
+            Assert.Equal(userJson, t.Get("user"));
         }
 
-        private void CheckFeatureEvent(JToken t, FeatureRequestEvent fe, IFlagEventProperties flag, bool debug, JToken userJson, EvaluationReason reason = null)
+        private void CheckFeatureEvent(LdValue t, FeatureRequestEvent fe, IFlagEventProperties flag, bool debug, LdValue userJson, EvaluationReason reason = null)
         {
-            JObject o = t as JObject;
-            Assert.Equal(debug ? "debug" : "feature", (string)o["kind"]);
-            Assert.Equal(fe.CreationDate, (long)o["creationDate"]);
-            Assert.Equal(flag.Key, (string)o["key"]);
-            Assert.Equal(flag.EventVersion, (int)o["version"]);
-            if (fe.Variation == null)
-            {
-                Assert.Null(o["variation"]);
-            }
-            else
-            {
-                Assert.Equal(fe.Variation, (int)o["variation"]);
-            }
-            TestUtil.AssertJsonEquals(fe.Value.InnerValue, o["value"]);
-            CheckEventUserOrKey(o, fe, userJson);
+            Assert.Equal(LdValue.Of(debug ? "debug" : "feature"), t.Get("kind"));
+            Assert.Equal(LdValue.Of(fe.CreationDate), t.Get("creationDate"));
+            Assert.Equal(LdValue.Of(flag.Key), t.Get("key"));
+            Assert.Equal(LdValue.Of(flag.EventVersion), t.Get("version"));
+            Assert.Equal(fe.Variation.HasValue ? LdValue.Of(fe.Variation.Value) : LdValue.Null, t.Get("variation"));
+            Assert.Equal(fe.Value, t.Get("value"));
+            CheckEventUserOrKey(t, fe, userJson);
             Assert.Equal(reason, fe.Reason);
         }
 
-        private void CheckCustomEvent(JToken t, CustomEvent e, JToken userJson)
+        private void CheckCustomEvent(LdValue t, CustomEvent e, LdValue userJson)
         {
-            JObject o = t as JObject;
-            Assert.Equal("custom", (string)o["kind"]);
-            Assert.Equal(e.Key, (string)o["key"]);
-            TestUtil.AssertJsonEquals(e.Data.InnerValue, o["data"]);
-            CheckEventUserOrKey(o, e, userJson);
-            if (e.MetricValue.HasValue)
+            Assert.Equal(LdValue.Of("custom"), t.Get("kind"));
+            Assert.Equal(LdValue.Of(e.Key), t.Get("key"));
+            Assert.Equal(e.Data, t.Get("data"));
+            CheckEventUserOrKey(t, e, userJson);
+            Assert.Equal(e.MetricValue.HasValue ? LdValue.Of(e.MetricValue.Value) : LdValue.Null, t.Get("metricValue"));
+        }
+
+        private void CheckEventUserOrKey(LdValue o, Event e, LdValue userJson)
+        {
+            if (!userJson.IsNull)
             {
-                Assert.Equal(e.MetricValue, (double)o["metricValue"]);
+                Assert.Equal(userJson, o.Get("user"));
+                Assert.Equal(LdValue.Null, o.Get("userKey"));
             }
             else
             {
-                Assert.Null(o["metricValue"]);
+                Assert.Equal(LdValue.Null, o.Get("user"));
+                Assert.Equal(e.User is null ? LdValue.Null : LdValue.Of(e.User.Key), o.Get("userKey"));
             }
+        }
+        private void CheckSummaryEvent(LdValue t)
+        {
+            Assert.Equal(LdValue.Of("summary"), t.Get("kind"));
         }
 
-        private void CheckEventUserOrKey(JObject o, Event e, JToken userJson)
-        {
-            if (userJson != null)
-            {
-                TestUtil.AssertJsonEquals(userJson, o["user"]);
-                Assert.Null(o["userKey"]);
-            }
-            else
-            {
-                Assert.Null(o["user"]);
-                if (e.User == null)
-                {
-                    Assert.Null(o["userKey"]);
-                }
-                else
-                {
-                    Assert.Equal(e.User.Key, (string)o["userKey"]);
-                }
-            }
-        }
-        private void CheckSummaryEvent(JToken t)
-        {
-            JObject o = t as JObject;
-            Assert.Equal("summary", (string)o["kind"]);
-        }
-
-        private void CheckSummaryEventCounters(JToken t, params FeatureRequestEvent[] fes)
+        private void CheckSummaryEventCounters(LdValue t, params FeatureRequestEvent[] fes)
         {
             CheckSummaryEvent(t);
-            JObject o = t as JObject;
-            Assert.Equal(fes[0].CreationDate, (long)o["startDate"]);
-            Assert.Equal(fes[fes.Length - 1].CreationDate, (long)o["endDate"]);
+            Assert.Equal(LdValue.Of(fes[0].CreationDate), t.Get("startDate"));
+            Assert.Equal(LdValue.Of(fes[fes.Length - 1].CreationDate), t.Get("endDate"));
             foreach (FeatureRequestEvent fe in fes)
             {
-                JObject fo = (o["features"] as JObject)[fe.Key] as JObject;
-                Assert.NotNull(fo);
-                TestUtil.AssertJsonEquals(fe.Default.InnerValue, fo["default"]);
-                JArray cs = fo["counters"] as JArray;
-                Assert.NotNull(cs);
+                LdValue fo = t.Get("features").Get(fe.Key);
+                Assert.NotEqual(LdValue.Null, fo);
+                Assert.Equal(fe.Default, fo.Get("default"));
+                LdValue cs = fo.Get("counters");
                 Assert.Equal(1, cs.Count);
-                JObject c = cs[0] as JObject;
-                Assert.Equal(fe.Variation, c["variation"]);
-                TestUtil.AssertJsonEquals(fe.Value.InnerValue, c["value"]);
-                Assert.Equal(fe.Version, (int)c["version"]);
-                Assert.Equal(1, (int)c["count"]);
+                LdValue c = cs.Get(0);
+                Assert.Equal(LdValue.Of(fe.Variation.Value), c.Get("variation"));
+                Assert.Equal(fe.Value, c.Get("value"));
+                Assert.Equal(LdValue.Of(fe.Version.Value), c.Get("version"));
+                Assert.Equal(LdValue.Of(1), c.Get("count"));
             }
         }
 
@@ -690,9 +663,12 @@ namespace LaunchDarkly.Common.Tests
             return null;
         }
 
-        private JArray FlushAndGetEvents(IResponseBuilder resp, IEventProcessor ep = null)
+        private IReadOnlyList<LdValue> FlushAndGetEvents(IResponseBuilder resp, IEventProcessor ep = null)
         {
-            return FlushAndGetRequest(resp, ep).BodyAsJson as JArray;
+            var req = FlushAndGetRequest(resp, ep);
+            // annoyingly, req.Body is not provided by WireMock, only req.BodyAsJson
+            var bodyStr = JsonConvert.SerializeObject(req.BodyAsJson);
+            return LdValue.Parse(bodyStr).AsList(LdValue.Convert.Json);
         }
     }
 

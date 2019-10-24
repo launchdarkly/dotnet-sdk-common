@@ -1,5 +1,4 @@
 ﻿using System;
-using Newtonsoft.Json.Linq;
 using LaunchDarkly.Client;
 
 namespace LaunchDarkly.Common

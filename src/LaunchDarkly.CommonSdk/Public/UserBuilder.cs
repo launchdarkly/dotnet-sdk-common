@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Immutable;
-using Newtonsoft.Json.Linq;
 
 namespace LaunchDarkly.Client
 {
