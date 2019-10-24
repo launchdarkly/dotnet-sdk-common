@@ -41,6 +41,8 @@ namespace LaunchDarkly.Common
         /// <param name="clientEnvironment">A subclass of ClientEnvironment.</param>
         /// <param name="eventSourceCreator">Null in normal usage; pass a non-null delegate if you
         /// are in a unit test and want to mock out the event source.</param>
+        /// <param name="diagnosticStore">An implementation of IDiagnosticStore. The StreamManager
+        /// will call AddStreamInit to record the stream init for diagnostics.</param>
         public StreamManager(IStreamProcessor streamProcessor, StreamProperties streamProperties,
             IStreamManagerConfiguration config, ClientEnvironment clientEnvironment,
             EventSourceCreator eventSourceCreator, IDiagnosticStore diagnosticStore)
