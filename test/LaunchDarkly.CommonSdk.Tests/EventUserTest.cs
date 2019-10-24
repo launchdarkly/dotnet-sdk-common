@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Xunit;
 using LaunchDarkly.Client;
 

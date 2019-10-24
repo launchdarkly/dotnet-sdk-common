@@ -1,4 +1,3 @@
-using Newtonsoft.Json.Linq;
 using System.Collections.Immutable;
 using LaunchDarkly.Client;
 
