@@ -18,12 +18,12 @@ namespace LaunchDarkly.Common
 
             if (config.WrapperName != null)
             {
-                string wrapperVersion = "";
+                string WrapperVersion = "";
                 if (config.WrapperVersion != null)
                 {
-                    wrapperVersion = "/" + config.WrapperVersion;
+                    WrapperVersion = "/" + config.WrapperVersion;
                 }
-                headers.Add("X-LaunchDarkly-Wrapper", config.WrapperName + config.WrapperVersion);
+                headers.Add("X-LaunchDarkly-Wrapper", config.WrapperName + WrapperVersion);
             }
 
             return headers;
