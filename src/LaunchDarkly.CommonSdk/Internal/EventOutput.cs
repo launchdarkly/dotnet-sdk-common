@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
@@ -29,6 +30,15 @@ namespace LaunchDarkly.Common
         private readonly IEventProcessorConfiguration _config;
         private readonly JsonWriter _jsonWriter;
         private readonly JsonSerializer _jsonSerializer;
+
+        private struct MutableKeyValuePair<A, B>
+        {
+            public A Key { get; set; }
+            public B Value { get; set; }
+
+            public static MutableKeyValuePair<A, B> FromKeyValue(KeyValuePair<A, B> kv) =>
+                new MutableKeyValuePair<A, B> { Key = kv.Key, Value = kv.Value };
+        }
 
         internal EventOutputFormatterScope(IEventProcessorConfiguration config, TextWriter tw, bool inlineUsers)
         {
@@ -135,7 +145,7 @@ namespace LaunchDarkly.Common
             _jsonWriter.WritePropertyName("features");
             _jsonWriter.WriteStartObject();
 
-            var unprocessedCounters = summary.Counters.ToArray();
+            var unprocessedCounters = summary.Counters.Select(kv => MutableKeyValuePair<EventsCounterKey, EventsCounterValue>.FromKeyValue(kv)).ToArray();
             for (var i = 0; i < unprocessedCounters.Length; i++)
             {
                 var firstEntry = unprocessedCounters[i];
@@ -160,6 +170,8 @@ namespace LaunchDarkly.Common
                     if (key.Key == flagKey && entry.Value != null)
                     {
                         var counter = entry.Value;
+                        unprocessedCounters[j].Value = null; // mark as already processed
+
                         _jsonWriter.WriteStartObject();
                         if (key.Variation.HasValue)
                         {
