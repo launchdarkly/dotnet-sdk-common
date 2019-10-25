@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using LaunchDarkly.Client;
 
@@ -8,56 +7,19 @@ namespace LaunchDarkly.Common
     /// <summary>
     /// Used internally to represent user data that is being serialized in an <see cref="Event"/>.
     /// </summary>
-    internal sealed class EventUser
+    internal struct EventUser
     {
-        /// <see cref="User.Key"/>
-        [JsonProperty(PropertyName = "key", NullValueHandling = NullValueHandling.Ignore)]
         public string Key { get; internal set; }
-
-        /// <see cref="User.SecondaryKey"/>
-        [JsonProperty(PropertyName = "secondary", NullValueHandling = NullValueHandling.Ignore)]
         public string SecondaryKey { get; internal set; }
-
-        /// <see cref="User.IpAddress"/>
-        [JsonProperty(PropertyName = "ip", NullValueHandling = NullValueHandling.Ignore)]
         public string IpAddress { get; internal set; }
-
-        /// <see cref="User.Country"/>
-        [JsonProperty(PropertyName = "country", NullValueHandling = NullValueHandling.Ignore)]
         public string Country { get; internal set; }
-
-        /// <see cref="User.FirstName"/>
-        [JsonProperty(PropertyName = "firstName", NullValueHandling = NullValueHandling.Ignore)]
         public string FirstName { get; internal set; }
-
-        /// <see cref="User.LastName"/>
-        [JsonProperty(PropertyName = "lastName", NullValueHandling = NullValueHandling.Ignore)]
         public string LastName { get; internal set; }
-
-        /// <see cref="User.Name"/>
-        [JsonProperty(PropertyName = "name", NullValueHandling = NullValueHandling.Ignore)]
         public string Name { get; internal set; }
-
-        /// <see cref="User.Avatar"/>
-        [JsonProperty(PropertyName = "avatar", NullValueHandling = NullValueHandling.Ignore)]
         public string Avatar { get; internal set; }
-
-        /// <see cref="User.Email"/>
-        [JsonProperty(PropertyName = "email", NullValueHandling = NullValueHandling.Ignore)]
         public string Email { get; internal set; }
-
-        /// <see cref="User.Anonymous"/>
-        [JsonProperty(PropertyName = "anonymous", NullValueHandling = NullValueHandling.Ignore)]
         public bool? Anonymous { get; internal set; }
-
-        /// <see cref="User.Custom"/>
-        [JsonProperty(PropertyName = "custom", NullValueHandling = NullValueHandling.Ignore)]
         public Dictionary<string, JToken> Custom { get; internal set; }
-
-        /// <summary>
-        /// A list of attribute names that have been omitted from the event.
-        /// </summary>
-        [JsonProperty(PropertyName = "privateAttrs", NullValueHandling = NullValueHandling.Ignore)]
         public List<string> PrivateAttrs { get; set; }
 
         internal static EventUser FromUser(User user, IEventProcessorConfiguration config)
@@ -67,7 +29,7 @@ namespace LaunchDarkly.Common
         }
     }
 
-    internal sealed class EventUserBuilder
+    internal struct EventUserBuilder
     {
         private IEventProcessorConfiguration _config;
         private User _user;
@@ -92,19 +54,28 @@ namespace LaunchDarkly.Common
             _result.Name = CheckPrivateAttr("name", _user.Name);
             _result.Avatar = CheckPrivateAttr("avatar", _user.Avatar);
             _result.Email = CheckPrivateAttr("email", _user.Email);
-            if (_user.Custom != null)
+            if (_user.Custom != null && _user.Custom.Count > 0)
             {
+                Dictionary<string, JToken> filteredCustom = null;
                 foreach (KeyValuePair<string, JToken> kv in _user.Custom)
                 {
                     JToken value = CheckPrivateAttr(kv.Key, kv.Value);
-                    if (value != null)
+                    if (value is null && kv.Value != null)
                     {
-                        if (_result.Custom == null)
+                        if (filteredCustom is null)
                         {
-                            _result.Custom = new Dictionary<string, JToken>();
+                            filteredCustom = new Dictionary<string, JToken>(_user.Custom);
                         }
-                        _result.Custom[kv.Key] = kv.Value;
+                        filteredCustom.Remove(kv.Key);
                     }
+                }
+                if (filteredCustom != null)
+                {
+                    _result.Custom = filteredCustom.Count == 0 ? null : filteredCustom;
+                }
+                else
+                {
+                    _result.Custom = _user.Custom;
                 }
             }
             return _result;
