@@ -186,18 +186,18 @@ namespace LaunchDarkly.Common
             message.WaitForCompletion();
         }
 
-        private void DoBackgroundFlush(object StateInfo)
+        private void DoBackgroundFlush(object stateInfo)
         {
             SubmitMessage(new FlushMessage());
         }
 
-        private void DoUserKeysFlush(object StateInfo)
+        private void DoUserKeysFlush(object stateInfo)
         {
             SubmitMessage(new FlushUsersMessage());
         }
 
         // exposed for testing 
-        internal void DoDiagnosticSend(object StateInfo)
+        internal void DoDiagnosticSend(object stateInfo)
         {
             SubmitMessage(new DiagnosticMessage());
         }
@@ -332,7 +332,7 @@ namespace LaunchDarkly.Common
                             }
                             break;
                         case DiagnosticMessage dm:
-                            sendAndResetDiagnostics(buffer);
+                            SendAndResetDiagnostics(buffer);
                             break;
                         case TestSyncMessage tm:
                             WaitForFlushes();
@@ -353,7 +353,7 @@ namespace LaunchDarkly.Common
             }
         }
 
-        private void sendAndResetDiagnostics(EventBuffer buffer)
+        private void SendAndResetDiagnostics(EventBuffer buffer)
         {
             if (_diagnosticStore != null)
             {

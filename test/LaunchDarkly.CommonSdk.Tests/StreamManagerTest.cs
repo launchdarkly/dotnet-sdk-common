@@ -86,11 +86,11 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void HeadersDontIncludeWrapperWhenNotSet()
         {
-            var Config = new SimpleConfiguration
+            var config = new SimpleConfiguration
             {
                 SdkKey = SdkKey
             };
-            using (StreamManager sm = new StreamManager(_streamProcessor, _streamProperties, Config,
+            using (StreamManager sm = new StreamManager(_streamProcessor, _streamProperties, config,
                 SimpleClientEnvironment.Instance, _eventSourceCreator.Create, null))
             {
                 sm.Start();
@@ -101,12 +101,12 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void HeadersHaveWrapperNameField()
         {
-            var Config = new SimpleConfiguration
+            var config = new SimpleConfiguration
             {
                 SdkKey = SdkKey,
                 WrapperName = "Xamarin",
             };
-            using (StreamManager sm = new StreamManager(_streamProcessor, _streamProperties, Config,
+            using (StreamManager sm = new StreamManager(_streamProcessor, _streamProperties, config,
                 SimpleClientEnvironment.Instance, _eventSourceCreator.Create, null))
             {
                 sm.Start();
@@ -117,12 +117,12 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void HeadersIgnoreWrapperVersionIfNameNotSetField()
         {
-            var Config = new SimpleConfiguration
+            var config = new SimpleConfiguration
             {
                 SdkKey = SdkKey,
                 WrapperVersion = "1.0.0"
             };
-            using (StreamManager sm = new StreamManager(_streamProcessor, _streamProperties, Config,
+            using (StreamManager sm = new StreamManager(_streamProcessor, _streamProperties, config,
                 SimpleClientEnvironment.Instance, _eventSourceCreator.Create, null))
             {
                 sm.Start();
@@ -133,13 +133,13 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void HeadersHaveCombinedWrapperField()
         {
-            var Config = new SimpleConfiguration
+            var config = new SimpleConfiguration
             {
                 SdkKey = SdkKey,
                 WrapperName = "Xamarin",
                 WrapperVersion = "1.0.0"
             };
-            using (StreamManager sm = new StreamManager(_streamProcessor, _streamProperties, Config,
+            using (StreamManager sm = new StreamManager(_streamProcessor, _streamProperties, config,
                 SimpleClientEnvironment.Instance, _eventSourceCreator.Create, null))
             {
                 sm.Start();
