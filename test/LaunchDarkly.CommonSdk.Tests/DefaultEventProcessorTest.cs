@@ -521,7 +521,7 @@ namespace LaunchDarkly.Common.Tests
             expected.Add("testKey", "testValue");
 
             Mock<IDiagnosticStore> mockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
-            mockDiagnosticStore.Setup(diagStore => diagStore.LastStats).Returns((Dictionary<string, object>)Expected);
+            mockDiagnosticStore.Setup(diagStore => diagStore.LastStats).Returns((Dictionary<string, object>)expected);
             mockDiagnosticStore.Setup(diagStore => diagStore.InitEvent).Returns((Dictionary<string, object>)null);
             mockDiagnosticStore.Setup(diagStore => diagStore.DataSince).Returns((DateTime)DateTime.Now);
 

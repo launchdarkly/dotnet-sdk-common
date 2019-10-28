@@ -96,7 +96,7 @@ namespace LaunchDarkly.Common
             {
                 Task.Run(() => {
                     _esStarted = Util.GetUnixTimestampMillis(DateTime.Now);
-                    _es.StartAsync();
+                    return _es.StartAsync();
                 });
             }
             catch (Exception ex)

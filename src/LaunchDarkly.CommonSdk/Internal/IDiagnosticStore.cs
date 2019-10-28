@@ -33,7 +33,7 @@ namespace LaunchDarkly.Common
         /// </summary>
         IReadOnlyDictionary<string, object> LastStats { get; }
         /// <summary>
-        /// Called when the user deduplicator prevents a user from being index.
+        /// Called when the user deduplicator prevents a user from being indexed.
         /// </summary>
         void IncrementDeduplicatedUsers();
         /// <summary>
