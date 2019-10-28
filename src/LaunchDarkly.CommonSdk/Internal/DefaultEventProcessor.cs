@@ -33,13 +33,13 @@ namespace LaunchDarkly.Common
             HttpClient httpClient,
             IDiagnosticStore diagnosticStore,
             IDiagnosticDisabler diagnosticDisabler,
-            CountdownEvent testDiagnosticCounter)
+            Action testActionOnDiagnosticSend)
         {
             _stopped = new AtomicBoolean(false);
             _sentInitialDiagnostics = new AtomicBoolean(false);
             _inputCapacityExceeded = new AtomicBoolean(false);
             _messageQueue = new BlockingCollection<IEventMessage>(config.EventCapacity);
-            _dispatcher = new EventDispatcher(config, _messageQueue, userDeduplicator, httpClient, diagnosticStore, testDiagnosticCounter);
+            _dispatcher = new EventDispatcher(config, _messageQueue, userDeduplicator, httpClient, diagnosticStore, testActionOnDiagnosticSend);
             _flushTimer = new Timer(DoBackgroundFlush, null, config.EventFlushInterval,
                 config.EventFlushInterval);
             _diagnosticStore = diagnosticStore;
@@ -269,7 +269,7 @@ namespace LaunchDarkly.Common
         private readonly IDiagnosticStore _diagnosticStore;
         private readonly IUserDeduplicator _userDeduplicator;
         private readonly CountdownEvent _flushWorkersCounter;
-        private readonly CountdownEvent _testDiagnosticCounter;
+        private readonly Action _testActionOnDiagnosticSend;
         private readonly HttpClient _httpClient;
         private readonly Random _random;
         private long _lastKnownPastTime;
@@ -280,12 +280,12 @@ namespace LaunchDarkly.Common
             IUserDeduplicator userDeduplicator,
             HttpClient httpClient,
             IDiagnosticStore diagnosticStore,
-            CountdownEvent testDiagnosticCounter)
+            Action testActionOnDiagnosticSend)
         {
             _config = config;
             _diagnosticStore = diagnosticStore;
             _userDeduplicator = userDeduplicator;
-            _testDiagnosticCounter = testDiagnosticCounter;
+            _testActionOnDiagnosticSend = testActionOnDiagnosticSend;
             _flushWorkersCounter = new CountdownEvent(1);
             _httpClient = httpClient;
             _random = new Random();
@@ -634,10 +634,7 @@ namespace LaunchDarkly.Common
                 _config.DiagnosticUri.AbsoluteUri, jsonDiagnostic);
             await SendWithRetry(_config.DiagnosticUri, jsonDiagnostic, false, async (response, duration) =>
             {
-                if (_testDiagnosticCounter != null)
-                {
-                    _testDiagnosticCounter.Signal();
-                }
+                _testActionOnDiagnosticSend?.Invoke();
 
                 if (response == null)
                 {
