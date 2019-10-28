@@ -619,7 +619,7 @@ namespace LaunchDarkly.Common
                             default:
                                 break;
                         }
-                        DefaultEventProcessor.Log.WarnFormat(errorMessage + " sending event(s); {0} (1)",
+                        DefaultEventProcessor.Log.WarnFormat(errorMessage + " sending event(s); {0}",
                             attempt == maxAttempts - 1 ? "will not retry" : "will retry after one second",
                             Util.ExceptionMessage(e));
                     }
