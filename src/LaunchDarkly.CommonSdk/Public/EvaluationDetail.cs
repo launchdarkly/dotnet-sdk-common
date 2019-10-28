@@ -83,6 +83,10 @@ namespace LaunchDarkly.Client
     {
         private readonly EvaluationReasonKind _kind;
 
+        // Note that the JsonProperty annotations in this class are used only if application code decides to
+        // serialize an EvaluationReason instance. When generating event output, the SDK instead uses the
+        // direct stream-writing logic in EventOutputFormatter.
+
         /// <summary>
         /// An enum indicating the general category of the reason.
         /// </summary>

@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using Newtonsoft.Json;
+﻿using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 using Xunit;
 using LaunchDarkly.Client;
@@ -52,100 +50,91 @@ namespace LaunchDarkly.Common.Tests
             .Custom("bizzle", "def")
             .Custom("dizzle", "ghi")
             .Build();
-
-        static readonly JObject _userWithAllAttributesJson = JObject.Parse(@"
-            { ""key"": ""abc"",
-              ""secondary"": ""xyz"",
-              ""firstName"": ""Sue"",
-              ""lastName"": ""Storm"",
-              ""name"": ""Susan"",
-              ""country"": ""us"",
-              ""avatar"": ""http://avatar"",
-              ""ip"": ""1.2.3.4"",
-              ""email"": ""test@example.com"",
-              ""custom"": { ""bizzle"": ""def"", ""dizzle"": ""ghi"" }
-            } ");
-
-        static readonly JObject _userWithAllAttributesPrivateJson = JObject.Parse(@"
-            { ""key"": ""abc"",
-              ""secondary"": ""xyz"",
-              ""privateAttrs"": [ ""ip"", ""country"", ""firstName"", ""lastName"",
-                                  ""name"", ""avatar"", ""email"", ""bizzle"", ""dizzle"" ]
-            } ");
-
-        static readonly JObject _userWithSomeAttributesPrivateJson = JObject.Parse(@"
-            { ""key"": ""abc"",
-              ""secondary"": ""xyz"",
-              ""lastName"": ""Storm"",
-              ""name"": ""Susan"",
-              ""country"": ""us"",
-              ""avatar"": ""http://avatar"",
-              ""ip"": ""1.2.3.4"",
-              ""email"": ""test@example.com"",
-              ""custom"": { ""dizzle"": ""ghi"" },
-              ""privateAttrs"": [ ""firstName"", ""bizzle"" ]
-            } ");
-
-        static readonly JObject _anonUserWithAllAttributesPrivateJson = JObject.Parse(@"
-            { ""key"": ""abc"",
-              ""anonymous"": true,
-              ""privateAttrs"": [ ""bizzle"", ""dizzle"" ]
-            } ");
         
-        [Fact]
-        public void SerializingAUserWithNoAnonymousSetYieldsNoAnonymous()
-        {
-            var user = User.WithKey("foo@bar.com");
-            var eu = EventUser.FromUser(user, _baseConfig);
-            var json = JsonConvert.SerializeObject(eu);
-            Assert.False(json.Contains("anonymous"));
-        }
-
         [Fact]
         public void AllUserAttributesAreIncludedByDefault()
         {
             EventUser eu = EventUser.FromUser(_baseUser, _baseConfig);
-            CheckJsonSerialization(eu, _userWithAllAttributesJson);
+            Assert.Equal(_baseUser.Key, eu.Key);
+            Assert.Equal(_baseUser.SecondaryKey, eu.SecondaryKey);
+            Assert.Equal(_baseUser.FirstName, eu.FirstName);
+            Assert.Equal(_baseUser.LastName, eu.LastName);
+            Assert.Equal(_baseUser.Name, eu.Name);
+            Assert.Equal(_baseUser.Avatar, eu.Avatar);
+            Assert.Equal(_baseUser.IPAddress, eu.IpAddress);
+            Assert.Equal(_baseUser.Email, eu.Email);
+            Assert.Null(eu.Anonymous);
+            Assert.Equal(_baseUser.Custom, eu.Custom);
+            Assert.Null(eu.PrivateAttrs);
         }
 
         [Fact]
         public void CanHideAllAttributesExceptKeyForNonAnonUser()
         {
             EventUser eu = EventUser.FromUser(_baseUser, _configWithAllAttrsPrivate);
-            CheckJsonSerialization(eu, _userWithAllAttributesPrivateJson);
+            Assert.Equal(_baseUser.Key, eu.Key);
+            Assert.Equal(_baseUser.SecondaryKey, eu.SecondaryKey);
+            Assert.Null(eu.FirstName);
+            Assert.Null(eu.LastName);
+            Assert.Null(eu.Name);
+            Assert.Null(eu.Avatar);
+            Assert.Null(eu.IpAddress);
+            Assert.Null(eu.Email);
+            Assert.Null(eu.Anonymous);
+            Assert.Null(eu.Custom);
+            Assert.Equal(new List<string> { "ip", "country", "firstName", "lastName", "name", "avatar", "email", "bizzle", "dizzle" },
+                eu.PrivateAttrs);
         }
 
         [Fact]
         public void CanHideAllAttributesExceptKeyAndAnonymousForAnonUser()
         {
             EventUser eu = EventUser.FromUser(_anonUser, _configWithAllAttrsPrivate);
-            CheckJsonSerialization(eu, _anonUserWithAllAttributesPrivateJson);
+            Assert.Equal(_anonUser.Key, eu.Key);
+            Assert.Equal(_anonUser.SecondaryKey, eu.SecondaryKey);
+            Assert.Null(eu.FirstName);
+            Assert.Null(eu.LastName);
+            Assert.Null(eu.Name);
+            Assert.Null(eu.Avatar);
+            Assert.Null(eu.IpAddress);
+            Assert.Null(eu.Email);
+            Assert.True(eu.Anonymous);
+            Assert.Null(eu.Custom);
+            Assert.Equal(new List<string> { "bizzle", "dizzle" }, eu.PrivateAttrs);
         }
 
         [Fact]
         public void CanHideSomeAttributesWithGlobalSet()
         {
             EventUser eu = EventUser.FromUser(_baseUser, _configWithSomeAttrsPrivate);
-            CheckJsonSerialization(eu, _userWithSomeAttributesPrivateJson);
+            Assert.Equal(_baseUser.Key, eu.Key);
+            Assert.Equal(_baseUser.SecondaryKey, eu.SecondaryKey);
+            Assert.Null(eu.FirstName);
+            Assert.Equal(_baseUser.LastName, eu.LastName);
+            Assert.Equal(_baseUser.Name, eu.Name);
+            Assert.Equal(_baseUser.Avatar, eu.Avatar);
+            Assert.Equal(_baseUser.IPAddress, eu.IpAddress);
+            Assert.Equal(_baseUser.Email, eu.Email);
+            Assert.Null(eu.Anonymous);
+            Assert.Equal(new Dictionary<string, JToken> { { "dizzle", new JValue("ghi") } }, eu.Custom);
+            Assert.Equal(new List<string> { "firstName", "bizzle" }, eu.PrivateAttrs);
         }
 
         [Fact]
         public void CanHideSomeAttributesPerUser()
         {
             EventUser eu = EventUser.FromUser(_userSpecifyingOwnPrivateAttrs, _baseConfig);
-            CheckJsonSerialization(eu, _userWithSomeAttributesPrivateJson);
-        }
-
-        private void CheckJsonSerialization(object o, JObject shouldBe)
-        {
-            string json = JsonConvert.SerializeObject(o);
-            JObject parsed = JObject.Parse(json);
-            if (!JToken.DeepEquals(shouldBe, parsed))
-            {
-                Console.Error.WriteLine("should be: " + shouldBe.ToString());
-                Console.Error.WriteLine("was: " + parsed.ToString());
-            }
-            Assert.True(JToken.DeepEquals(shouldBe, parsed));
+            Assert.Equal(_baseUser.Key, eu.Key);
+            Assert.Equal(_baseUser.SecondaryKey, eu.SecondaryKey);
+            Assert.Null(eu.FirstName);
+            Assert.Equal(_baseUser.LastName, eu.LastName);
+            Assert.Equal(_baseUser.Name, eu.Name);
+            Assert.Equal(_baseUser.Avatar, eu.Avatar);
+            Assert.Equal(_baseUser.IPAddress, eu.IpAddress);
+            Assert.Equal(_baseUser.Email, eu.Email);
+            Assert.Null(eu.Anonymous);
+            Assert.Equal(new Dictionary<string, JToken> { { "dizzle", new JValue("ghi") } }, eu.Custom);
+            Assert.Equal(new List<string> { "firstName", "bizzle" }, eu.PrivateAttrs);
         }
     }
 }

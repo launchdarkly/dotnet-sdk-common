@@ -523,12 +523,11 @@ namespace LaunchDarkly.Common
         private async Task FlushEventsAsync(FlushPayload payload)
         {
             EventOutputFormatter formatter = new EventOutputFormatter(_config);
-            List<EventOutput> eventsOut;
             string jsonEvents;
+            int eventCount;
             try
             {
-                eventsOut = formatter.MakeOutputEvents(payload.Events, payload.Summary);
-                jsonEvents = JsonConvert.SerializeObject(eventsOut, Formatting.None);
+                jsonEvents = formatter.SerializeOutputEvents(payload.Events, payload.Summary, out eventCount);
             }
             catch (Exception e)
             {
@@ -538,7 +537,7 @@ namespace LaunchDarkly.Common
             }
 
             DefaultEventProcessor.Log.DebugFormat("Submitting {0} event(s) to {1} with json: {2}",
-                eventsOut.Count, _config.EventsUri.AbsoluteUri, jsonEvents);
+                eventCount, _config.EventsUri.AbsoluteUri, jsonEvents);
             await SendWithRetry(_config.EventsUri, jsonEvents, true, async (response, duration) =>
             {
                 if (response == null)
@@ -620,7 +619,7 @@ namespace LaunchDarkly.Common
                             default:
                                 break;
                         }
-                        DefaultEventProcessor.Log.WarnFormat(errorMessage + " sending event(s); {0}",
+                        DefaultEventProcessor.Log.WarnFormat(errorMessage + " sending event(s); {0} (1)",
                             attempt == maxAttempts - 1 ? "will not retry" : "will retry after one second",
                             Util.ExceptionMessage(e));
                     }
