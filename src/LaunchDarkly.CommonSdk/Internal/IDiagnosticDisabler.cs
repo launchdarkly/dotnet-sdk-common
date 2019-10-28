@@ -20,8 +20,8 @@ namespace LaunchDarkly.Common
     internal interface IDiagnosticDisabler
     {
         /// <summary>
-        /// An Event listener to be called when the diagnostic event processor so switch from
-        /// disabled to enabled or vice versa.
+        /// An event listener that can be called to switch the diagnostics feature of the event
+        /// processor from disabled to enabled or vice versa.
         /// </summary>
         event EventHandler<DisabledChangedArgs> DisabledChanged;
         /// <summary>
