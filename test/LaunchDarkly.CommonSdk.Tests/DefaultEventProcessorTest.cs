@@ -517,8 +517,7 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void DiagnosticStoreLastStatsSentToDiagnosticUri()
         {
-            Dictionary<string, object> expected = new Dictionary<string, object>();
-            expected.Add("testKey", "testValue");
+            Dictionary<string, object> expected = new Dictionary<string, object> { { "testKey", "testValue" } };
 
             Mock<IDiagnosticStore> mockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
             mockDiagnosticStore.Setup(diagStore => diagStore.LastStats).Returns((Dictionary<string, object>)expected);
@@ -540,8 +539,7 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void DiagnosticStoreInitEventSentToDiagnosticUri()
         {
-            Dictionary<string, object> expected = new Dictionary<string, object>();
-            expected.Add("testKey", "testValue");
+            Dictionary<string, object> expected = new Dictionary<string, object> { { "testKey", "testValue" } };
 
             Mock<IDiagnosticStore> mockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
             mockDiagnosticStore.Setup(diagStore => diagStore.LastStats).Returns((Dictionary<string, object>)null);
@@ -563,8 +561,7 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void DiagnosticDisablerDisablesInitialDiagnostics()
         {
-            Dictionary<string, object> testDiagnostic = new Dictionary<string, object>();
-            testDiagnostic.Add("testKey", "testValue");
+            Dictionary<string, object> testDiagnostic = new Dictionary<string, object> { { "testKey", "testValue" } };
 
             Mock<IDiagnosticStore> mockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
             mockDiagnosticStore.Setup(diagStore => diagStore.LastStats).Returns((Dictionary<string, object>)testDiagnostic);
@@ -582,8 +579,7 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void DiagnosticDisablerEnabledInitialDiagnostics()
         {
-            Dictionary<string, object> expected = new Dictionary<string, object>();
-            expected.Add("testKey", "testValue");
+            Dictionary<string, object> expected = new Dictionary<string, object> { { "testKey", "testValue" } };
 
             Mock<IDiagnosticStore> mockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
             mockDiagnosticStore.Setup(diagStore => diagStore.LastStats).Returns((Dictionary<string, object>)expected);
