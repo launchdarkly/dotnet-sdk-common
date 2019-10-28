@@ -84,9 +84,9 @@ namespace LaunchDarkly.Common
 
         private void StartDiagnosticTimer()
         {
-            TimeSpan InitialDelay = _diagnosticRecordingInterval - (DateTime.Now - _diagnosticStore.DataSince);
-            TimeSpan SafeDelay = Util.Clamp(InitialDelay, TimeSpan.Zero, _diagnosticRecordingInterval);
-            _diagnosticTimer = new Timer(DoDiagnosticSend, null, SafeDelay, _diagnosticRecordingInterval);
+            TimeSpan initialDelay = _diagnosticRecordingInterval - (DateTime.Now - _diagnosticStore.DataSince);
+            TimeSpan safeDelay = Util.Clamp(initialDelay, TimeSpan.Zero, _diagnosticRecordingInterval);
+            _diagnosticTimer = new Timer(DoDiagnosticSend, null, safeDelay, _diagnosticRecordingInterval);
         }
 
         private void StopDiagnosticTimer()
@@ -101,16 +101,16 @@ namespace LaunchDarkly.Common
         private void SendInitialDiagnostics()
         {
             _sentInitialDiagnostics.GetAndSet(true);
-            IReadOnlyDictionary<string, object> LastStats = _diagnosticStore.LastStats;
-            if (LastStats != null)
+            IReadOnlyDictionary<string, object> lastStats = _diagnosticStore.LastStats;
+            if (lastStats != null)
             {
-                _dispatcher.SendDiagnosticEventAsync(JsonConvert.SerializeObject(LastStats, Formatting.None));
+                _dispatcher.SendDiagnosticEventAsync(JsonConvert.SerializeObject(lastStats, Formatting.None));
             }
 
-            IReadOnlyDictionary<string, object> InitEvent = _diagnosticStore.InitEvent;
-            if (InitEvent != null)
+            IReadOnlyDictionary<string, object> initEvent = _diagnosticStore.InitEvent;
+            if (initEvent != null)
             {
-                _dispatcher.SendDiagnosticEventAsync(JsonConvert.SerializeObject(InitEvent, Formatting.None));
+                _dispatcher.SendDiagnosticEventAsync(JsonConvert.SerializeObject(initEvent, Formatting.None));
             }
         }
 
@@ -357,11 +357,11 @@ namespace LaunchDarkly.Common
         {
             if (_diagnosticStore != null)
             {
-                long EventsInQueue = buffer.GetEventsInQueueCount();
-                IReadOnlyDictionary<string, object> Stats = _diagnosticStore.CreateEventAndReset(EventsInQueue);
-                if (Stats != null)
+                long eventsInQueue = buffer.GetEventsInQueueCount();
+                IReadOnlyDictionary<string, object> stats = _diagnosticStore.CreateEventAndReset(eventsInQueue);
+                if (stats != null)
                 {
-                    SendDiagnosticEventAsync(JsonConvert.SerializeObject(Stats, Formatting.None));
+                    SendDiagnosticEventAsync(JsonConvert.SerializeObject(stats, Formatting.None));
                 }
             }
         }

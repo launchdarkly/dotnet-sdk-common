@@ -465,12 +465,12 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void DiagnosticStoreCreateEventGivenEventsInQueueCount()
         {
-            Mock<IDiagnosticStore> MockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
-            MockDiagnosticStore.Setup(diagStore => diagStore.LastStats).Returns((Dictionary<string, object>)null);
-            MockDiagnosticStore.Setup(diagStore => diagStore.InitEvent).Returns((Dictionary<string, object>)null);
-            MockDiagnosticStore.Setup(diagStore => diagStore.DataSince).Returns((DateTime)DateTime.Now);
-            MockDiagnosticStore.Setup(diagStore => diagStore.CreateEventAndReset(It.IsAny<long>())).Returns(new Dictionary<string, object>());
-            _ep = MakeProcessor(_config, MockDiagnosticStore.Object, null, null);
+            Mock<IDiagnosticStore> mockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
+            mockDiagnosticStore.Setup(diagStore => diagStore.LastStats).Returns((Dictionary<string, object>)null);
+            mockDiagnosticStore.Setup(diagStore => diagStore.InitEvent).Returns((Dictionary<string, object>)null);
+            mockDiagnosticStore.Setup(diagStore => diagStore.DataSince).Returns((DateTime)DateTime.Now);
+            mockDiagnosticStore.Setup(diagStore => diagStore.CreateEventAndReset(It.IsAny<long>())).Returns(new Dictionary<string, object>());
+            _ep = MakeProcessor(_config, mockDiagnosticStore.Object, null, null);
 
             IFlagEventProperties flag1 = new FlagEventPropertiesBuilder("flagkey1").Version(11).TrackEvents(true).Build();
             var value = LdValue.Of("value");
@@ -483,105 +483,105 @@ namespace LaunchDarkly.Common.Tests
             _ep.DoDiagnosticSend(null);
             // Again not flushing events, but ensuring the main event loop has processed the diagnostic event trigger.
             _ep.WaitUntilInactive();
-            MockDiagnosticStore.Verify(diagStore => diagStore.CreateEventAndReset(2), Times.Once(), "Diagnostic store's CreateEventAndReset should be called with the number of events currently in the buffer before sending diagnostic event");
+            mockDiagnosticStore.Verify(diagStore => diagStore.CreateEventAndReset(2), Times.Once(), "Diagnostic store's CreateEventAndReset should be called with the number of events currently in the buffer before sending diagnostic event");
         }
 
         [Fact]
         public void DiagnosticStoreLastStatsSentToDiagnosticUri()
         {
-            Dictionary<string, object> Expected = new Dictionary<string, object>();
-            Expected.Add("testKey", "testValue");
+            Dictionary<string, object> expected = new Dictionary<string, object>();
+            expected.Add("testKey", "testValue");
 
-            Mock<IDiagnosticStore> MockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
-            MockDiagnosticStore.Setup(diagStore => diagStore.LastStats).Returns((Dictionary<string, object>)Expected);
-            MockDiagnosticStore.Setup(diagStore => diagStore.InitEvent).Returns((Dictionary<string, object>)null);
-            MockDiagnosticStore.Setup(diagStore => diagStore.DataSince).Returns((DateTime)DateTime.Now);
+            Mock<IDiagnosticStore> mockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
+            mockDiagnosticStore.Setup(diagStore => diagStore.LastStats).Returns((Dictionary<string, object>)Expected);
+            mockDiagnosticStore.Setup(diagStore => diagStore.InitEvent).Returns((Dictionary<string, object>)null);
+            mockDiagnosticStore.Setup(diagStore => diagStore.DataSince).Returns((DateTime)DateTime.Now);
 
             PrepareDiagnosticResponse(OkResponse());
-            CountdownEvent DiagnosticCountdown = new CountdownEvent(1);
-            _ep = MakeProcessor(_config, MockDiagnosticStore.Object, null, DiagnosticCountdown);
-            MockDiagnosticStore.Verify(diagStore => diagStore.LastStats, Times.Once(), "Expected call of LastStats");
+            CountdownEvent diagnosticCountdown = new CountdownEvent(1);
+            _ep = MakeProcessor(_config, mockDiagnosticStore.Object, null, diagnosticCountdown);
+            mockDiagnosticStore.Verify(diagStore => diagStore.LastStats, Times.Once(), "Expected call of LastStats");
 
-            DiagnosticCountdown.Wait();
+            diagnosticCountdown.Wait();
             JObject diagnostic = GetLastDiagnostic();
-            Dictionary<string, object> Retrieved = diagnostic.ToObject<Dictionary<string, object>>();
+            Dictionary<string, object> retrieved = diagnostic.ToObject<Dictionary<string, object>>();
 
-            Assert.Equal(Expected, Retrieved);
+            Assert.Equal(expected, retrieved);
         }
 
         [Fact]
         public void DiagnosticStoreInitEventSentToDiagnosticUri()
         {
-            Dictionary<string, object> Expected = new Dictionary<string, object>();
-            Expected.Add("testKey", "testValue");
+            Dictionary<string, object> expected = new Dictionary<string, object>();
+            expected.Add("testKey", "testValue");
 
-            Mock<IDiagnosticStore> MockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
-            MockDiagnosticStore.Setup(diagStore => diagStore.LastStats).Returns((Dictionary<string, object>)null);
-            MockDiagnosticStore.Setup(diagStore => diagStore.InitEvent).Returns((Dictionary<string, object>)Expected);
-            MockDiagnosticStore.Setup(diagStore => diagStore.DataSince).Returns((DateTime)DateTime.Now);
+            Mock<IDiagnosticStore> mockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
+            mockDiagnosticStore.Setup(diagStore => diagStore.LastStats).Returns((Dictionary<string, object>)null);
+            mockDiagnosticStore.Setup(diagStore => diagStore.InitEvent).Returns((Dictionary<string, object>)expected);
+            mockDiagnosticStore.Setup(diagStore => diagStore.DataSince).Returns((DateTime)DateTime.Now);
 
             PrepareDiagnosticResponse(OkResponse());
-            CountdownEvent DiagnosticCountdown = new CountdownEvent(1);
-            _ep = MakeProcessor(_config, MockDiagnosticStore.Object, null, DiagnosticCountdown);
-            MockDiagnosticStore.Verify(diagStore => diagStore.InitEvent, Times.Once(), "Expected call of InitEvent");
+            CountdownEvent diagnosticCountdown = new CountdownEvent(1);
+            _ep = MakeProcessor(_config, mockDiagnosticStore.Object, null, diagnosticCountdown);
+            mockDiagnosticStore.Verify(diagStore => diagStore.InitEvent, Times.Once(), "Expected call of InitEvent");
 
-            DiagnosticCountdown.Wait();
+            diagnosticCountdown.Wait();
             JObject diagnostic = GetLastDiagnostic();
-            Dictionary<string, object> Retrieved = diagnostic.ToObject<Dictionary<string, object>>();
+            Dictionary<string, object> retrieved = diagnostic.ToObject<Dictionary<string, object>>();
 
-            Assert.Equal(Expected, Retrieved);
+            Assert.Equal(expected, retrieved);
         }
 
         [Fact]
         public void DiagnosticDisablerDisablesInitialDiagnostics()
         {
-            Dictionary<string, object> TestDiagnostic = new Dictionary<string, object>();
-            TestDiagnostic.Add("testKey", "testValue");
+            Dictionary<string, object> testDiagnostic = new Dictionary<string, object>();
+            testDiagnostic.Add("testKey", "testValue");
 
-            Mock<IDiagnosticStore> MockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
-            MockDiagnosticStore.Setup(diagStore => diagStore.LastStats).Returns((Dictionary<string, object>)TestDiagnostic);
-            MockDiagnosticStore.Setup(diagStore => diagStore.InitEvent).Returns((Dictionary<string, object>)TestDiagnostic);
-            MockDiagnosticStore.Setup(diagStore => diagStore.DataSince).Returns((DateTime)DateTime.Now);
+            Mock<IDiagnosticStore> mockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
+            mockDiagnosticStore.Setup(diagStore => diagStore.LastStats).Returns((Dictionary<string, object>)testDiagnostic);
+            mockDiagnosticStore.Setup(diagStore => diagStore.InitEvent).Returns((Dictionary<string, object>)testDiagnostic);
+            mockDiagnosticStore.Setup(diagStore => diagStore.DataSince).Returns((DateTime)DateTime.Now);
 
-            Mock<IDiagnosticDisabler> MockDiagnosticDisabler = new Mock<IDiagnosticDisabler>(MockBehavior.Strict);
-            MockDiagnosticDisabler.Setup(diagDisabler => diagDisabler.Disabled).Returns(true);
+            Mock<IDiagnosticDisabler> mockDiagnosticDisabler = new Mock<IDiagnosticDisabler>(MockBehavior.Strict);
+            mockDiagnosticDisabler.Setup(diagDisabler => diagDisabler.Disabled).Returns(true);
 
-            _ep = MakeProcessor(_config, MockDiagnosticStore.Object, MockDiagnosticDisabler.Object, null);
-            MockDiagnosticStore.Verify(diagStore => diagStore.InitEvent, Times.Never());
-            MockDiagnosticStore.Verify(diagStore => diagStore.LastStats, Times.Never());
+            _ep = MakeProcessor(_config, mockDiagnosticStore.Object, mockDiagnosticDisabler.Object, null);
+            mockDiagnosticStore.Verify(diagStore => diagStore.InitEvent, Times.Never());
+            mockDiagnosticStore.Verify(diagStore => diagStore.LastStats, Times.Never());
         }
 
         [Fact]
         public void DiagnosticDisablerEnabledInitialDiagnostics()
         {
-            Dictionary<string, object> Expected = new Dictionary<string, object>();
-            Expected.Add("testKey", "testValue");
+            Dictionary<string, object> expected = new Dictionary<string, object>();
+            expected.Add("testKey", "testValue");
 
-            Mock<IDiagnosticStore> MockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
-            MockDiagnosticStore.Setup(diagStore => diagStore.LastStats).Returns((Dictionary<string, object>)Expected);
-            MockDiagnosticStore.Setup(diagStore => diagStore.InitEvent).Returns((Dictionary<string, object>)Expected);
-            MockDiagnosticStore.Setup(diagStore => diagStore.DataSince).Returns((DateTime)DateTime.Now);
+            Mock<IDiagnosticStore> mockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
+            mockDiagnosticStore.Setup(diagStore => diagStore.LastStats).Returns((Dictionary<string, object>)expected);
+            mockDiagnosticStore.Setup(diagStore => diagStore.InitEvent).Returns((Dictionary<string, object>)expected);
+            mockDiagnosticStore.Setup(diagStore => diagStore.DataSince).Returns((DateTime)DateTime.Now);
 
-            Mock<IDiagnosticDisabler> MockDiagnosticDisabler = new Mock<IDiagnosticDisabler>(MockBehavior.Strict);
-            MockDiagnosticDisabler.Setup(diagDisabler => diagDisabler.Disabled).Returns(false);
+            Mock<IDiagnosticDisabler> mockDiagnosticDisabler = new Mock<IDiagnosticDisabler>(MockBehavior.Strict);
+            mockDiagnosticDisabler.Setup(diagDisabler => diagDisabler.Disabled).Returns(false);
 
             PrepareDiagnosticResponse(OkResponse());
-            CountdownEvent DiagnosticCountdown = new CountdownEvent(2);
-            _ep = MakeProcessor(_config, MockDiagnosticStore.Object, MockDiagnosticDisabler.Object, DiagnosticCountdown);
-            MockDiagnosticStore.Verify(diagStore => diagStore.LastStats, Times.Once(), "Expected call of LastStats");
-            MockDiagnosticStore.Verify(diagStore => diagStore.InitEvent, Times.Once(), "Expected call of InitEvent");
+            CountdownEvent diagnosticCountdown = new CountdownEvent(2);
+            _ep = MakeProcessor(_config, mockDiagnosticStore.Object, mockDiagnosticDisabler.Object, diagnosticCountdown);
+            mockDiagnosticStore.Verify(diagStore => diagStore.LastStats, Times.Once(), "Expected call of LastStats");
+            mockDiagnosticStore.Verify(diagStore => diagStore.InitEvent, Times.Once(), "Expected call of InitEvent");
 
-            DiagnosticCountdown.Wait();
+            diagnosticCountdown.Wait();
 
-            int RequestCount = 0;
+            int requestCount = 0;
             foreach (LogEntry le in _server.LogEntries)
             {
-                RequestCount++;
+                requestCount++;
                 Assert.Equal(DiagnosticUriPath, le.RequestMessage.Path);
-                Dictionary<string, object> Retrieved = (le.RequestMessage.BodyAsJson as JObject).ToObject<Dictionary<string, object>>();
-                Assert.Equal(Expected, Retrieved);
+                Dictionary<string, object> retrieved = (le.RequestMessage.BodyAsJson as JObject).ToObject<Dictionary<string, object>>();
+                Assert.Equal(expected, retrieved);
             }
-            Assert.Equal(2, RequestCount);
+            Assert.Equal(2, requestCount);
         }
 
         private void VerifyUnrecoverableHttpError(int status)
