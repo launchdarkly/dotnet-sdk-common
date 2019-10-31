@@ -97,7 +97,7 @@ namespace LaunchDarkly.Common
             {
                 return;
             }
-            _dispatcher.SendDiagnosticEventAsync(_diagnosticStore.LastStats);
+            _dispatcher.SendDiagnosticEventAsync(_diagnosticStore.PersistedUnsentEvent);
             _dispatcher.SendDiagnosticEventAsync(_diagnosticStore.InitEvent);
         }
 

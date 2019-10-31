@@ -494,7 +494,7 @@ namespace LaunchDarkly.Common.Tests
         public void DiagnosticStoreCreateEventGivenEventsInQueueCount()
         {
             Mock<IDiagnosticStore> mockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
-            mockDiagnosticStore.Setup(diagStore => diagStore.LastStats).Returns((Dictionary<string, object>)null);
+            mockDiagnosticStore.Setup(diagStore => diagStore.PersistedUnsentEvent).Returns((Dictionary<string, object>)null);
             mockDiagnosticStore.Setup(diagStore => diagStore.InitEvent).Returns((Dictionary<string, object>)null);
             mockDiagnosticStore.Setup(diagStore => diagStore.DataSince).Returns((DateTime)DateTime.Now);
             mockDiagnosticStore.Setup(diagStore => diagStore.CreateEventAndReset(It.IsAny<long>())).Returns(new Dictionary<string, object>());
@@ -515,19 +515,19 @@ namespace LaunchDarkly.Common.Tests
         }
 
         [Fact]
-        public void DiagnosticStoreLastStatsSentToDiagnosticUri()
+        public void DiagnosticStorePersistedUnsentEventSentToDiagnosticUri()
         {
             Dictionary<string, object> expected = new Dictionary<string, object> { { "testKey", "testValue" } };
 
             Mock<IDiagnosticStore> mockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
-            mockDiagnosticStore.Setup(diagStore => diagStore.LastStats).Returns((Dictionary<string, object>)expected);
+            mockDiagnosticStore.Setup(diagStore => diagStore.PersistedUnsentEvent).Returns((Dictionary<string, object>)expected);
             mockDiagnosticStore.Setup(diagStore => diagStore.InitEvent).Returns((Dictionary<string, object>)null);
             mockDiagnosticStore.Setup(diagStore => diagStore.DataSince).Returns((DateTime)DateTime.Now);
 
             PrepareDiagnosticResponse(OkResponse());
             CountdownEvent diagnosticCountdown = new CountdownEvent(1);
             _ep = MakeProcessor(_config, mockDiagnosticStore.Object, null, diagnosticCountdown);
-            mockDiagnosticStore.Verify(diagStore => diagStore.LastStats, Times.Once());
+            mockDiagnosticStore.Verify(diagStore => diagStore.PersistedUnsentEvent, Times.Once());
 
             diagnosticCountdown.Wait();
             JObject diagnostic = GetLastDiagnostic();
@@ -542,7 +542,7 @@ namespace LaunchDarkly.Common.Tests
             Dictionary<string, object> expected = new Dictionary<string, object> { { "testKey", "testValue" } };
 
             Mock<IDiagnosticStore> mockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
-            mockDiagnosticStore.Setup(diagStore => diagStore.LastStats).Returns((Dictionary<string, object>)null);
+            mockDiagnosticStore.Setup(diagStore => diagStore.PersistedUnsentEvent).Returns((Dictionary<string, object>)null);
             mockDiagnosticStore.Setup(diagStore => diagStore.InitEvent).Returns((Dictionary<string, object>)expected);
             mockDiagnosticStore.Setup(diagStore => diagStore.DataSince).Returns((DateTime)DateTime.Now);
 
@@ -564,7 +564,7 @@ namespace LaunchDarkly.Common.Tests
             Dictionary<string, object> testDiagnostic = new Dictionary<string, object> { { "testKey", "testValue" } };
 
             Mock<IDiagnosticStore> mockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
-            mockDiagnosticStore.Setup(diagStore => diagStore.LastStats).Returns((Dictionary<string, object>)testDiagnostic);
+            mockDiagnosticStore.Setup(diagStore => diagStore.PersistedUnsentEvent).Returns((Dictionary<string, object>)testDiagnostic);
             mockDiagnosticStore.Setup(diagStore => diagStore.InitEvent).Returns((Dictionary<string, object>)testDiagnostic);
             mockDiagnosticStore.Setup(diagStore => diagStore.DataSince).Returns((DateTime)DateTime.Now);
 
@@ -573,7 +573,7 @@ namespace LaunchDarkly.Common.Tests
 
             _ep = MakeProcessor(_config, mockDiagnosticStore.Object, mockDiagnosticDisabler.Object, null);
             mockDiagnosticStore.Verify(diagStore => diagStore.InitEvent, Times.Never());
-            mockDiagnosticStore.Verify(diagStore => diagStore.LastStats, Times.Never());
+            mockDiagnosticStore.Verify(diagStore => diagStore.PersistedUnsentEvent, Times.Never());
         }
 
         [Fact]
@@ -583,7 +583,7 @@ namespace LaunchDarkly.Common.Tests
             Dictionary<string, object> expectedInit = new Dictionary<string, object> { { "init", "testValue" } };
 
             Mock<IDiagnosticStore> mockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
-            mockDiagnosticStore.Setup(diagStore => diagStore.LastStats).Returns((Dictionary<string, object>)expectedStats);
+            mockDiagnosticStore.Setup(diagStore => diagStore.PersistedUnsentEvent).Returns((Dictionary<string, object>)expectedStats);
             mockDiagnosticStore.Setup(diagStore => diagStore.InitEvent).Returns((Dictionary<string, object>)expectedInit);
             mockDiagnosticStore.Setup(diagStore => diagStore.DataSince).Returns((DateTime)DateTime.Now);
 
@@ -593,7 +593,7 @@ namespace LaunchDarkly.Common.Tests
             PrepareDiagnosticResponse(OkResponse());
             CountdownEvent diagnosticCountdown = new CountdownEvent(2);
             _ep = MakeProcessor(_config, mockDiagnosticStore.Object, mockDiagnosticDisabler.Object, diagnosticCountdown);
-            mockDiagnosticStore.Verify(diagStore => diagStore.LastStats, Times.Once());
+            mockDiagnosticStore.Verify(diagStore => diagStore.PersistedUnsentEvent, Times.Once());
             mockDiagnosticStore.Verify(diagStore => diagStore.InitEvent, Times.Once());
 
             diagnosticCountdown.Wait();

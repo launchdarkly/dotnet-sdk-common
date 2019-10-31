@@ -31,7 +31,7 @@ namespace LaunchDarkly.Common
         /// with the data from the previous diagnostic id if the initialization caused a switch of
         /// diagnostic id and there is periodic diagnostics data available for the previous id.
         /// </summary>
-        IReadOnlyDictionary<string, object> LastStats { get; }
+        IReadOnlyDictionary<string, object> PersistedUnsentEvent { get; }
         /// <summary>
         /// Called when the user deduplicator prevents a user from being indexed.
         /// </summary>
