@@ -97,17 +97,8 @@ namespace LaunchDarkly.Common
             {
                 return;
             }
-            IReadOnlyDictionary<string, object> lastStats = _diagnosticStore.LastStats;
-            if (lastStats != null)
-            {
-                _dispatcher.SendDiagnosticEventAsync(JsonConvert.SerializeObject(lastStats, Formatting.None));
-            }
-
-            IReadOnlyDictionary<string, object> initEvent = _diagnosticStore.InitEvent;
-            if (initEvent != null)
-            {
-                _dispatcher.SendDiagnosticEventAsync(JsonConvert.SerializeObject(initEvent, Formatting.None));
-            }
+            _dispatcher.SendDiagnosticEventAsync(_diagnosticStore.LastStats);
+            _dispatcher.SendDiagnosticEventAsync(_diagnosticStore.InitEvent);
         }
 
         public void SendEvent(Event eventToLog)
@@ -354,11 +345,7 @@ namespace LaunchDarkly.Common
             if (_diagnosticStore != null)
             {
                 long eventsInQueue = buffer.GetEventsInQueueCount();
-                IReadOnlyDictionary<string, object> stats = _diagnosticStore.CreateEventAndReset(eventsInQueue);
-                if (stats != null)
-                {
-                    SendDiagnosticEventAsync(JsonConvert.SerializeObject(stats, Formatting.None));
-                }
+                SendDiagnosticEventAsync(_diagnosticStore.CreateEventAndReset(eventsInQueue));
             }
         }
 
@@ -624,8 +611,14 @@ namespace LaunchDarkly.Common
             await onComplete(null, 0);
         }
 
-        internal async Task SendDiagnosticEventAsync(string jsonDiagnostic)
+        internal async Task SendDiagnosticEventAsync(IReadOnlyDictionary<string, object> diagnostic)
         {
+            if (diagnostic == null)
+            {
+                return;
+            }
+
+            String jsonDiagnostic = JsonConvert.SerializeObject(diagnostic, Formatting.None);
             DefaultEventProcessor.Log.DebugFormat("Submitting diagnostic event to {0} with json: {1}",
                 _config.DiagnosticUri.AbsoluteUri, jsonDiagnostic);
             await SendWithRetry(_config.DiagnosticUri, jsonDiagnostic, false, async (response, duration) =>
