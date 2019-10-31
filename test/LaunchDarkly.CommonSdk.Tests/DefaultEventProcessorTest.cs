@@ -527,7 +527,7 @@ namespace LaunchDarkly.Common.Tests
             PrepareDiagnosticResponse(OkResponse());
             CountdownEvent diagnosticCountdown = new CountdownEvent(1);
             _ep = MakeProcessor(_config, mockDiagnosticStore.Object, null, diagnosticCountdown);
-            mockDiagnosticStore.Verify(diagStore => diagStore.LastStats, Times.Once(), "Expected call of LastStats");
+            mockDiagnosticStore.Verify(diagStore => diagStore.LastStats, Times.Once());
 
             diagnosticCountdown.Wait();
             JObject diagnostic = GetLastDiagnostic();
@@ -549,7 +549,7 @@ namespace LaunchDarkly.Common.Tests
             PrepareDiagnosticResponse(OkResponse());
             CountdownEvent diagnosticCountdown = new CountdownEvent(1);
             _ep = MakeProcessor(_config, mockDiagnosticStore.Object, null, diagnosticCountdown);
-            mockDiagnosticStore.Verify(diagStore => diagStore.InitEvent, Times.Once(), "Expected call of InitEvent");
+            mockDiagnosticStore.Verify(diagStore => diagStore.InitEvent, Times.Once());
 
             diagnosticCountdown.Wait();
             JObject diagnostic = GetLastDiagnostic();
