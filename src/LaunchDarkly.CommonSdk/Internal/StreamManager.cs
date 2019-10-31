@@ -30,7 +30,7 @@ namespace LaunchDarkly.Common
         private readonly IDiagnosticStore _diagnosticStore;
         private IEventSource _es;
         private int _initialized = UNINITIALIZED;
-        private long _esStarted;
+        private DateTime _esStarted;
 
         /// <summary>
         /// Constructs a StreamManager instance.
@@ -95,7 +95,7 @@ namespace LaunchDarkly.Common
             try
             {
                 Task.Run(() => {
-                    _esStarted = Util.GetUnixTimestampMillis(DateTime.Now);
+                    _esStarted = DateTime.Now;
                     return _es.StartAsync();
                 });
             }
@@ -121,7 +121,7 @@ namespace LaunchDarkly.Common
             await Task.Delay(sleepTime);
             try
             {
-                _esStarted = Util.GetUnixTimestampMillis(DateTime.Now);
+                _esStarted = DateTime.Now;
                 await _es.StartAsync();
                 _backOff.ResetReconnectAttemptCount();
                 Log.Info("Reconnected to LaunchDarkly StreamProcessor");
@@ -175,8 +175,8 @@ namespace LaunchDarkly.Common
 
         private void RecordStreamInit(bool failed) {
             if (_diagnosticStore != null) {
-                _diagnosticStore.AddStreamInit(_esStarted, (int)(Util.GetUnixTimestampMillis(DateTime.Now) - _esStarted), failed);
-                _esStarted = Util.GetUnixTimestampMillis(DateTime.Now);
+                _diagnosticStore.AddStreamInit(Util.GetUnixTimestampMillis(_esStarted), (int)(DateTime.Now - _esStarted).TotalMilliseconds, failed);
+                _esStarted = DateTime.Now;
             }
         }
 
