@@ -579,11 +579,12 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void DiagnosticDisablerEnabledInitialDiagnostics()
         {
-            Dictionary<string, object> expected = new Dictionary<string, object> { { "testKey", "testValue" } };
+            Dictionary<string, object> expectedStats = new Dictionary<string, object> { { "stats", "testValue" } };
+            Dictionary<string, object> expectedInit = new Dictionary<string, object> { { "init", "testValue" } };
 
             Mock<IDiagnosticStore> mockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
-            mockDiagnosticStore.Setup(diagStore => diagStore.LastStats).Returns((Dictionary<string, object>)expected);
-            mockDiagnosticStore.Setup(diagStore => diagStore.InitEvent).Returns((Dictionary<string, object>)expected);
+            mockDiagnosticStore.Setup(diagStore => diagStore.LastStats).Returns((Dictionary<string, object>)expectedStats);
+            mockDiagnosticStore.Setup(diagStore => diagStore.InitEvent).Returns((Dictionary<string, object>)expectedInit);
             mockDiagnosticStore.Setup(diagStore => diagStore.DataSince).Returns((DateTime)DateTime.Now);
 
             Mock<IDiagnosticDisabler> mockDiagnosticDisabler = new Mock<IDiagnosticDisabler>(MockBehavior.Strict);
@@ -592,20 +593,21 @@ namespace LaunchDarkly.Common.Tests
             PrepareDiagnosticResponse(OkResponse());
             CountdownEvent diagnosticCountdown = new CountdownEvent(2);
             _ep = MakeProcessor(_config, mockDiagnosticStore.Object, mockDiagnosticDisabler.Object, diagnosticCountdown);
-            mockDiagnosticStore.Verify(diagStore => diagStore.LastStats, Times.Once(), "Expected call of LastStats");
-            mockDiagnosticStore.Verify(diagStore => diagStore.InitEvent, Times.Once(), "Expected call of InitEvent");
+            mockDiagnosticStore.Verify(diagStore => diagStore.LastStats, Times.Once());
+            mockDiagnosticStore.Verify(diagStore => diagStore.InitEvent, Times.Once());
 
             diagnosticCountdown.Wait();
 
-            int requestCount = 0;
+            List<Dictionary<string, object>> retrieved = new List<Dictionary<string, object>>();
             foreach (LogEntry le in _server.LogEntries)
             {
-                requestCount++;
                 Assert.Equal(DiagnosticUriPath, le.RequestMessage.Path);
-                Dictionary<string, object> retrieved = (le.RequestMessage.BodyAsJson as JObject).ToObject<Dictionary<string, object>>();
-                Assert.Equal(expected, retrieved);
+                retrieved.Add((le.RequestMessage.BodyAsJson as JObject).ToObject<Dictionary<string, object>>());
             }
-            Assert.Equal(2, requestCount);
+
+            Assert.Equal(2, retrieved.Count);
+            Assert.Contains(expectedInit, retrieved);
+            Assert.Contains(expectedStats, retrieved);
         }
 
         private void VerifyUnrecoverableHttpError(int status)
