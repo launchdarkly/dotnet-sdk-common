@@ -56,28 +56,21 @@ namespace LaunchDarkly.Common
 
             if (diagnosticStore != null)
             {
-                if (diagnosticDisabler == null || !diagnosticDisabler.Disabled)
-                {
-                    SendInitialDiagnostics();
-                    StartDiagnosticTimer();
-                }
+                SetupDiagnosticInit(diagnosticDisabler == null || !diagnosticDisabler.Disabled);
 
                 if (diagnosticDisabler != null)
                 {
-                    diagnosticDisabler.DisabledChanged += OnDisabledChanged;
+                    diagnosticDisabler.DisabledChanged += ((sender, args) => SetupDiagnosticInit(!args.Disabled));
                 }
             }
         }
 
-        private void OnDisabledChanged(object sender, DisabledChangedArgs args)
+        private void SetupDiagnosticInit(bool enabled)
         {
             StopDiagnosticTimer();
-            if (!args.Disabled)
+            if (enabled)
             {
-                if (!_sentInitialDiagnostics.GetAndSet(true))
-                {
-                    SendInitialDiagnostics();
-                }
+                SendInitialDiagnostics();
                 StartDiagnosticTimer();
             }
         }
@@ -100,7 +93,10 @@ namespace LaunchDarkly.Common
 
         private void SendInitialDiagnostics()
         {
-            _sentInitialDiagnostics.GetAndSet(true);
+            if (_sentInitialDiagnostics.GetAndSet(true))
+            {
+                return;
+            }
             IReadOnlyDictionary<string, object> lastStats = _diagnosticStore.LastStats;
             if (lastStats != null)
             {
