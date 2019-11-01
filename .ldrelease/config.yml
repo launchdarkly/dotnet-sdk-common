@@ -2,6 +2,12 @@ repo:
   public: dotnet-sdk-common
   private: dotnet-sdk-common-private
 
+releasableBranches:
+  - name: master
+    description: 4.x (for Xamarin and future .NET)
+  - name: 2.x
+    description: (for current .NET SDK)
+
 publications:
   - url: https://nuget.org/packages/LaunchDarkly.CommonSdk
     description: NuGet (1)
