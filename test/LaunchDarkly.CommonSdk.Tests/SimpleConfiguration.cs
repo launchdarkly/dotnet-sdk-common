@@ -27,7 +27,6 @@ namespace LaunchDarkly.Common.Tests
         public TimeSpan HttpClientTimeout { get; set; } = TimeSpan.FromSeconds(30);
         public HttpClientHandler HttpClientHandler { get; set; } = new HttpClientHandler();
         public TimeSpan DiagnosticRecordingInterval { get; set; }
-        public bool DiagnosticOptOut { get; set; }
         public Uri DiagnosticUri { get; set; }
         public string WrapperName { get; set; }
         public string WrapperVersion { get; set; }

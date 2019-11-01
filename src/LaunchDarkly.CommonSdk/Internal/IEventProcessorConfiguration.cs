@@ -9,7 +9,6 @@ namespace LaunchDarkly.Common
     internal interface IEventProcessorConfiguration
     {
         bool AllAttributesPrivate { get; }
-        bool DiagnosticOptOut { get; }
         TimeSpan DiagnosticRecordingInterval { get; }
         Uri DiagnosticUri { get; }
         int EventCapacity { get; }
