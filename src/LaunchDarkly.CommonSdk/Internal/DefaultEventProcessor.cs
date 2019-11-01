@@ -23,6 +23,7 @@ namespace LaunchDarkly.Common
         private readonly Timer _flushTimer;
         private readonly Timer _flushUsersTimer;
         private readonly TimeSpan _diagnosticRecordingInterval;
+        private readonly Object _diagnosticTimerLock = new Object();
         private Timer _diagnosticTimer;
         private AtomicBoolean _stopped;
         private AtomicBoolean _sentInitialDiagnostics;
@@ -67,11 +68,13 @@ namespace LaunchDarkly.Common
 
         private void SetupDiagnosticInit(bool enabled)
         {
-            StopDiagnosticTimer();
-            if (enabled)
-            {
-                SendInitialDiagnostics();
-                StartDiagnosticTimer();
+            lock (_diagnosticTimerLock) {
+                StopDiagnosticTimer();
+                if (enabled)
+                {
+                    SendInitialDiagnostics();
+                    StartDiagnosticTimer();
+                }
             }
         }
 
@@ -84,10 +87,7 @@ namespace LaunchDarkly.Common
 
         private void StopDiagnosticTimer()
         {
-            if (_diagnosticTimer != null)
-            {
-                _diagnosticTimer.Dispose();
-            }
+            _diagnosticTimer?.Dispose();
             _diagnosticTimer = null;
         }
 
@@ -400,9 +400,9 @@ namespace LaunchDarkly.Common
                         IndexEvent ie = new IndexEvent(e.CreationDate, e.User);
                         buffer.AddEvent(ie);
                     }
-                    else if (_diagnosticStore != null && !(e is IdentifyEvent))
+                    else if (!(e is IdentifyEvent))
                     {
-                       _diagnosticStore.IncrementDeduplicatedUsers();
+                       _diagnosticStore?.IncrementDeduplicatedUsers();
                     }
                 }
             }
@@ -667,10 +667,7 @@ namespace LaunchDarkly.Common
         {
             if (_events.Count >= _capacity)
             {
-                if (_diagnosticStore != null)
-                {
-                    _diagnosticStore.IncrementDroppedEvents();
-                }
+                _diagnosticStore?.IncrementDroppedEvents();
                 if (!_exceededCapacity)
                 {
                     DefaultEventProcessor.Log.Warn("Exceeded event queue capacity. Increase capacity to avoid dropping events.");
