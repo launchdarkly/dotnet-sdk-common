@@ -1,0 +1,18 @@
+repo:
+  public: dotnet-sdk-common
+  private: dotnet-sdk-common-private
+
+publications:
+  - url: https://nuget.org/packages/LaunchDarkly.CommonSdk
+    description: NuGet (1)
+  - url: https://nuget.org/packages/LaunchDarkly.CommonSdk.StrongName
+    description: NuGet (2)
+
+circleci:
+  windows: {}
+
+template:
+  name: dotnet-windows
+
+# Note that we don't generate HTML docs for this project, because it's mostly internal stuff and the
+# public stuff will be included in the API docs for the actual SDKs.
