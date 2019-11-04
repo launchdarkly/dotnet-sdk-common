@@ -17,9 +17,7 @@ namespace LaunchDarkly.Common.Tests
         public TimeSpan ReadTimeout { get; set; }
         public TimeSpan ReconnectTime { get; set;  }
         public int EventCapacity { get; set; } = 1000;
-        public int EventQueueCapacity => EventCapacity;
         public TimeSpan EventFlushInterval { get; set; }
-        public TimeSpan EventQueueFrequency => EventFlushInterval;
         public int EventSamplingInterval { get; set; }
         public bool AllAttributesPrivate { get; set; }
         public ISet<string> PrivateAttributeNames { get; set; } = new HashSet<string>();
@@ -28,5 +26,9 @@ namespace LaunchDarkly.Common.Tests
         public bool InlineUsersInEvents { get; set; }
         public TimeSpan HttpClientTimeout { get; set; } = TimeSpan.FromSeconds(30);
         public HttpClientHandler HttpClientHandler { get; set; } = new HttpClientHandler();
-    }
+        public TimeSpan DiagnosticRecordingInterval { get; set; }
+        public Uri DiagnosticUri { get; set; }
+        public string WrapperName { get; set; }
+        public string WrapperVersion { get; set; }
+   }
 }
