@@ -336,20 +336,38 @@ namespace LaunchDarkly.Common.Tests
             _ep = MakeProcessor(_config);
             IFlagEventProperties flag1 = new FlagEventPropertiesBuilder("flagkey1").Version(11).Build();
             IFlagEventProperties flag2 = new FlagEventPropertiesBuilder("flagkey2").Version(22).Build();
-            var value = LdValue.Of("value");
+            var value1 = LdValue.Of("value1");
+            var value2 = LdValue.Of("value2");
             var default1 = LdValue.Of("default1");
             var default2 = LdValue.Of("default2");
-            FeatureRequestEvent fe1 = EventFactory.Default.NewFeatureRequestEvent(flag1, _user,
-                new EvaluationDetail<LdValue>(value, 1, null), default1);
+            FeatureRequestEvent fe1a = EventFactory.Default.NewFeatureRequestEvent(flag1, _user,
+                new EvaluationDetail<LdValue>(value1, 1, null), default1);
+            FeatureRequestEvent fe1b = EventFactory.Default.NewFeatureRequestEvent(flag1, _user,
+                new EvaluationDetail<LdValue>(value1, 1, null), default1);
+            FeatureRequestEvent fe1c = EventFactory.Default.NewFeatureRequestEvent(flag1, _user,
+                new EvaluationDetail<LdValue>(value2, 2, null), default1);
             FeatureRequestEvent fe2 = EventFactory.Default.NewFeatureRequestEvent(flag2, _user,
-                new EvaluationDetail<LdValue>(value, 1, null), default2);
-            _ep.SendEvent(fe1);
+                new EvaluationDetail<LdValue>(value2, 2, null), default2);
+            _ep.SendEvent(fe1a);
+            _ep.SendEvent(fe1b);
+            _ep.SendEvent(fe1c);
             _ep.SendEvent(fe2);
 
             var output = FlushAndGetEvents(OkResponse());
             Assert.Collection(output,
-                item => CheckIndexEvent(item, fe1, _userJson),
-                item => CheckSummaryEventCounters(item, fe1, fe2));
+                item => CheckIndexEvent(item, fe1a, _userJson),
+                item => CheckSummaryEventDetails(item,
+                    fe1a.CreationDate,
+                    fe2.CreationDate,
+                    MustHaveFlagSummary(flag1.Key, default1,
+                        MustHaveFlagSummaryCounter(value1, 1, flag1.EventVersion, 2),
+                        MustHaveFlagSummaryCounter(value2, 2, flag1.EventVersion, 1)
+                    ),
+                    MustHaveFlagSummary(flag2.Key, default2,
+                        MustHaveFlagSummaryCounter(value2, 2, flag2.EventVersion, 1)
+                    )
+                )
+            );
         }
 
         [Fact]
@@ -602,25 +620,59 @@ namespace LaunchDarkly.Common.Tests
         {
             Assert.Equal(LdValue.Of("summary"), t.Get("kind"));
         }
-
-        private void CheckSummaryEventCounters(LdValue t, params FeatureRequestEvent[] fes)
+        
+        private void CheckSummaryEventDetails(LdValue o, long startDate, long endDate, params Action<LdValue>[] flagChecks)
         {
-            CheckSummaryEvent(t);
-            Assert.Equal(LdValue.Of(fes[0].CreationDate), t.Get("startDate"));
-            Assert.Equal(LdValue.Of(fes[fes.Length - 1].CreationDate), t.Get("endDate"));
-            foreach (FeatureRequestEvent fe in fes)
+            CheckSummaryEvent(o);
+            Assert.Equal(LdValue.Of(startDate), o.Get("startDate"));
+            Assert.Equal(LdValue.Of(endDate), o.Get("endDate"));
+            var features = o.Get("features");
+            Assert.Equal(flagChecks.Length, features.Count);
+            foreach (var flagCheck in flagChecks)
             {
-                LdValue fo = t.Get("features").Get(fe.Key);
-                Assert.NotEqual(LdValue.Null, fo);
-                Assert.Equal(fe.Default, fo.Get("default"));
-                LdValue cs = fo.Get("counters");
-                Assert.Equal(1, cs.Count);
-                LdValue c = cs.Get(0);
-                Assert.Equal(LdValue.Of(fe.Variation.Value), c.Get("variation"));
-                Assert.Equal(fe.Value, c.Get("value"));
-                Assert.Equal(LdValue.Of(fe.Version.Value), c.Get("version"));
-                Assert.Equal(LdValue.Of(1), c.Get("count"));
+                flagCheck(features);
             }
+        }
+
+        private Action<LdValue> MustHaveFlagSummary(string flagKey, LdValue defaultVal, params Action<string, LdValue>[] counterChecks)
+        {
+            return o =>
+            {
+                var fo = o.Get(flagKey);
+                if (fo.IsNull)
+                {
+                    Assert.True(false, "could not find flag '" + flagKey + "' in: " + fo.ToString());
+                }
+                LdValue cs = fo.Get("counters");
+                Assert.True(defaultVal.Equals(fo.Get("default")),
+                    "default should be " + defaultVal + " in " + fo);
+                if (counterChecks.Length != cs.Count)
+                {
+                    Assert.True(false, "number of counters should be " + counterChecks.Length + " in " + fo + " for flag " + flagKey);
+                }
+                foreach (var counterCheck in counterChecks)
+                {
+                    counterCheck(flagKey, cs);
+                }
+            };
+        }
+
+        private Action<string, LdValue> MustHaveFlagSummaryCounter(LdValue value, int? variation, int? version, int count)
+        {
+            return (flagKey, items) =>
+            {
+                if (!items.AsList(LdValue.Convert.Json).Any(o =>
+                {
+                    return o.Get("value").Equals(value)
+                        && o.Get("version").Equals(version.HasValue ? LdValue.Of(version.Value) : LdValue.Null)
+                        && o.Get("variation").Equals(variation.HasValue ? LdValue.Of(variation.Value) : LdValue.Null)
+                        && o.Get("count").Equals(LdValue.Of(count));
+                }))
+                {
+                    Assert.True(false, "could not find counter for (" + value + ", " + version + ", " + variation + ", " + count
+                        + ") in: " + items.ToString() + " for flag " + flagKey);
+                }
+            };
         }
 
         private IResponseBuilder OkResponse()
