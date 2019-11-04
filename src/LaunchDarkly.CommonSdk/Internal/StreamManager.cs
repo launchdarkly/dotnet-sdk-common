@@ -175,7 +175,7 @@ namespace LaunchDarkly.Common
 
         private void RecordStreamInit(bool failed) {
             if (_diagnosticStore != null) {
-                _diagnosticStore.AddStreamInit(Util.GetUnixTimestampMillis(_esStarted), (int)(DateTime.Now - _esStarted).TotalMilliseconds, failed);
+                _diagnosticStore.AddStreamInit(_esStarted, DateTime.Now - _esStarted, failed);
                 _esStarted = DateTime.Now;
             }
         }

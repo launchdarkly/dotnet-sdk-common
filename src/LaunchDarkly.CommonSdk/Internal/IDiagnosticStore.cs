@@ -44,9 +44,9 @@ namespace LaunchDarkly.Common
         /// Called when a stream init completes
         /// </summary>
         /// <param name="timestamp">The time at which the stream began attempted initialization. </param>
-        /// <param name="durationMs">The duration in milliseconds of the stream initialization attempt. </param>
+        /// <param name="duration">The duration of the stream initialization attempt. </param>
         /// <param name="failed">True if the initialization failed, false otherwise. </param>
-        void AddStreamInit(long timestamp, int durationMs, bool failed);
+        void AddStreamInit(DateTime timestamp, TimeSpan duration, bool failed);
         /// <summary>
         /// Called to generate a periodic diagnostic event, resetting the store counts and stream
         /// initializations.
