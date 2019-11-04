@@ -10,9 +10,9 @@ releasableBranches:
 
 publications:
   - url: https://nuget.org/packages/LaunchDarkly.CommonSdk
-    description: NuGet (1)
+    description: NuGet (non-strong-named package)
   - url: https://nuget.org/packages/LaunchDarkly.CommonSdk.StrongName
-    description: NuGet (2)
+    description: NuGet (strong-named package)
 
 circleci:
   windows: {}
