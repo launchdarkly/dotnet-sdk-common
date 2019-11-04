@@ -69,36 +69,21 @@ namespace LaunchDarkly.Common
         private void SetupDiagnosticInit(bool enabled)
         {
             lock (_diagnosticTimerLock) {
-                StopDiagnosticTimer();
+                _diagnosticTimer?.Dispose();
+                _diagnosticTimer = null;
                 if (enabled)
                 {
-                    SendInitialDiagnostics();
-                    StartDiagnosticTimer();
+                    TimeSpan initialDelay = _diagnosticRecordingInterval - (DateTime.Now - _diagnosticStore.DataSince);
+                    TimeSpan safeDelay = Util.Clamp(initialDelay, TimeSpan.Zero, _diagnosticRecordingInterval);
+                    _diagnosticTimer = new Timer(DoDiagnosticSend, null, safeDelay, _diagnosticRecordingInterval);
                 }
             }
-        }
-
-        private void StartDiagnosticTimer()
-        {
-            TimeSpan initialDelay = _diagnosticRecordingInterval - (DateTime.Now - _diagnosticStore.DataSince);
-            TimeSpan safeDelay = Util.Clamp(initialDelay, TimeSpan.Zero, _diagnosticRecordingInterval);
-            _diagnosticTimer = new Timer(DoDiagnosticSend, null, safeDelay, _diagnosticRecordingInterval);
-        }
-
-        private void StopDiagnosticTimer()
-        {
-            _diagnosticTimer?.Dispose();
-            _diagnosticTimer = null;
-        }
-
-        private void SendInitialDiagnostics()
-        {
-            if (_sentInitialDiagnostics.GetAndSet(true))
+            // Send initial and persisted unsent event the first time diagnostics are started
+            if (enabled && !_sentInitialDiagnostics.GetAndSet(true))
             {
-                return;
+                _dispatcher.SendDiagnosticEventAsync(_diagnosticStore.PersistedUnsentEvent);
+                _dispatcher.SendDiagnosticEventAsync(_diagnosticStore.InitEvent);
             }
-            _dispatcher.SendDiagnosticEventAsync(_diagnosticStore.PersistedUnsentEvent);
-            _dispatcher.SendDiagnosticEventAsync(_diagnosticStore.InitEvent);
         }
 
         public void SendEvent(Event eventToLog)
