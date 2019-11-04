@@ -92,19 +92,11 @@ namespace LaunchDarkly.Common
             _es.Opened += OnOpen;
             _es.Closed += OnClose;
 
-            try
-            {
-                Task.Run(() => {
-                    _esStarted = DateTime.Now;
-                    return _es.StartAsync();
-                });
-            }
-            catch (Exception ex)
-            {
-                Log.ErrorFormat("General Exception: {0}", ex, Util.ExceptionMessage(ex));
+            Task.Run(() => {
+                _esStarted = DateTime.Now;
+                return _es.StartAsync();
+            });
 
-                _initTask.SetException(ex);
-            }
             return _initTask.Task;
         }
 
