@@ -1,0 +1,24 @@
+repo:
+  public: dotnet-sdk-common
+  private: dotnet-sdk-common-private
+
+releasableBranches:
+  - name: master
+    description: 4.x (for Xamarin and future .NET)
+  - name: 2.x
+    description: (for current .NET SDK)
+
+publications:
+  - url: https://nuget.org/packages/LaunchDarkly.CommonSdk
+    description: NuGet (non-strong-named package)
+  - url: https://nuget.org/packages/LaunchDarkly.CommonSdk.StrongName
+    description: NuGet (strong-named package)
+
+circleci:
+  windows: {}
+
+template:
+  name: dotnet-windows
+
+# Note that we don't generate HTML docs for this project, because it's mostly internal stuff and the
+# public stuff will be included in the API docs for the actual SDKs.

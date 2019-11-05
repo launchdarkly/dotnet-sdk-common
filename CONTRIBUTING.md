@@ -37,9 +37,3 @@ To run all unit tests:
 ```
 dotnet test test/LaunchDarkly.CommonSdk.Tests/LaunchDarkly.CommonSdk.Tests.csproj
 ```
-
-## Miscellaneous
-
-This project imports the `dotnet-base` repository as a subtree. See the `README.md` file in that directory for more information.
-
-Releases are done using the release script in `dotnet-base`. Since the published package includes a .NET Framework 4.5 build, the release must be done from Windows.
