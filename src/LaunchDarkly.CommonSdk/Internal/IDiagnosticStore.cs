@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using LaunchDarkly.Client;
 
 namespace LaunchDarkly.Common
 {
@@ -25,13 +26,13 @@ namespace LaunchDarkly.Common
         /// An event to be sent for a new diagnostic id, if the initialization represented a new
         /// diagnostic id.
         /// </summary>
-        IReadOnlyDictionary<string, object> InitEvent { get; }
+        LdValue InitEvent { get; }
         /// <summary>
         /// Persisted periodic diagnostic data from a previous initialization. This should be set
         /// with the data from the previous diagnostic id if the initialization caused a switch of
         /// diagnostic id and there is periodic diagnostics data available for the previous id.
         /// </summary>
-        IReadOnlyDictionary<string, object> PersistedUnsentEvent { get; }
+        LdValue PersistedUnsentEvent { get; }
         /// <summary>
         /// Called when the user deduplicator prevents a user from being indexed.
         /// </summary>
@@ -53,6 +54,6 @@ namespace LaunchDarkly.Common
         /// </summary>
         /// <param name="eventsInQueue">The current number of events in the event buffer</param>
         /// <returns>A dictionary representing the periodic diagnostic event</returns>
-        IReadOnlyDictionary<string, object> CreateEventAndReset(long eventsInQueue);
+        LdValue CreateEventAndReset(long eventsInQueue);
     }
 }

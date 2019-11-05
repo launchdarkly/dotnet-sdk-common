@@ -3,6 +3,7 @@ using System.Threading;
 using System.Collections.Generic;
 using System.Linq;
 using LaunchDarkly.Client;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using WireMock;
 using WireMock.Logging;
@@ -512,16 +513,16 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void DiagnosticStoreCreateEventGivenEventsInQueueCount()
         {
-            Mock<IDiagnosticStore> mockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
-            mockDiagnosticStore.Setup(diagStore => diagStore.PersistedUnsentEvent).Returns((Dictionary<string, object>)null);
-            mockDiagnosticStore.Setup(diagStore => diagStore.InitEvent).Returns((Dictionary<string, object>)null);
+            var mockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
+            mockDiagnosticStore.Setup(diagStore => diagStore.PersistedUnsentEvent).Returns(LdValue.Null);
+            mockDiagnosticStore.Setup(diagStore => diagStore.InitEvent).Returns(LdValue.Null);
             mockDiagnosticStore.Setup(diagStore => diagStore.DataSince).Returns((DateTime)DateTime.Now);
-            mockDiagnosticStore.Setup(diagStore => diagStore.CreateEventAndReset(It.IsAny<long>())).Returns(new Dictionary<string, object>());
+            mockDiagnosticStore.Setup(diagStore => diagStore.CreateEventAndReset(It.IsAny<long>())).Returns(LdValue.Null);
             _ep = MakeProcessor(_config, mockDiagnosticStore.Object, null, null);
 
-            IFlagEventProperties flag1 = new FlagEventPropertiesBuilder("flagkey1").Version(11).TrackEvents(true).Build();
+            var flag1 = new FlagEventPropertiesBuilder("flagkey1").Version(11).TrackEvents(true).Build();
             var value = LdValue.Of("value");
-            FeatureRequestEvent fe1 = EventFactory.Default.NewFeatureRequestEvent(flag1, _user,
+            var fe1 = EventFactory.Default.NewFeatureRequestEvent(flag1, _user,
                 new EvaluationDetail<LdValue>(value, 1, null), LdValue.Null);
             _ep.SendEvent(fe1);
 
@@ -536,43 +537,41 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void DiagnosticStorePersistedUnsentEventSentToDiagnosticUri()
         {
-            Dictionary<string, object> expected = new Dictionary<string, object> { { "testKey", "testValue" } };
+            var expected = LdValue.Convert.String.ObjectFrom(new Dictionary<string, string> { { "testKey", "testValue" } });
 
-            Mock<IDiagnosticStore> mockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
-            mockDiagnosticStore.Setup(diagStore => diagStore.PersistedUnsentEvent).Returns((Dictionary<string, object>)expected);
-            mockDiagnosticStore.Setup(diagStore => diagStore.InitEvent).Returns((Dictionary<string, object>)null);
+            var mockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
+            mockDiagnosticStore.Setup(diagStore => diagStore.PersistedUnsentEvent).Returns(expected);
+            mockDiagnosticStore.Setup(diagStore => diagStore.InitEvent).Returns(LdValue.Null);
             mockDiagnosticStore.Setup(diagStore => diagStore.DataSince).Returns((DateTime)DateTime.Now);
 
             PrepareDiagnosticResponse(OkResponse());
-            CountdownEvent diagnosticCountdown = new CountdownEvent(1);
+            var diagnosticCountdown = new CountdownEvent(1);
             _ep = MakeProcessor(_config, mockDiagnosticStore.Object, null, diagnosticCountdown);
             mockDiagnosticStore.Verify(diagStore => diagStore.PersistedUnsentEvent, Times.Once());
 
             diagnosticCountdown.Wait();
-            JObject diagnostic = GetLastDiagnostic();
-            Dictionary<string, object> retrieved = diagnostic.ToObject<Dictionary<string, object>>();
-
+            var retrieved = GetLastDiagnostic();
+            
             Assert.Equal(expected, retrieved);
         }
 
         [Fact]
         public void DiagnosticStoreInitEventSentToDiagnosticUri()
         {
-            Dictionary<string, object> expected = new Dictionary<string, object> { { "testKey", "testValue" } };
+            var expected = LdValue.Convert.String.ObjectFrom(new Dictionary<string, string> { { "testKey", "testValue" } });
 
-            Mock<IDiagnosticStore> mockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
-            mockDiagnosticStore.Setup(diagStore => diagStore.PersistedUnsentEvent).Returns((Dictionary<string, object>)null);
-            mockDiagnosticStore.Setup(diagStore => diagStore.InitEvent).Returns((Dictionary<string, object>)expected);
+            var mockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
+            mockDiagnosticStore.Setup(diagStore => diagStore.PersistedUnsentEvent).Returns(LdValue.Null);
+            mockDiagnosticStore.Setup(diagStore => diagStore.InitEvent).Returns(expected);
             mockDiagnosticStore.Setup(diagStore => diagStore.DataSince).Returns((DateTime)DateTime.Now);
 
             PrepareDiagnosticResponse(OkResponse());
-            CountdownEvent diagnosticCountdown = new CountdownEvent(1);
+            var diagnosticCountdown = new CountdownEvent(1);
             _ep = MakeProcessor(_config, mockDiagnosticStore.Object, null, diagnosticCountdown);
             mockDiagnosticStore.Verify(diagStore => diagStore.InitEvent, Times.Once());
 
             diagnosticCountdown.Wait();
-            JObject diagnostic = GetLastDiagnostic();
-            Dictionary<string, object> retrieved = diagnostic.ToObject<Dictionary<string, object>>();
+            var retrieved = GetLastDiagnostic();
 
             Assert.Equal(expected, retrieved);
         }
@@ -580,14 +579,14 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void DiagnosticDisablerDisablesInitialDiagnostics()
         {
-            Dictionary<string, object> testDiagnostic = new Dictionary<string, object> { { "testKey", "testValue" } };
+            var testDiagnostic = LdValue.Convert.String.ObjectFrom(new Dictionary<string, string> { { "testKey", "testValue" } });
 
-            Mock<IDiagnosticStore> mockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
-            mockDiagnosticStore.Setup(diagStore => diagStore.PersistedUnsentEvent).Returns((Dictionary<string, object>)testDiagnostic);
-            mockDiagnosticStore.Setup(diagStore => diagStore.InitEvent).Returns((Dictionary<string, object>)testDiagnostic);
+            var mockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
+            mockDiagnosticStore.Setup(diagStore => diagStore.PersistedUnsentEvent).Returns(testDiagnostic);
+            mockDiagnosticStore.Setup(diagStore => diagStore.InitEvent).Returns(testDiagnostic);
             mockDiagnosticStore.Setup(diagStore => diagStore.DataSince).Returns((DateTime)DateTime.Now);
 
-            Mock<IDiagnosticDisabler> mockDiagnosticDisabler = new Mock<IDiagnosticDisabler>(MockBehavior.Strict);
+            var mockDiagnosticDisabler = new Mock<IDiagnosticDisabler>(MockBehavior.Strict);
             mockDiagnosticDisabler.Setup(diagDisabler => diagDisabler.Disabled).Returns(true);
 
             _ep = MakeProcessor(_config, mockDiagnosticStore.Object, mockDiagnosticDisabler.Object, null);
@@ -598,30 +597,31 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void DiagnosticDisablerEnabledInitialDiagnostics()
         {
-            Dictionary<string, object> expectedStats = new Dictionary<string, object> { { "stats", "testValue" } };
-            Dictionary<string, object> expectedInit = new Dictionary<string, object> { { "init", "testValue" } };
+            var expectedStats = LdValue.Convert.String.ObjectFrom(new Dictionary<string, string> { { "stats", "testValue" } });
+            var expectedInit = LdValue.Convert.String.ObjectFrom(new Dictionary<string, string> { { "init", "testValue" } });
 
-            Mock<IDiagnosticStore> mockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
-            mockDiagnosticStore.Setup(diagStore => diagStore.PersistedUnsentEvent).Returns((Dictionary<string, object>)expectedStats);
-            mockDiagnosticStore.Setup(diagStore => diagStore.InitEvent).Returns((Dictionary<string, object>)expectedInit);
+            var mockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
+            mockDiagnosticStore.Setup(diagStore => diagStore.PersistedUnsentEvent).Returns(expectedStats);
+            mockDiagnosticStore.Setup(diagStore => diagStore.InitEvent).Returns(expectedInit);
             mockDiagnosticStore.Setup(diagStore => diagStore.DataSince).Returns((DateTime)DateTime.Now);
 
-            Mock<IDiagnosticDisabler> mockDiagnosticDisabler = new Mock<IDiagnosticDisabler>(MockBehavior.Strict);
+            var mockDiagnosticDisabler = new Mock<IDiagnosticDisabler>(MockBehavior.Strict);
             mockDiagnosticDisabler.Setup(diagDisabler => diagDisabler.Disabled).Returns(false);
 
             PrepareDiagnosticResponse(OkResponse());
-            CountdownEvent diagnosticCountdown = new CountdownEvent(2);
+            var diagnosticCountdown = new CountdownEvent(2);
             _ep = MakeProcessor(_config, mockDiagnosticStore.Object, mockDiagnosticDisabler.Object, diagnosticCountdown);
             mockDiagnosticStore.Verify(diagStore => diagStore.PersistedUnsentEvent, Times.Once());
             mockDiagnosticStore.Verify(diagStore => diagStore.InitEvent, Times.Once());
 
             diagnosticCountdown.Wait();
 
-            List<Dictionary<string, object>> retrieved = new List<Dictionary<string, object>>();
+            var retrieved = new List<LdValue>();
             foreach (LogEntry le in _server.LogEntries)
             {
                 Assert.Equal(DiagnosticUriPath, le.RequestMessage.Path);
-                retrieved.Add((le.RequestMessage.BodyAsJson as JObject).ToObject<Dictionary<string, object>>());
+                var jsonString = JsonConvert.SerializeObject(le.RequestMessage.BodyAsJson);
+                retrieved.Add(JsonConvert.DeserializeObject<LdValue>(jsonString));
             }
 
             Assert.Equal(2, retrieved.Count);
@@ -848,9 +848,10 @@ namespace LaunchDarkly.Common.Tests
             return FlushAndGetRequest(resp).BodyAsJson as JArray;
         }
 
-        private JObject GetLastDiagnostic()
+        private LdValue GetLastDiagnostic()
         {
-            return GetLastRequest().BodyAsJson as JObject;
+            var jsonString = JsonConvert.SerializeObject(GetLastRequest().BodyAsJson);
+            return JsonConvert.DeserializeObject<LdValue>(jsonString);
         }
     }
 

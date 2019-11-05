@@ -596,14 +596,14 @@ namespace LaunchDarkly.Common
             await onComplete(null, 0);
         }
 
-        internal async Task SendDiagnosticEventAsync(IReadOnlyDictionary<string, object> diagnostic)
+        internal async Task SendDiagnosticEventAsync(LdValue diagnostic)
         {
-            if (diagnostic == null)
+            if (diagnostic.IsNull)
             {
                 return;
             }
 
-            String jsonDiagnostic = JsonConvert.SerializeObject(diagnostic, Formatting.None);
+            var jsonDiagnostic = diagnostic.ToJsonString();
             DefaultEventProcessor.Log.DebugFormat("Submitting diagnostic event to {0} with json: {1}",
                 _config.DiagnosticUri.AbsoluteUri, jsonDiagnostic);
             await SendWithRetry(_config.DiagnosticUri, jsonDiagnostic, false, async (response, duration) =>
