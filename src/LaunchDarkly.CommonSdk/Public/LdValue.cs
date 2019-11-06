@@ -475,6 +475,34 @@ namespace LaunchDarkly.Client
         {
             return new ObjectBuilder();
         }
+        
+        /// <summary>
+        /// Parses a value from its JSON encoding.
+        /// </summary>
+        /// <remarks>
+        /// This is currently just a wrapper for using the Newtonsoft.Json parsing method and converting the
+        /// resulting value to <see cref="LdValue"/>. However, it may not always be implemented in that way.
+        /// It rethrows the underlying parser's JsonException as an <see cref="ArgumentException"/> to avoid
+        /// surfacing dependencies on that third-party API.
+        /// </remarks>
+        /// <param name="jsonString">a string in JSON format</param>
+        /// <returns>the parsed value</returns>
+        /// <exception cref="ArgumentException">if the string is not valid JSON</exception>
+        public static LdValue Parse(string jsonString)
+        {
+            if (jsonString is null)
+            {
+                return LdValue.Null;
+            }
+            try
+            {
+                return FromSafeValue(JsonConvert.DeserializeObject<JToken>(jsonString));
+            }
+            catch (JsonException e)
+            {
+                throw new ArgumentException("invalid JSON", e);
+            }
+        }
 
         #endregion
 
