@@ -81,8 +81,16 @@ namespace LaunchDarkly.Common
             // Send initial and persisted unsent event the first time diagnostics are started
             if (enabled && !_sentInitialDiagnostics.GetAndSet(true))
             {
-                _dispatcher.SendDiagnosticEventAsync(_diagnosticStore.PersistedUnsentEvent);
-                _dispatcher.SendDiagnosticEventAsync(_diagnosticStore.InitEvent);
+                var unsent = _diagnosticStore.PersistedUnsentEvent;
+                var init = _diagnosticStore.InitEvent;
+                if (unsent.HasValue)
+                {
+                    _dispatcher.SendDiagnosticEventAsync(unsent.Value);
+                }
+                if (init.HasValue)
+                {
+                    _dispatcher.SendDiagnosticEventAsync(init.Value);
+                }
             }
         }
 
@@ -596,14 +604,9 @@ namespace LaunchDarkly.Common
             await onComplete(null, 0);
         }
 
-        internal async Task SendDiagnosticEventAsync(LdValue diagnostic)
+        internal async Task SendDiagnosticEventAsync(DiagnosticEvent diagnostic)
         {
-            if (diagnostic.IsNull)
-            {
-                return;
-            }
-
-            var jsonDiagnostic = diagnostic.ToJsonString();
+            var jsonDiagnostic = diagnostic.JsonValue.ToJsonString();
             DefaultEventProcessor.Log.DebugFormat("Submitting diagnostic event to {0} with json: {1}",
                 _config.DiagnosticUri.AbsoluteUri, jsonDiagnostic);
             await SendWithRetry(_config.DiagnosticUri, jsonDiagnostic, false, async (response, duration) =>

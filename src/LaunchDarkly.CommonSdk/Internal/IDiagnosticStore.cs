@@ -26,13 +26,13 @@ namespace LaunchDarkly.Common
         /// An event to be sent for a new diagnostic id, if the initialization represented a new
         /// diagnostic id.
         /// </summary>
-        LdValue InitEvent { get; }
+        DiagnosticEvent? InitEvent { get; }
         /// <summary>
         /// Persisted periodic diagnostic data from a previous initialization. This should be set
         /// with the data from the previous diagnostic id if the initialization caused a switch of
         /// diagnostic id and there is periodic diagnostics data available for the previous id.
         /// </summary>
-        LdValue PersistedUnsentEvent { get; }
+        DiagnosticEvent? PersistedUnsentEvent { get; }
         /// <summary>
         /// Called when the user deduplicator prevents a user from being indexed.
         /// </summary>
@@ -54,6 +54,6 @@ namespace LaunchDarkly.Common
         /// </summary>
         /// <param name="eventsInQueue">The current number of events in the event buffer</param>
         /// <returns>A dictionary representing the periodic diagnostic event</returns>
-        LdValue CreateEventAndReset(long eventsInQueue);
+        DiagnosticEvent CreateEventAndReset(long eventsInQueue);
     }
 }
