@@ -534,27 +534,32 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void TestJsonSerialization()
         {
-            Assert.Equal("null", JsonConvert.SerializeObject(LdValue.Null));
-            Assert.Equal("true", JsonConvert.SerializeObject(aTrueBoolValue));
-            Assert.Equal("true", JsonConvert.SerializeObject(aTrueBoolValueFromJToken));
-            Assert.Equal("false", JsonConvert.SerializeObject(LdValue.Of(false)));
-            Assert.Equal(someInt.ToString(), JsonConvert.SerializeObject(anIntValue));
-            Assert.Equal(someInt.ToString(), JsonConvert.SerializeObject(anIntValueFromJToken));
-            Assert.Equal(someFloat.ToString(), JsonConvert.SerializeObject(aFloatValue));
-            Assert.Equal(someFloat.ToString(), JsonConvert.SerializeObject(aFloatValueFromJToken));
-            Assert.Equal("[3]", JsonConvert.SerializeObject(anArrayValue));
-            Assert.Equal("[3]", JsonConvert.SerializeObject(anArrayValueFromJToken));
-            Assert.Equal("{\"1\":\"x\"}", JsonConvert.SerializeObject(anObjectValue));
-            Assert.Equal("{\"1\":\"x\"}", JsonConvert.SerializeObject(anObjectValueFromJToken));
+            VerifySerializeAndParse(LdValue.Null, "null");
+            VerifySerializeAndParse(aTrueBoolValue, "true");
+            VerifySerializeAndParse(aTrueBoolValueFromJToken, "true");
+            VerifySerializeAndParse(LdValue.Of(false), "false");
+            VerifySerializeAndParse(anIntValue, someInt.ToString());
+            VerifySerializeAndParse(anIntValueFromJToken, someInt.ToString());
+            VerifySerializeAndParse(aFloatValue, someFloat.ToString());
+            VerifySerializeAndParse(aFloatValueFromJToken, someFloat.ToString());
+            VerifySerializeAndParse(anArrayValue, "[3]");
+            VerifySerializeAndParse(anArrayValueFromJToken, "[3]");
+            VerifySerializeAndParse(anObjectValue, "{\"1\":\"x\"}");
+            VerifySerializeAndParse(anObjectValueFromJToken, "{\"1\":\"x\"}");
+            Assert.Throws(typeof(JsonReaderException), () => JsonConvert.DeserializeObject<LdValue>("nono"));
+            Assert.Throws(typeof(ArgumentException), () => LdValue.Parse("nono"));
         }
         
-        [Fact]
-        public void TestJsonDeserialization()
+        private void VerifySerializeAndParse(LdValue value, string expectedJson)
         {
-            var json = "{\"a\":\"b\"}";
-            var actual = JsonConvert.DeserializeObject<LdValue>(json);
-            var expected = LdValue.Convert.String.ObjectFrom(new Dictionary<string, string> { { "a", "b" } });
-            Assert.Equal(expected, actual);
+            var json1 = JsonConvert.SerializeObject(value);
+            var json2 = value.ToJsonString();
+            Assert.Equal(expectedJson, json1);
+            Assert.Equal(json1, json2);
+            var parsed1 = JsonConvert.DeserializeObject<LdValue>(expectedJson);
+            var parsed2 = LdValue.Parse(expectedJson);
+            Assert.Equal(value, parsed1);
+            Assert.Equal(value, parsed2);
         }
 
         [Fact]
@@ -574,14 +579,7 @@ namespace LaunchDarkly.Common.Tests
                 LdValue.Convert.Int.ObjectFrom(new Dictionary<string, int> { { "a", 1 } }).AsJToken()));
 #pragma warning restore 0618
         }
-
-        [Fact]
-        public void TestJsonDeserializationOfNull()
-        {
-            var v = JsonConvert.DeserializeObject<LdValue>("null");
-            Assert.Null(v.InnerValue);
-        }
-
+        
         [Fact]
         public void TestNullStringConstructorIsEquivalentToNullInstance()
         {
