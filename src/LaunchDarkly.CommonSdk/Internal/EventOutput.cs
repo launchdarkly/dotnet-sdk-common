@@ -1,122 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using LaunchDarkly.Client;
 
 namespace LaunchDarkly.Common
 {
-    // Base class for data structures that we send in an event payload, which are somewhat
-    // different in shape from the originating events.  Also defines all of its own subclasses
-    // and the class that constructs them.  These are implementation details used only by
-    // DefaultEventProcessor and related classes, so they are all internal.
-    internal abstract class EventOutput
-    {
-        [JsonProperty(PropertyName = "kind")]
-        internal string Kind { get; set; }
-    }
-
-    internal sealed class FeatureRequestEventOutput : EventOutput
-    {
-        [JsonProperty(PropertyName = "creationDate")]
-        internal long CreationDate { get; set; }
-        [JsonProperty(PropertyName = "key")]
-        internal string Key { get; set; }
-        [JsonProperty(PropertyName = "user", NullValueHandling = NullValueHandling.Ignore)]
-        internal EventUser User { get; set; }
-        [JsonProperty(PropertyName = "userKey", NullValueHandling = NullValueHandling.Ignore)]
-        internal string UserKey { get; set; }
-        [JsonProperty(PropertyName = "variation", NullValueHandling = NullValueHandling.Ignore)]
-        internal int? Variation { get; set; }
-        [JsonProperty(PropertyName = "version", NullValueHandling = NullValueHandling.Ignore)]
-        internal int? Version { get; set; }
-        [JsonProperty(PropertyName = "value")]
-        internal LdValue Value { get; set; }
-        [JsonProperty(PropertyName = "default", NullValueHandling = NullValueHandling.Ignore)]
-        internal LdValue? Default { get; set; }
-        [JsonProperty(PropertyName = "prereqOf", NullValueHandling = NullValueHandling.Ignore)]
-        internal string PrereqOf { get; set; }
-        [JsonProperty(PropertyName = "reason", NullValueHandling = NullValueHandling.Ignore)]
-        internal EvaluationReason Reason { get; set; }
-    }
-
-    internal sealed class IdentifyEventOutput : EventOutput
-    {
-        [JsonProperty(PropertyName = "creationDate")]
-        internal long CreationDate { get; set; }
-        [JsonProperty(PropertyName = "key")]
-        internal string Key { get; set; }
-        [JsonProperty(PropertyName = "user", NullValueHandling = NullValueHandling.Ignore)]
-        internal EventUser User { get; set; }
-    }
-
-    internal sealed class CustomEventOutput : EventOutput
-    {
-        [JsonProperty(PropertyName = "creationDate")]
-        internal long CreationDate { get; set; }
-        [JsonProperty(PropertyName = "key")]
-        internal string Key { get; set; }
-        [JsonProperty(PropertyName = "user", NullValueHandling = NullValueHandling.Ignore)]
-        internal EventUser User { get; set; }
-        [JsonProperty(PropertyName = "userKey", NullValueHandling = NullValueHandling.Ignore)]
-        internal string UserKey { get; set; }
-        [JsonProperty(PropertyName = "data", NullValueHandling = NullValueHandling.Ignore)]
-        internal LdValue? Data { get; set; }
-        [JsonProperty(PropertyName = "metricValue", NullValueHandling = NullValueHandling.Ignore)]
-        internal double? MetricValue { get; set; }
-    }
-
-    internal sealed class IndexEventOutput : EventOutput
-    {
-        [JsonProperty(PropertyName = "creationDate")]
-        internal long CreationDate { get; set; }
-        [JsonProperty(PropertyName = "user", NullValueHandling = NullValueHandling.Ignore)]
-        internal EventUser User { get; set; }
-    }
-
-    internal sealed class SummaryEventOutput : EventOutput
-    {
-        [JsonProperty(PropertyName = "startDate")]
-        internal long StartDate { get; set; }
-        [JsonProperty(PropertyName = "endDate")]
-        internal long EndDate { get; set; }
-        [JsonProperty(PropertyName = "features")]
-        internal Dictionary<string, EventSummaryFlag> Features;
-    }
-
-    internal sealed class EventSummaryFlag
-    {
-        [JsonProperty(PropertyName = "default")]
-        internal LdValue Default { get; set; }
-        [JsonProperty(PropertyName = "counters")]
-        internal List<EventSummaryCounter> Counters { get; set; }
-    }
-
-    internal sealed class EventSummaryCounter
-    {
-        [JsonProperty(PropertyName = "variation", NullValueHandling = NullValueHandling.Ignore)]
-        internal int? Variation { get; set; }
-        [JsonProperty(PropertyName = "value")]
-        internal LdValue Value { get; private set; }
-        [JsonProperty(PropertyName = "version", NullValueHandling = NullValueHandling.Ignore)]
-        internal int? Version { get; private set; }
-        [JsonProperty(PropertyName = "count")]
-        internal int Count { get; private set; }
-        [JsonProperty(PropertyName = "unknown", NullValueHandling = NullValueHandling.Ignore)]
-        internal bool? Unknown { get; private set; }
-
-        internal EventSummaryCounter(int? variation, LdValue value, int? version, int count)
-        {
-            Variation = variation;
-            Value = value;
-            Version = version;
-            Count = count;
-            if (version == null)
-            {
-                Unknown = true;
-            }
-        }
-    }
-
     internal sealed class EventOutputFormatter
     {
         private readonly IEventProcessorConfiguration _config;
@@ -126,120 +16,284 @@ namespace LaunchDarkly.Common
             _config = config;
         }
 
-        internal List<EventOutput> MakeOutputEvents(Event[] events, EventSummary summary)
+        internal string SerializeOutputEvents(Event[] events, EventSummary summary, out int eventCountOut)
         {
-            List<EventOutput> eventsOut = new List<EventOutput>(events.Length + 1);
+            var stringWriter = new StringWriter();
+            var scope = new EventOutputFormatterScope(_config, stringWriter, _config.InlineUsersInEvents);
+            eventCountOut = scope.WriteOutputEvents(events, summary);
+            return stringWriter.ToString();
+        }
+    }
+
+    internal struct EventOutputFormatterScope
+    {
+        private readonly IEventProcessorConfiguration _config;
+        private readonly JsonWriter _jsonWriter;
+        private readonly JsonSerializer _jsonSerializer;
+
+        private struct MutableKeyValuePair<A, B>
+        {
+            public A Key { get; set; }
+            public B Value { get; set; }
+
+            public static MutableKeyValuePair<A, B> FromKeyValue(KeyValuePair<A, B> kv) =>
+                new MutableKeyValuePair<A, B> { Key = kv.Key, Value = kv.Value };
+        }
+
+        internal EventOutputFormatterScope(IEventProcessorConfiguration config, TextWriter tw, bool inlineUsers)
+        {
+            _config = config;
+            _jsonWriter = new JsonTextWriter(tw);
+            _jsonSerializer = new JsonSerializer();
+        }
+
+        internal int WriteOutputEvents(Event[] events, EventSummary summary)
+        {
+            var eventCount = 0;
+            _jsonWriter.WriteStartArray();
             foreach (Event e in events)
             {
-                EventOutput eo = MakeOutputEvent(e);
-                if (eo != null)
+                if (WriteOutputEvent(e))
                 {
-                    eventsOut.Add(eo);
+                    eventCount++;
                 }
             }
             if (summary.Counters.Count > 0)
             {
-                eventsOut.Add(MakeSummaryEvent(summary));
+                WriteSummaryEvent(summary);
+                eventCount++;
             }
-            return eventsOut;
+            _jsonWriter.WriteEndArray();
+            _jsonWriter.Flush();
+            return eventCount;
         }
 
-        private EventUser MaybeInlineUser(User user, bool inline)
-        {
-            if (inline)
-            {
-                return user == null ? null : EventUser.FromUser(user, _config);
-            }
-            return null;
-        }
-
-        private string MaybeUserKey(User user, bool inline)
-        {
-            if (inline)
-            {
-                return null;
-            }
-            return user?.Key;
-        }
-
-        private EventOutput MakeOutputEvent(Event e)
+        private bool WriteOutputEvent(Event e)
         {
             switch (e)
             {
                 case FeatureRequestEvent fe:
-                    bool inlineUser = _config.InlineUsersInEvents || fe.Debug;
-                    return new FeatureRequestEventOutput
+                    WithBaseObject(fe.Debug ? "debug" : "feature", fe.CreationDate, fe.Key, me =>
                     {
-                        Kind = fe.Debug ? "debug" : "feature",
-                        CreationDate = fe.CreationDate,
-                        Key = fe.Key,
-                        User = MaybeInlineUser(fe.User, inlineUser),
-                        UserKey = MaybeUserKey(fe.User, inlineUser),
-                        Version = fe.Version,
-                        Variation = fe.Variation,
-                        Value = fe.LdValue,
-                        // Default is nullable to save a little bandwidth if it's null
-                        Default = fe.LdValueDefault.IsNull ? null : (LdValue?)fe.LdValueDefault,
-                        PrereqOf = fe.PrereqOf,
-                        Reason = fe.Reason
-                    };
+                        me.WriteUserOrKey(fe.User, fe.Debug);
+                        if (fe.Version.HasValue)
+                        {
+                            me._jsonWriter.WritePropertyName("version");
+                            me._jsonWriter.WriteValue(fe.Version.Value);
+                        }
+                        if (fe.Variation.HasValue)
+                        {
+                            me._jsonWriter.WritePropertyName("variation");
+                            me._jsonWriter.WriteValue(fe.Variation.Value);
+                        }
+                        me._jsonWriter.WritePropertyName("value");
+                        LdValueSerializer.Instance.WriteJson(me._jsonWriter, fe.LdValue, me._jsonSerializer);
+                        if (!fe.LdValueDefault.IsNull)
+                        {
+                            me._jsonWriter.WritePropertyName("default");
+                            LdValueSerializer.Instance.WriteJson(me._jsonWriter, fe.LdValueDefault, me._jsonSerializer);
+                        }
+                        me.MaybeWriteString("prereqOf", fe.PrereqOf);
+                        me.WriteReason(fe.Reason);
+                    });
+                    break;
                 case IdentifyEvent ie:
-                    return new IdentifyEventOutput
+                    WithBaseObject("identify", ie.CreationDate, e.User?.Key, me =>
                     {
-                        Kind = "identify",
-                        CreationDate = e.CreationDate,
-                        Key = e.User?.Key,
-                        User = e.User == null ? null : EventUser.FromUser(e.User, _config)
-                    };
+                        me.WriteUser(ie.User);
+                    });
+                    break;
                 case CustomEvent ce:
-                    return new CustomEventOutput
+                    WithBaseObject("custom", ce.CreationDate, ce.Key, me =>
                     {
-                        Kind = "custom",
-                        CreationDate = ce.CreationDate,
-                        Key = ce.Key,
-                        User = MaybeInlineUser(ce.User, _config.InlineUsersInEvents),
-                        UserKey = MaybeUserKey(ce.User, _config.InlineUsersInEvents),
-                        // Data is nullable to save a little bandwidth if it's null
-                        Data = ce.LdValueData.IsNull ? null : (LdValue?)ce.LdValueData,
-                        MetricValue = ce.MetricValue
-                    };
+                        me.WriteUserOrKey(ce.User, false);
+                        if (!ce.LdValueData.IsNull)
+                        {
+                            me._jsonWriter.WritePropertyName("data");
+                            LdValueSerializer.Instance.WriteJson(me._jsonWriter, ce.LdValueData, me._jsonSerializer);
+                        }
+                        if (ce.MetricValue.HasValue)
+                        {
+                            me._jsonWriter.WritePropertyName("metricValue");
+                            me._jsonWriter.WriteValue(ce.MetricValue.Value);
+                        }
+                    });
+                    break;
                 case IndexEvent ie:
-                    return new IndexEventOutput
+                    WithBaseObject("index", ie.CreationDate, null, me =>
                     {
-                        Kind = "index",
-                        CreationDate = e.CreationDate,
-                        User = EventUser.FromUser(e.User, _config)
-                    };
+                        me.WriteUserOrKey(ie.User, true);
+                    });
+                    break;
+                default:
+                    return false;
+                }
+            return true;
+        }
+        
+        private void WriteSummaryEvent(EventSummary summary)
+        {
+            _jsonWriter.WriteStartObject();
+
+            _jsonWriter.WritePropertyName("kind");
+            _jsonWriter.WriteValue("summary");
+            _jsonWriter.WritePropertyName("startDate");
+            _jsonWriter.WriteValue(summary.StartDate);
+            _jsonWriter.WritePropertyName("endDate");
+            _jsonWriter.WriteValue(summary.EndDate);
+
+            _jsonWriter.WritePropertyName("features");
+            _jsonWriter.WriteStartObject();
+
+            var unprocessedCounters = summary.Counters.Select(kv => MutableKeyValuePair<EventsCounterKey, EventsCounterValue>.FromKeyValue(kv)).ToArray();
+            for (var i = 0; i < unprocessedCounters.Length; i++)
+            {
+                var firstEntry = unprocessedCounters[i];
+                if (firstEntry.Value is null)
+                { // already processed
+                    continue;
+                }
+                var flagKey = firstEntry.Key.Key;
+                var flagDefault = firstEntry.Value.Default;
+
+                _jsonWriter.WritePropertyName(flagKey);
+                _jsonWriter.WriteStartObject();
+                _jsonWriter.WritePropertyName("default");
+                LdValueSerializer.Instance.WriteJson(_jsonWriter, flagDefault, _jsonSerializer);
+                _jsonWriter.WritePropertyName("counters");
+                _jsonWriter.WriteStartArray();
+
+                for (var j = i; j < unprocessedCounters.Length; j++)
+                {
+                    var entry = unprocessedCounters[j];
+                    var key = entry.Key;
+                    if (key.Key == flagKey && entry.Value != null)
+                    {
+                        var counter = entry.Value;
+                        unprocessedCounters[j].Value = null; // mark as already processed
+
+                        _jsonWriter.WriteStartObject();
+                        if (key.Variation.HasValue)
+                        {
+                            _jsonWriter.WritePropertyName("variation");
+                            _jsonWriter.WriteValue(key.Variation.Value);
+                        }
+                        else
+                        {
+                            _jsonWriter.WritePropertyName("unknown");
+                            _jsonWriter.WriteValue(true);
+                        }
+                        _jsonWriter.WritePropertyName("value");
+                        LdValueSerializer.Instance.WriteJson(_jsonWriter, counter.FlagValue, _jsonSerializer);
+                        if (key.Version.HasValue)
+                        {
+                            _jsonWriter.WritePropertyName("version");
+                            _jsonWriter.WriteValue(key.Version.Value);
+                        }
+                        _jsonWriter.WritePropertyName("count");
+                        _jsonWriter.WriteValue(counter.Count);
+                        _jsonWriter.WriteEndObject();
+                    }
+                }
+
+                _jsonWriter.WriteEndArray();
+                _jsonWriter.WriteEndObject();
             }
-            return null;
+
+            _jsonWriter.WriteEndObject();
+
+            _jsonWriter.WriteEndObject();
         }
 
-        // Transform the summary data into the format used in event sending.
-        private SummaryEventOutput MakeSummaryEvent(EventSummary summary)
+        private void MaybeWriteString(string name, string value)
         {
-            Dictionary<string, EventSummaryFlag> flagsOut = new Dictionary<string, EventSummaryFlag>();
-            foreach (KeyValuePair<EventsCounterKey, EventsCounterValue> entry in summary.Counters)
+            if (value != null)
             {
-                EventSummaryFlag flag;
-                if (!flagsOut.TryGetValue(entry.Key.Key, out flag))
-                {
-                    flag = new EventSummaryFlag
-                    {
-                        Default = entry.Value.Default,
-                        Counters = new List<EventSummaryCounter>()
-                    };
-                    flagsOut[entry.Key.Key] = flag;
-                }
-                flag.Counters.Add(new EventSummaryCounter(entry.Key.Variation, entry.Value.FlagValue,
-                    entry.Key.Version, entry.Value.Count));
+                _jsonWriter.WritePropertyName(name);
+                _jsonWriter.WriteValue(value);
             }
-            return new SummaryEventOutput
+        }
+
+        private void WithBaseObject(string kind, long creationDate, string key, Action<EventOutputFormatterScope> moreActions)
+        {
+            _jsonWriter.WriteStartObject();
+            _jsonWriter.WritePropertyName("kind");
+            _jsonWriter.WriteValue(kind);
+            _jsonWriter.WritePropertyName("creationDate");
+            _jsonWriter.WriteValue(creationDate);
+            MaybeWriteString("key", key);
+            moreActions(this);
+            _jsonWriter.WriteEndObject();
+        }
+
+        private void WriteUserOrKey(User user, bool forceInline)
+        {
+            if (forceInline || _config.InlineUsersInEvents)
             {
-                Kind = "summary",
-                StartDate = summary.StartDate,
-                EndDate = summary.EndDate,
-                Features = flagsOut
-            };
+                WriteUser(user);
+            }
+            else if (user != null)
+            {
+                _jsonWriter.WritePropertyName("userKey");
+                _jsonWriter.WriteValue(user.Key);
+            }
+        }
+
+        private void WriteUser(User user)
+        {
+            if (user is null)
+            {
+                return;
+            }
+            var eu = EventUser.FromUser(user, _config);
+            _jsonWriter.WritePropertyName("user");
+            _jsonWriter.WriteStartObject();
+            MaybeWriteString("key", eu.Key);
+            MaybeWriteString("secondary", eu.SecondaryKey);
+            MaybeWriteString("ip", eu.IpAddress);
+            MaybeWriteString("country", eu.Country);
+            MaybeWriteString("firstName", eu.FirstName);
+            MaybeWriteString("lastName", eu.LastName);
+            MaybeWriteString("name", eu.Name);
+            MaybeWriteString("avatar", eu.Avatar);
+            MaybeWriteString("email", eu.Email);
+            if (eu.Anonymous.HasValue)
+            {
+                _jsonWriter.WritePropertyName("anonymous");
+                _jsonWriter.WriteValue(eu.Anonymous.Value);
+            }
+            if (eu.Custom != null)
+            {
+                _jsonWriter.WritePropertyName("custom");
+                _jsonWriter.WriteStartObject();
+                foreach (var kv in eu.Custom)
+                {
+                    _jsonWriter.WritePropertyName(kv.Key);
+                    LdValueSerializer.Instance.WriteJson(_jsonWriter, kv.Value, _jsonSerializer);
+                }
+                _jsonWriter.WriteEndObject();
+            }
+            if (eu.PrivateAttrs != null)
+            {
+                _jsonWriter.WritePropertyName("privateAttrs");
+                _jsonWriter.WriteStartArray();
+                foreach (var a in eu.PrivateAttrs)
+                {
+                    _jsonWriter.WriteValue(a);
+                }
+                _jsonWriter.WriteEndArray();
+            }
+            _jsonWriter.WriteEndObject();
+        }
+
+        private void WriteReason(EvaluationReason reason)
+        {
+            if (reason is null)
+            {
+                return;
+            }
+            _jsonWriter.WritePropertyName("reason");
+            EvaluationReasonConverter.Instance.WriteJson(_jsonWriter, reason, _jsonSerializer);
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using LaunchDarkly.Common;
 using Newtonsoft.Json;
@@ -105,8 +106,8 @@ namespace LaunchDarkly.Client
         private readonly bool _boolValue;
         private readonly double _doubleValue; // all numbers are stored as double
         private readonly string _stringValue;
-        private readonly IList<LdValue> _arrayValue; // will be IImmutableList in the future, but we don't have System.Collections.Immutables yet
-        private readonly IDictionary<string, LdValue> _objectValue; // same
+        private readonly ImmutableList<LdValue> _arrayValue;
+        private readonly ImmutableDictionary<string, LdValue> _objectValue; // same
         private volatile JToken _synthesizedJTokenValue; // see InnerValue
 
         #endregion
@@ -149,7 +150,7 @@ namespace LaunchDarkly.Client
         }
 
         // Constructor from a read-only list
-        private LdValue(IList<LdValue> list)
+        private LdValue(ImmutableList<LdValue> list)
         {
             _type = LdValueType.Array;
             _arrayValue = list;
@@ -162,7 +163,7 @@ namespace LaunchDarkly.Client
         }
 
         // Constructor from a read-only dictionary
-        private LdValue(IDictionary<string, LdValue> dict)
+        private LdValue(ImmutableDictionary<string, LdValue> dict)
         {
             _type = LdValueType.Object;
             _objectValue = dict;
@@ -314,6 +315,10 @@ namespace LaunchDarkly.Client
             }
         }
 
+        internal ImmutableList<LdValue> List => _arrayValue;
+
+        internal ImmutableDictionary<string, LdValue> Dictionary => _objectValue;
+
         #endregion
 
         #region Public factory methods
@@ -443,6 +448,15 @@ namespace LaunchDarkly.Client
             Convert.Json.ArrayOf(values);
 
         /// <summary>
+        /// Starts building an array value.
+        /// </summary>
+        /// <returns>an <see cref="ArrayBuilder"/></returns>
+        public static ArrayBuilder BuildArray()
+        {
+            return new ArrayBuilder();
+        }
+
+        /// <summary>
         /// Initializes an <see cref="LdValue"/> as a JSON object, from a dictionary.
         /// </summary>
         /// <remarks>
@@ -452,6 +466,43 @@ namespace LaunchDarkly.Client
         /// <returns>a struct representing a JSON object, or <see cref="Null"/> if the parameter was null</returns>
         public static LdValue ObjectFrom(IReadOnlyDictionary<string, LdValue> dictionary) =>
             Convert.Json.ObjectFrom(dictionary);
+
+        /// <summary>
+        /// Starts building an object value.
+        /// </summary>
+        /// <returns>an <see cref="ObjectBuilder"/></returns>
+        public static ObjectBuilder BuildObject()
+        {
+            return new ObjectBuilder();
+        }
+        
+        /// <summary>
+        /// Parses a value from its JSON encoding.
+        /// </summary>
+        /// <remarks>
+        /// This is currently just a wrapper for using the Newtonsoft.Json parsing method and converting the
+        /// resulting value to <see cref="LdValue"/>. However, it may not always be implemented in that way.
+        /// It rethrows the underlying parser's JsonException as an <see cref="ArgumentException"/> to avoid
+        /// surfacing dependencies on that third-party API.
+        /// </remarks>
+        /// <param name="jsonString">a string in JSON format</param>
+        /// <returns>the parsed value</returns>
+        /// <exception cref="ArgumentException">if the string is not valid JSON</exception>
+        public static LdValue Parse(string jsonString)
+        {
+            if (jsonString is null)
+            {
+                return LdValue.Null;
+            }
+            try
+            {
+                return FromSafeValue(JsonConvert.DeserializeObject<JToken>(jsonString));
+            }
+            catch (JsonException e)
+            {
+                throw new ArgumentException("invalid JSON", e);
+            }
+        }
 
         #endregion
 
@@ -607,9 +658,97 @@ namespace LaunchDarkly.Client
             }
         }
 
+        /// <summary>
+        /// The number of values if this is an array or object; otherwise zero.
+        /// </summary>
+        public int Count
+        {
+            get
+            {
+                switch (_type)
+                {
+                    case LdValueType.Array:
+                        if (!(_arrayValue is null))
+                        {
+                            return _arrayValue.Count;
+                        }
+                        else if (_wrappedJTokenValue is JArray a)
+                        {
+                            return a.Count;
+                        }
+                        break;
+                    case LdValueType.Object:
+                        if (!(_objectValue is null))
+                        {
+                            return _objectValue.Count;
+                        }
+                        else if (_wrappedJTokenValue is JObject o)
+                        {
+                            return o.Count;
+                        }
+                        break;
+                }
+                return 0;
+            }
+        }
+
         #endregion
 
         #region Public methods
+
+        /// <summary>
+        /// Retrieves an array item or object key by index. Never throws an exception.
+        /// </summary>
+        /// <param name="index">the item index</param>
+        /// <returns>the item value if this is an array; the key if this is an object; otherwise <see cref="Null"/></returns>
+        public LdValue Get(int index)
+        {
+            switch (_type)
+            {
+                case LdValueType.Array:
+                    if (!(_arrayValue is null))
+                    {
+                        return index >= 0 && index < _arrayValue.Count ? _arrayValue[index] : LdValue.Null;
+                    }
+                    else if (_wrappedJTokenValue is JArray a)
+                    {
+                        return index >= 0 && index < a.Count ? FromSafeValue(a[index]) : LdValue.Null;
+                    }
+                    break;
+                case LdValueType.Object:
+                    if (!(_objectValue is null))
+                    {
+                        return index >= 0 && index < _objectValue.Count ? LdValue.Of(_objectValue.Keys.ElementAt(index)) : LdValue.Null;
+                    }
+                    else if (_wrappedJTokenValue is JObject o)
+                    {
+                        return index >= 0 && index < o.Count ? LdValue.Of(o.Properties().ElementAt(index).Name) : LdValue.Null;
+                    }
+                    break;
+            }
+            return LdValue.Null;
+        }
+
+        /// <summary>
+        /// Retrieves a object value by key. Never throws an exception.
+        /// </summary>
+        /// <param name="key">the key to retrieve</param>
+        /// <returns>the value for the key, if this is an object; <see cref="Null"/> if not found, or if this is not an object</returns>
+        public LdValue Get(string key)
+        {
+            if (_type == LdValueType.Object)
+            {
+                if (!(_objectValue is null))
+                {
+                    return _objectValue.TryGetValue(key, out var value) ? value : LdValue.Null;
+                }
+                else if (_wrappedJTokenValue is JObject o)
+                {
+                    return o.TryGetValue(key, out var value) ? FromSafeValue(value) : LdValue.Null;
+                }
+            }
+            return LdValue.Null;
+        }
 
         /// <summary>
         /// Converts the value to a read-only list of elements of some type.
@@ -803,6 +942,159 @@ namespace LaunchDarkly.Client
         #region Inner types
 
         /// <summary>
+        /// An object returned by <see cref="LdValue.BuildArray"/> for building an array of values.
+        /// </summary>
+        public sealed class ArrayBuilder
+        {
+            private ImmutableList<LdValue>.Builder _builder = ImmutableList.CreateBuilder<LdValue>();
+
+            internal ArrayBuilder() { }
+
+            /// <summary>
+            /// Adds a value to the array being built.
+            /// </summary>
+            /// <param name="value">the value to add</param>
+            /// <returns>the same builder</returns>
+            public ArrayBuilder Add(LdValue value)
+            {
+                _builder.Add(value);
+                return this;
+            }
+
+            /// <summary>
+            /// Adds a value to the array being built.
+            /// </summary>
+            /// <param name="value">the value to add</param>
+            /// <returns>the same builder</returns>
+            public ArrayBuilder Add(bool value)
+            {
+                _builder.Add(LdValue.Of(value));
+                return this;
+            }
+
+            /// <summary>
+            /// Adds a value to the array being built.
+            /// </summary>
+            /// <param name="value">the value to add</param>
+            /// <returns>the same builder</returns>
+            public ArrayBuilder Add(long value)
+            {
+                _builder.Add(LdValue.Of(value));
+                return this;
+            }
+
+            /// <summary>
+            /// Adds a value to the array being built.
+            /// </summary>
+            /// <param name="value">the value to add</param>
+            /// <returns>the same builder</returns>
+            public ArrayBuilder Add(double value)
+            {
+                _builder.Add(LdValue.Of(value));
+                return this;
+            }
+
+            /// <summary>
+            /// Adds a value to the array being built.
+            /// </summary>
+            /// <param name="value">the value to add</param>
+            /// <returns>the same builder</returns>
+            public ArrayBuilder Add(string value)
+            {
+                _builder.Add(LdValue.Of(value));
+                return this;
+            }
+
+            /// <summary>
+            /// Returns an array value containing the items provided so far.
+            /// </summary>
+            /// <returns>an immutable array <see cref="LdValue"/></returns>
+            public LdValue Build()
+            {
+                return new LdValue(_builder.ToImmutable());
+            }
+        }
+
+        /// <summary>
+        /// An object returned by <see cref="LdValue.BuildObject"/> for building an object from keys and values.
+        /// </summary>
+        public sealed class ObjectBuilder
+        {
+            private ImmutableDictionary<string, LdValue>.Builder _builder = ImmutableDictionary.CreateBuilder<string, LdValue>();
+
+            internal ObjectBuilder() { }
+
+            /// <summary>
+            /// Adds a key-value pair to the object being built.
+            /// </summary>
+            /// <param name="key">the key to add</param>
+            /// <param name="value">the value to add</param>
+            /// <returns>the same builder</returns>
+            public ObjectBuilder Add(string key, LdValue value)
+            {
+                _builder.Add(key, value);
+                return this;
+            }
+
+            /// <summary>
+            /// Adds a key-value pair to the object being built.
+            /// </summary>
+            /// <param name="key">the key to add</param>
+            /// <param name="value">the value to add</param>
+            /// <returns>the same builder</returns>
+            public ObjectBuilder Add(string key, bool value)
+            {
+                _builder.Add(key, LdValue.Of(value));
+                return this;
+            }
+
+            /// <summary>
+            /// Adds a key-value pair to the object being built.
+            /// </summary>
+            /// <param name="key">the key to add</param>
+            /// <param name="value">the value to add</param>
+            /// <returns>the same builder</returns>
+            public ObjectBuilder Add(string key, long value)
+            {
+                _builder.Add(key, LdValue.Of(value));
+                return this;
+            }
+
+            /// <summary>
+            /// Adds a key-value pair to the object being built.
+            /// </summary>
+            /// <param name="key">the key to add</param>
+            /// <param name="value">the value to add</param>
+            /// <returns>the same builder</returns>
+            public ObjectBuilder Add(string key, double value)
+            {
+                _builder.Add(key, LdValue.Of(value));
+                return this;
+            }
+
+            /// <summary>
+            /// Adds a key-value pair to the object being built.
+            /// </summary>
+            /// <param name="key">the key to add</param>
+            /// <param name="value">the value to add</param>
+            /// <returns>the same builder</returns>
+            public ObjectBuilder Add(string key, string value)
+            {
+                _builder.Add(key, LdValue.Of(value));
+                return this;
+            }
+
+            /// <summary>
+            /// Returns an object value containing the keys and values provided so far.
+            /// </summary>
+            /// <returns>an immutable object <see cref="LdValue"/></returns>
+            public LdValue Build()
+            {
+                return new LdValue(_builder.ToImmutable());
+            }
+        }
+
+        /// <summary>
         /// Defines a conversion between <see cref="LdValue"/> and some other type.
         /// </summary>
         /// <remarks>
@@ -862,12 +1154,7 @@ namespace LaunchDarkly.Client
                 {
                     return Null;
                 }
-                var list = new List<LdValue>(values.Count());
-                foreach (var value in values)
-                {
-                    list.Add(FromType(value));
-                }
-                return new LdValue(list);
+                return new LdValue(ImmutableList.CreateRange<LdValue>(values.Select(FromType)));
             }
 
             /// <summary>
@@ -910,11 +1197,8 @@ namespace LaunchDarkly.Client
                 {
                     return Null;
                 }
-                var d = new Dictionary<string, LdValue>(dictionary.Count);
-                foreach (var e in dictionary)
-                {
-                    d[e.Key] = FromType(e.Value);
-                }
+                var d = ImmutableDictionary.CreateRange<string, LdValue>(dictionary.Select(kv =>
+                    new KeyValuePair<string, LdValue>(kv.Key, FromType(kv.Value))));
                 return new LdValue(d);
             }
         }

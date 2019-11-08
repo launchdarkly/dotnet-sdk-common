@@ -262,20 +262,28 @@ namespace LaunchDarkly.Common.Tests
         {
             Assert.Equal(new bool[] { true, false }, LdValue.Convert.Bool.ArrayFrom(new bool[] { true, false }).AsList(LdValue.Convert.Bool));
             Assert.Equal(new bool[] { true, false }, LdValue.Convert.Bool.ArrayOf(true, false).AsList(LdValue.Convert.Bool));
+            Assert.Equal(new bool[] { true, false }, LdValue.BuildArray().Add(true).Add(false).Build().AsList(LdValue.Convert.Bool));
             Assert.Equal(new int[] { 1, 2 }, LdValue.Convert.Int.ArrayFrom(new int[] { 1, 2 }).AsList(LdValue.Convert.Int));
             Assert.Equal(new int[] { 1, 2 }, LdValue.Convert.Int.ArrayOf(1, 2).AsList(LdValue.Convert.Int));
+            Assert.Equal(new int[] { 1, 2 }, LdValue.BuildArray().Add(1).Add(2).Build().AsList(LdValue.Convert.Int));
             Assert.Equal(new long[] { 1, 2 }, LdValue.Convert.Long.ArrayFrom(new long[] { 1, 2 }).AsList(LdValue.Convert.Long));
             Assert.Equal(new long[] { 1, 2 }, LdValue.Convert.Long.ArrayOf(1, 2).AsList(LdValue.Convert.Long));
+            Assert.Equal(new long[] { 1, 2 }, LdValue.BuildArray().Add(1).Add(2).Build().AsList(LdValue.Convert.Long));
             Assert.Equal(new float[] { 1.0f, 2.0f }, LdValue.Convert.Float.ArrayFrom(new float[] { 1.0f, 2.0f }).AsList(LdValue.Convert.Float));
             Assert.Equal(new float[] { 1.0f, 2.0f }, LdValue.Convert.Float.ArrayOf(1.0f, 2.0f).AsList(LdValue.Convert.Float));
+            Assert.Equal(new float[] { 1.0f, 2.0f }, LdValue.BuildArray().Add(1.0f).Add(2.0f).Build().AsList(LdValue.Convert.Float));
             Assert.Equal(new double[] { 1.0d, 2.0d }, LdValue.Convert.Double.ArrayFrom(new double[] { 1.0d, 2.0d }).AsList(LdValue.Convert.Double));
             Assert.Equal(new double[] { 1.0d, 2.0d }, LdValue.Convert.Double.ArrayOf(1.0d, 2.0d).AsList(LdValue.Convert.Double));
+            Assert.Equal(new double[] { 1.0f, 2.0f }, LdValue.BuildArray().Add(1.0d).Add(2.0d).Build().AsList(LdValue.Convert.Double));
             Assert.Equal(new string[] { "a", "b" }, LdValue.Convert.String.ArrayFrom(new string[] { "a", "b" }).AsList(LdValue.Convert.String));
             Assert.Equal(new string[] { "a", "b" }, LdValue.Convert.String.ArrayOf("a", "b").AsList(LdValue.Convert.String));
+            Assert.Equal(new string[] { "a", "b" }, LdValue.BuildArray().Add("a").Add("b").Build().AsList(LdValue.Convert.String));
             Assert.Equal(new LdValue[] { anIntValue, aStringValue },
                 LdValue.ArrayFrom(new LdValue[] { anIntValue, aStringValue }).AsList(LdValue.Convert.Json));
             Assert.Equal(new LdValue[] { anIntValue, aStringValue },
                 LdValue.ArrayOf(anIntValue, aStringValue).AsList(LdValue.Convert.Json));
+            Assert.Equal(new LdValue[] { anIntValue, aStringValue },
+                LdValue.BuildArray().Add(anIntValue).Add(aStringValue).Build().AsList(LdValue.Convert.Json));
 
 #pragma warning disable 0618
             Assert.Equal(new bool[] { true, false }, LdValue.FromJToken(new JArray { new JValue(true), new JValue(false) }).AsList(LdValue.Convert.Bool));
@@ -294,10 +302,24 @@ namespace LaunchDarkly.Common.Tests
         public void ListCanGetItemByIndex()
         {
             var v = LdValue.Convert.Int.ArrayOf(1, 2, 3);
+
+            Assert.Equal(3, v.Count);
+            Assert.Equal(LdValue.Of(2), v.Get(1));
+            Assert.Equal(LdValue.Null, v.Get(-1));
+            Assert.Equal(LdValue.Null, v.Get(3));
+
             var list = v.AsList(LdValue.Convert.Int);
             Assert.Equal(2, list[1]);
             Assert.Throws<IndexOutOfRangeException>(() => list[-1]);
             Assert.Throws<IndexOutOfRangeException>(() => list[3]);
+
+#pragma warning disable 0618
+            var v1 = LdValue.FromJToken(new JArray { new JValue(1), new JValue(2), new JValue(3) });
+            Assert.Equal(3, v1.Count);
+            Assert.Equal(LdValue.Of(2), v1.Get(1));
+            Assert.Equal(LdValue.Null, v1.Get(-1));
+            Assert.Equal(LdValue.Null, v1.Get(3));
+#pragma warning restore 0618
         }
 
         [Fact]
@@ -344,33 +366,65 @@ namespace LaunchDarkly.Common.Tests
         {
             AssertDictsEqual(MakeDictionary(true, false),
                 LdValue.Convert.Bool.ObjectFrom(MakeDictionary(true, false)).AsDictionary(LdValue.Convert.Bool));
+            AssertDictsEqual(MakeDictionary(true, false),
+                LdValue.BuildObject().Add("1", true).Add("2", false).Build().AsDictionary(LdValue.Convert.Bool));
             AssertDictsEqual(MakeDictionary(1, 2),
                 LdValue.Convert.Int.ObjectFrom(MakeDictionary(1, 2)).AsDictionary(LdValue.Convert.Int));
+            AssertDictsEqual(MakeDictionary(1, 2),
+               LdValue.BuildObject().Add("1", 1).Add("2", 2).Build().AsDictionary(LdValue.Convert.Int));
             AssertDictsEqual(MakeDictionary(1L, 2L),
                 LdValue.Convert.Long.ObjectFrom(MakeDictionary(1L, 2L)).AsDictionary(LdValue.Convert.Long));
+            AssertDictsEqual(MakeDictionary(1L, 2L),
+               LdValue.BuildObject().Add("1", 1L).Add("2", 2L).Build().AsDictionary(LdValue.Convert.Long));
             AssertDictsEqual(MakeDictionary(1.0f, 2.0f),
                 LdValue.Convert.Float.ObjectFrom(MakeDictionary(1.0f, 2.0f)).AsDictionary(LdValue.Convert.Float));
+            AssertDictsEqual(MakeDictionary(1.0f, 2.0f),
+                LdValue.BuildObject().Add("1", 1.0f).Add("2", 2.0f).Build().AsDictionary(LdValue.Convert.Float));
             AssertDictsEqual(MakeDictionary(1.0d, 2.0d),
                 LdValue.Convert.Double.ObjectFrom(MakeDictionary(1.0d, 2.0d)).AsDictionary(LdValue.Convert.Double));
+            AssertDictsEqual(MakeDictionary(1.0d, 2.0d),
+               LdValue.BuildObject().Add("1", 1.0d).Add("2", 2.0d).Build().AsDictionary(LdValue.Convert.Double));
+            AssertDictsEqual(MakeDictionary("a", "b"),
+               LdValue.BuildObject().Add("1", "a").Add("2", "b").Build().AsDictionary(LdValue.Convert.String));
             AssertDictsEqual(MakeDictionary("a", "b"),
                 LdValue.Convert.String.ObjectFrom(MakeDictionary("a", "b")).AsDictionary(LdValue.Convert.String));
             AssertDictsEqual(MakeDictionary(anIntValue, aStringValue),
                 LdValue.Convert.Json.ObjectFrom(MakeDictionary(anIntValue, aStringValue)).AsDictionary(LdValue.Convert.Json));
+            AssertDictsEqual(MakeDictionary(anIntValue, aStringValue),
+                LdValue.BuildObject().Add("1", anIntValue).Add("2", aStringValue).Build().AsDictionary(LdValue.Convert.Json));
             Assert.Equal(LdValue.Null, LdValue.Convert.String.ObjectFrom((IReadOnlyDictionary<string, string>)null));
         }
 
         [Fact]
         public void DictionaryCanGetValueByKey()
         {
-            var v = LdValue.Convert.Int.ObjectFrom(MakeDictionary(100, 200, 300));
+            var v = LdValue.BuildObject().Add("a", 100).Add("b", 200).Add("c", 300).Build();
+
+            Assert.Equal(3, v.Count);
+            Assert.Equal(LdValue.Of(200), v.Get("b"));
+            Assert.NotEqual(LdValue.Null, v.Get(1));
+            Assert.Equal(LdValue.Null, v.Get("x"));
+            Assert.Equal(LdValue.Null, v.Get(-1));
+            Assert.Equal(LdValue.Null, v.Get(3));
+
             var d = v.AsDictionary(LdValue.Convert.Int);
-            Assert.True(d.ContainsKey("2"));
-            Assert.Equal(200, d["2"]);
-            Assert.True(d.TryGetValue("1", out var n));
+            Assert.True(d.ContainsKey("b"));
+            Assert.Equal(200, d["b"]);
+            Assert.True(d.TryGetValue("a", out var n));
             Assert.Equal(100, n);
-            Assert.False(d.ContainsKey("000"));
-            Assert.Throws<KeyNotFoundException>(() => d["000"]);
-            Assert.False(d.TryGetValue("000", out n));
+            Assert.False(d.ContainsKey("x"));
+            Assert.Throws<KeyNotFoundException>(() => d["x"]);
+            Assert.False(d.TryGetValue("x", out n));
+
+#pragma warning disable 0618
+            var v1 = LdValue.FromJToken(new JObject() { { "a", new JValue(100) }, { "b", new JValue(200) }, { "c", new JValue(300) } });
+            Assert.Equal(3, v1.Count);
+            Assert.Equal(LdValue.Of(200), v1.Get("b"));
+            Assert.NotEqual(LdValue.Null, v1.Get(1));
+            Assert.Equal(LdValue.Null, v1.Get("x"));
+            Assert.Equal(LdValue.Null, v1.Get(-1));
+            Assert.Equal(LdValue.Null, v1.Get(3));
+#pragma warning restore 0618
         }
 
         [Fact]
@@ -480,27 +534,32 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void TestJsonSerialization()
         {
-            Assert.Equal("null", JsonConvert.SerializeObject(LdValue.Null));
-            Assert.Equal("true", JsonConvert.SerializeObject(aTrueBoolValue));
-            Assert.Equal("true", JsonConvert.SerializeObject(aTrueBoolValueFromJToken));
-            Assert.Equal("false", JsonConvert.SerializeObject(LdValue.Of(false)));
-            Assert.Equal(someInt.ToString(), JsonConvert.SerializeObject(anIntValue));
-            Assert.Equal(someInt.ToString(), JsonConvert.SerializeObject(anIntValueFromJToken));
-            Assert.Equal(someFloat.ToString(), JsonConvert.SerializeObject(aFloatValue));
-            Assert.Equal(someFloat.ToString(), JsonConvert.SerializeObject(aFloatValueFromJToken));
-            Assert.Equal("[3]", JsonConvert.SerializeObject(anArrayValue));
-            Assert.Equal("[3]", JsonConvert.SerializeObject(anArrayValueFromJToken));
-            Assert.Equal("{\"1\":\"x\"}", JsonConvert.SerializeObject(anObjectValue));
-            Assert.Equal("{\"1\":\"x\"}", JsonConvert.SerializeObject(anObjectValueFromJToken));
+            VerifySerializeAndParse(LdValue.Null, "null");
+            VerifySerializeAndParse(aTrueBoolValue, "true");
+            VerifySerializeAndParse(aTrueBoolValueFromJToken, "true");
+            VerifySerializeAndParse(LdValue.Of(false), "false");
+            VerifySerializeAndParse(anIntValue, someInt.ToString());
+            VerifySerializeAndParse(anIntValueFromJToken, someInt.ToString());
+            VerifySerializeAndParse(aFloatValue, someFloat.ToString());
+            VerifySerializeAndParse(aFloatValueFromJToken, someFloat.ToString());
+            VerifySerializeAndParse(anArrayValue, "[3]");
+            VerifySerializeAndParse(anArrayValueFromJToken, "[3]");
+            VerifySerializeAndParse(anObjectValue, "{\"1\":\"x\"}");
+            VerifySerializeAndParse(anObjectValueFromJToken, "{\"1\":\"x\"}");
+            Assert.Throws(typeof(JsonReaderException), () => JsonConvert.DeserializeObject<LdValue>("nono"));
+            Assert.Throws(typeof(ArgumentException), () => LdValue.Parse("nono"));
         }
         
-        [Fact]
-        public void TestJsonDeserialization()
+        private void VerifySerializeAndParse(LdValue value, string expectedJson)
         {
-            var json = "{\"a\":\"b\"}";
-            var actual = JsonConvert.DeserializeObject<LdValue>(json);
-            var expected = LdValue.Convert.String.ObjectFrom(new Dictionary<string, string> { { "a", "b" } });
-            Assert.Equal(expected, actual);
+            var json1 = JsonConvert.SerializeObject(value);
+            var json2 = value.ToJsonString();
+            Assert.Equal(expectedJson, json1);
+            Assert.Equal(json1, json2);
+            var parsed1 = JsonConvert.DeserializeObject<LdValue>(expectedJson);
+            var parsed2 = LdValue.Parse(expectedJson);
+            Assert.Equal(value, parsed1);
+            Assert.Equal(value, parsed2);
         }
 
         [Fact]
@@ -520,14 +579,7 @@ namespace LaunchDarkly.Common.Tests
                 LdValue.Convert.Int.ObjectFrom(new Dictionary<string, int> { { "a", 1 } }).AsJToken()));
 #pragma warning restore 0618
         }
-
-        [Fact]
-        public void TestJsonDeserializationOfNull()
-        {
-            var v = JsonConvert.DeserializeObject<LdValue>("null");
-            Assert.Null(v.InnerValue);
-        }
-
+        
         [Fact]
         public void TestNullStringConstructorIsEquivalentToNullInstance()
         {
