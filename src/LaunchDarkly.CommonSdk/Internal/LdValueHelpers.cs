@@ -40,7 +40,7 @@ namespace LaunchDarkly.Common
                     break;
                 case LdValueType.Array:
                     writer.WriteStartArray();
-                    foreach (var v in jv.AsList(LdValue.Convert.Json))
+                    foreach (var v in jv.List)
                     {
                         WriteJson(writer, v, serializer);
                     }
@@ -48,7 +48,7 @@ namespace LaunchDarkly.Common
                     break;
                 case LdValueType.Object:
                     writer.WriteStartObject();
-                    foreach (var kv in jv.AsDictionary(LdValue.Convert.Json))
+                    foreach (var kv in jv.Dictionary)
                     {
                         writer.WritePropertyName(kv.Key);
                         WriteJson(writer, kv.Value, serializer);

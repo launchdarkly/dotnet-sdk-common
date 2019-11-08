@@ -412,28 +412,27 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void TestJsonSerialization()
         {
-            Assert.Equal("null", JsonConvert.SerializeObject(LdValue.Null));
-            Assert.Equal("true", JsonConvert.SerializeObject(aTrueBoolValue));
-            Assert.Equal("false", JsonConvert.SerializeObject(LdValue.Of(false)));
-            Assert.Equal(someInt.ToString(), JsonConvert.SerializeObject(anIntValue));
-            Assert.Equal(someFloat.ToString(), JsonConvert.SerializeObject(aFloatValue));
-            Assert.Equal("[3]", JsonConvert.SerializeObject(anArrayValue));
-            Assert.Equal("{\"1\":\"x\"}", JsonConvert.SerializeObject(anObjectValue));
+            VerifySerializeAndParse(LdValue.Null, "null");
+            VerifySerializeAndParse(aTrueBoolValue, "true");
+            VerifySerializeAndParse(LdValue.Of(false), "false");
+            VerifySerializeAndParse(anIntValue, someInt.ToString());
+            VerifySerializeAndParse(aFloatValue, someFloat.ToString());
+            VerifySerializeAndParse(anArrayValue, "[3]");
+            VerifySerializeAndParse(anObjectValue, "{\"1\":\"x\"}");
+            Assert.Throws(typeof(JsonReaderException), () => JsonConvert.DeserializeObject<LdValue>("nono"));
+            Assert.Throws(typeof(ArgumentException), () => LdValue.Parse("nono"));
         }
         
-        [Fact]
-        public void TestJsonDeserialization()
+        private void VerifySerializeAndParse(LdValue value, string expectedJson)
         {
-            Assert.Equal(LdValue.Null, JsonConvert.DeserializeObject<LdValue>("null"));
-            Assert.Equal(LdValue.Of(true), JsonConvert.DeserializeObject<LdValue>("true"));
-            Assert.Equal(LdValue.Of(false), JsonConvert.DeserializeObject<LdValue>("false"));
-            Assert.Equal(LdValue.Of(1), JsonConvert.DeserializeObject<LdValue>("1"));
-            Assert.Equal(LdValue.Of(2.5), JsonConvert.DeserializeObject<LdValue>("2.5"));
-            Assert.Equal(LdValue.Of("hi"), JsonConvert.DeserializeObject<LdValue>("\"hi\""));
-            Assert.Equal(LdValue.BuildObject().Add("a", "b").Build(),
-                JsonConvert.DeserializeObject<LdValue>("{\"a\":\"b\"}"));
-            Assert.Equal(LdValue.BuildArray().Add(1).Add("x").Build(),
-                JsonConvert.DeserializeObject<LdValue>("[1,\"x\"]"));
+            var json1 = JsonConvert.SerializeObject(value);
+            var json2 = value.ToJsonString();
+            Assert.Equal(expectedJson, json1);
+            Assert.Equal(json1, json2);
+            var parsed1 = JsonConvert.DeserializeObject<LdValue>(expectedJson);
+            var parsed2 = LdValue.Parse(expectedJson);
+            Assert.Equal(value, parsed1);
+            Assert.Equal(value, parsed2);
         }
         
         [Fact]

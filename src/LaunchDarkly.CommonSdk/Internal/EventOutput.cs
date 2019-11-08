@@ -293,27 +293,7 @@ namespace LaunchDarkly.Common
                 return;
             }
             _jsonWriter.WritePropertyName("reason");
-            _jsonWriter.WriteStartObject();
-            _jsonWriter.WritePropertyName("kind");
-            _jsonWriter.WriteValue(reason.Kind.ToString());
-            switch (reason)
-            {
-                case EvaluationReason.Error e:
-                    _jsonWriter.WritePropertyName("errorKind");
-                    _jsonWriter.WriteValue(e.ErrorKind.ToString());
-                    break;
-                case EvaluationReason.RuleMatch rm:
-                    _jsonWriter.WritePropertyName("ruleIndex");
-                    _jsonWriter.WriteValue(rm.RuleIndex);
-                    break;
-                case EvaluationReason.PrerequisiteFailed pf:
-                    _jsonWriter.WritePropertyName("prerequisiteKey");
-                    _jsonWriter.WriteValue(pf.PrerequisiteKey);
-                    break;
-                default:
-                    break;
-            }
-            _jsonWriter.WriteEndObject();
+            EvaluationReasonConverter.Instance.WriteJson(_jsonWriter, reason, _jsonSerializer);
         }
     }
 }

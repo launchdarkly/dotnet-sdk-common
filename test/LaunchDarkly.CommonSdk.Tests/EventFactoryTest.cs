@@ -31,7 +31,7 @@ namespace LaunchDarkly.Common.Tests
         {
             var time = TimeNow();
             var flag = new FlagEventPropertiesBuilder("flag-key").Version(100).Build();
-            var result = new EvaluationDetail<LdValue>(resultVal, 1, EvaluationReason.Fallthrough.Instance);
+            var result = new EvaluationDetail<LdValue>(resultVal, 1, EvaluationReason.FallthroughReason);
             var e = EventFactory.Default.NewFeatureRequestEvent(flag, user, result, defaultVal);
             Assert.True(e.CreationDate >= time);
             Assert.Equal(flag.Key, e.Key);
@@ -51,7 +51,7 @@ namespace LaunchDarkly.Common.Tests
         {
             var flag = new FlagEventPropertiesBuilder("flag-key").Version(100)
                 .TrackEvents(true).DebugEventsUntilDate(1000).Build();
-            var result = new EvaluationDetail<LdValue>(resultVal, 1, EvaluationReason.Fallthrough.Instance);
+            var result = new EvaluationDetail<LdValue>(resultVal, 1, EvaluationReason.FallthroughReason);
             var e = EventFactory.Default.NewFeatureRequestEvent(flag, user, result, defaultVal);
             Assert.True(e.TrackEvents);
             Assert.Equal(1000, e.DebugEventsUntilDate);
@@ -61,7 +61,7 @@ namespace LaunchDarkly.Common.Tests
         public void FeatureEventHasReasonWhenUsingFactoryWithReason()
         {
             var flag = new FlagEventPropertiesBuilder("flag-key").Version(100).Build();
-            var result = new EvaluationDetail<LdValue>(resultVal, 1, EvaluationReason.Fallthrough.Instance);
+            var result = new EvaluationDetail<LdValue>(resultVal, 1, EvaluationReason.FallthroughReason);
             var e = EventFactory.DefaultWithReasons.NewFeatureRequestEvent(flag, user, result, defaultVal);
             Assert.Equal(result.Reason, e.Reason);
         }
@@ -70,9 +70,9 @@ namespace LaunchDarkly.Common.Tests
         public void FeatureEventHasTrackEventsAndReasonForExperiment()
         {
             var flag = new FlagEventPropertiesBuilder("flag-key").Version(100)
-                .ExperimentReason(EvaluationReason.Fallthrough.Instance)
+                .ExperimentReason(EvaluationReason.FallthroughReason)
                 .Build();
-            var result = new EvaluationDetail<LdValue>(resultVal, 1, EvaluationReason.Fallthrough.Instance);
+            var result = new EvaluationDetail<LdValue>(resultVal, 1, EvaluationReason.FallthroughReason);
             var e = EventFactory.Default.NewFeatureRequestEvent(flag, user, result, defaultVal);
             Assert.Equal(result.Reason, e.Reason);
             Assert.True(e.TrackEvents);
@@ -84,7 +84,7 @@ namespace LaunchDarkly.Common.Tests
             var time = TimeNow();
             var flag = new FlagEventPropertiesBuilder("flag-key").Version(100).Build();
             var err = EvaluationErrorKind.EXCEPTION;
-            var result = new EvaluationDetail<LdValue>(resultVal, 1, EvaluationReason.Fallthrough.Instance);
+            var result = new EvaluationDetail<LdValue>(resultVal, 1, EvaluationReason.FallthroughReason);
             var e = EventFactory.Default.NewDefaultFeatureRequestEvent(flag, user, defaultVal, err);
             Assert.True(e.CreationDate >= time);
             Assert.Equal(flag.Key, e.Key);
@@ -105,7 +105,7 @@ namespace LaunchDarkly.Common.Tests
             var flag = new FlagEventPropertiesBuilder("flag-key").Version(100)
                 .TrackEvents(true).DebugEventsUntilDate(1000).Build();
             var err = EvaluationErrorKind.EXCEPTION;
-            var result = new EvaluationDetail<LdValue>(resultVal, 1, EvaluationReason.Fallthrough.Instance);
+            var result = new EvaluationDetail<LdValue>(resultVal, 1, EvaluationReason.FallthroughReason);
             var e = EventFactory.Default.NewDefaultFeatureRequestEvent(flag, user, defaultVal, err);
             Assert.True(e.TrackEvents);
             Assert.Equal(1000, e.DebugEventsUntilDate);
@@ -117,7 +117,7 @@ namespace LaunchDarkly.Common.Tests
             var flag = new FlagEventPropertiesBuilder("flag-key").Version(100).Build();
             var err = EvaluationErrorKind.EXCEPTION;
             var e = EventFactory.DefaultWithReasons.NewDefaultFeatureRequestEvent(flag, user, defaultVal, err);
-            Assert.Equal(new EvaluationReason.Error(err), e.Reason);
+            Assert.Equal(EvaluationReason.ErrorReason(err), e.Reason);
         }
 
         [Fact]
@@ -144,7 +144,7 @@ namespace LaunchDarkly.Common.Tests
         {
             var err = EvaluationErrorKind.FLAG_NOT_FOUND;
             var e = EventFactory.DefaultWithReasons.NewUnknownFeatureRequestEvent("flag-key", user, defaultVal, err);
-            Assert.Equal(new EvaluationReason.Error(err), e.Reason);
+            Assert.Equal(EvaluationReason.ErrorReason(err), e.Reason);
         }
         
         [Fact]
@@ -153,7 +153,7 @@ namespace LaunchDarkly.Common.Tests
             var time = TimeNow();
             var parentFlag = new FlagEventPropertiesBuilder("flag-key").Version(100).Build();
             var flag = new FlagEventPropertiesBuilder("prereq-key").Version(100).Build();
-            var result = new EvaluationDetail<LdValue>(resultVal, 1, EvaluationReason.Fallthrough.Instance);
+            var result = new EvaluationDetail<LdValue>(resultVal, 1, EvaluationReason.FallthroughReason);
             var e = EventFactory.Default.NewPrerequisiteFeatureRequestEvent(flag, user, result, parentFlag);
             Assert.True(e.CreationDate >= time);
             Assert.Equal("prereq-key", e.Key);
@@ -173,7 +173,7 @@ namespace LaunchDarkly.Common.Tests
         {
             var parentFlag = new FlagEventPropertiesBuilder("flag-key").Version(100).Build();
             var flag = new FlagEventPropertiesBuilder("prereq-key").Version(100).Build();
-            var result = new EvaluationDetail<LdValue>(resultVal, 1, EvaluationReason.Fallthrough.Instance);
+            var result = new EvaluationDetail<LdValue>(resultVal, 1, EvaluationReason.FallthroughReason);
             var e = EventFactory.DefaultWithReasons.NewPrerequisiteFeatureRequestEvent(flag, user, result, parentFlag);
             Assert.Equal(result.Reason, e.Reason);
         }
@@ -183,9 +183,9 @@ namespace LaunchDarkly.Common.Tests
         {
             var parentFlag = new FlagEventPropertiesBuilder("flag-key").Version(100).Build();
             var flag = new FlagEventPropertiesBuilder("prereq-key").Version(100)
-                .ExperimentReason(EvaluationReason.Fallthrough.Instance)
+                .ExperimentReason(EvaluationReason.FallthroughReason)
                 .Build();
-            var result = new EvaluationDetail<LdValue>(resultVal, 1, EvaluationReason.Fallthrough.Instance);
+            var result = new EvaluationDetail<LdValue>(resultVal, 1, EvaluationReason.FallthroughReason);
             var e = EventFactory.Default.NewPrerequisiteFeatureRequestEvent(flag, user, result, parentFlag);
             Assert.Equal(result.Reason, e.Reason);
             Assert.True(e.TrackEvents);

@@ -86,8 +86,8 @@ namespace LaunchDarkly.Client
         private readonly bool _boolValue;
         private readonly double _doubleValue; // all numbers are stored as double
         private readonly string _stringValue;
-        private readonly IList<LdValue> _arrayValue; // will be IImmutableList in the future, but we don't have System.Collections.Immutables yet
-        private readonly IDictionary<string, LdValue> _objectValue; // same
+        private readonly ImmutableList<LdValue> _arrayValue;
+        private readonly ImmutableDictionary<string, LdValue> _objectValue;
 
         #endregion
 
@@ -114,7 +114,7 @@ namespace LaunchDarkly.Client
         }
 
         // Constructor from a read-only list
-        private LdValue(IList<LdValue> list)
+        private LdValue(ImmutableList<LdValue> list)
         {
             _type = LdValueType.Array;
             _arrayValue = list;
@@ -125,7 +125,7 @@ namespace LaunchDarkly.Client
         }
 
         // Constructor from a read-only dictionary
-        private LdValue(IDictionary<string, LdValue> dict)
+        private LdValue(ImmutableDictionary<string, LdValue> dict)
         {
             _type = LdValueType.Object;
             _objectValue = dict;
@@ -134,6 +134,10 @@ namespace LaunchDarkly.Client
             _stringValue = null;
             _arrayValue = null;
         }
+
+        internal ImmutableList<LdValue> List => _arrayValue;
+
+        internal ImmutableDictionary<string, LdValue> Dictionary => _objectValue;
 
         #endregion
 
@@ -444,7 +448,7 @@ namespace LaunchDarkly.Client
                 }
             }
         }
-
+        
         #endregion
 
         #region Public methods
@@ -695,7 +699,7 @@ namespace LaunchDarkly.Client
             /// <returns>an immutable array <see cref="LdValue"/></returns>
             public LdValue Build()
             {
-                return new LdValue(_builder.ToImmutableList());
+                return new LdValue(_builder.ToImmutable());
             }
         }
 
@@ -774,7 +778,7 @@ namespace LaunchDarkly.Client
             /// <returns>an immutable object <see cref="LdValue"/></returns>
             public LdValue Build()
             {
-                return new LdValue(_builder.ToImmutableDictionary());
+                return new LdValue(_builder.ToImmutable());
             }
         }
 
@@ -838,12 +842,7 @@ namespace LaunchDarkly.Client
                 {
                     return Null;
                 }
-                var list = new List<LdValue>(values.Count());
-                foreach (var value in values)
-                {
-                    list.Add(FromType(value));
-                }
-                return new LdValue(list);
+                return new LdValue(ImmutableList.CreateRange<LdValue>(values.Select(FromType)));
             }
 
             /// <summary>
@@ -886,11 +885,8 @@ namespace LaunchDarkly.Client
                 {
                     return Null;
                 }
-                var d = new Dictionary<string, LdValue>(dictionary.Count);
-                foreach (var e in dictionary)
-                {
-                    d[e.Key] = FromType(e.Value);
-                }
+                var d = ImmutableDictionary.CreateRange<string, LdValue>(dictionary.Select(kv =>
+                    new KeyValuePair<string, LdValue>(kv.Key, FromType(kv.Value))));
                 return new LdValue(d);
             }
         }
