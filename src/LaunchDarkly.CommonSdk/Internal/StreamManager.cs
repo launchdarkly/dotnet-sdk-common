@@ -30,7 +30,7 @@ namespace LaunchDarkly.Common
         private readonly IDiagnosticStore _diagnosticStore;
         private IEventSource _es;
         private int _initialized = UNINITIALIZED;
-        private DateTime _esStarted;
+        internal DateTime _esStarted;
 
         /// <summary>
         /// Constructs a StreamManager instance.
@@ -167,8 +167,9 @@ namespace LaunchDarkly.Common
 
         private void RecordStreamInit(bool failed) {
             if (_diagnosticStore != null) {
-                _diagnosticStore.AddStreamInit(_esStarted, DateTime.Now - _esStarted, failed);
-                _esStarted = DateTime.Now;
+                DateTime now = DateTime.Now;
+                _diagnosticStore.AddStreamInit(_esStarted, now - _esStarted, failed);
+                _esStarted = now;
             }
         }
 

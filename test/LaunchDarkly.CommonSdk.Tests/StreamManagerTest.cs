@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using LaunchDarkly.EventSource;
 using Moq;
@@ -16,15 +17,18 @@ namespace LaunchDarkly.Common.Tests
         Mock<IEventSource> _mockEventSource;
         IEventSource _eventSource;
         StubEventSourceCreator _eventSourceCreator;
+        CountdownEvent _esStartedReady = new CountdownEvent(1);
         Mock<IStreamProcessor> _mockStreamProcessor;
         IStreamProcessor _streamProcessor;
         StreamProperties _streamProperties;
         SimpleConfiguration _config;
+        Mock<IDiagnosticStore> _mockDiagnosticStore;
+        IDiagnosticStore _diagnosticStore;
 
         public StreamManagerTest()
         {
             _mockEventSource = new Mock<IEventSource>();
-            _mockEventSource.Setup(es => es.StartAsync()).Returns(Task.CompletedTask);
+            _mockEventSource.Setup(es => es.StartAsync()).Returns(Task.CompletedTask).Callback(() => _esStartedReady.Signal());
             _eventSource = _mockEventSource.Object;
             _eventSourceCreator = new StubEventSourceCreator(_eventSource);
             _config = new SimpleConfiguration
@@ -39,7 +43,7 @@ namespace LaunchDarkly.Common.Tests
         private StreamManager CreateManager()
         {
             return new StreamManager(_streamProcessor, _streamProperties, _config,
-                SimpleClientEnvironment.Instance, _eventSourceCreator.Create, null);
+                SimpleClientEnvironment.Instance, _eventSourceCreator.Create, _diagnosticStore);
         }
 
         [Fact]
@@ -144,6 +148,42 @@ namespace LaunchDarkly.Common.Tests
             {
                 sm.Start();
                 Assert.Equal("Xamarin/1.0.0", _eventSourceCreator.ReceivedHeaders["X-LaunchDarkly-Wrapper"]);
+            }
+        }
+
+        [Fact]
+        public void StreamInitDiagnosticRecordedOnOpen()
+        {
+            _mockDiagnosticStore = new Mock<IDiagnosticStore>();
+            _diagnosticStore = _mockDiagnosticStore.Object;
+            using (StreamManager sm = CreateManager())
+            {
+                sm.Start();
+                Assert.True(_esStartedReady.Wait(TimeSpan.FromMilliseconds(100)));
+                DateTime esStarted = sm._esStarted;
+                _mockEventSource.Raise(es => es.Opened += null, new EventSource.StateChangedEventArgs(ReadyState.Open));
+                DateTime startCompleted = sm._esStarted;
+
+                Assert.True(esStarted != startCompleted);
+                _mockDiagnosticStore.Verify(ds => ds.AddStreamInit(esStarted, It.Is<TimeSpan>(ts => TimeSpan.Equals(ts, startCompleted - esStarted)), false));
+            }
+        }
+
+        [Fact]
+        public void StreamInitDiagnosticRecordedOnError()
+        {
+            _mockDiagnosticStore = new Mock<IDiagnosticStore>();
+            _diagnosticStore = _mockDiagnosticStore.Object;
+            using (StreamManager sm = CreateManager())
+            {
+                sm.Start();
+                Assert.True(_esStartedReady.Wait(TimeSpan.FromMilliseconds(100)));
+                DateTime esStarted = sm._esStarted;
+                _mockEventSource.Raise(es => es.Error += null, new EventSource.ExceptionEventArgs(new EventSource.EventSourceServiceUnsuccessfulResponseException("test", 401)));
+                DateTime startFailed = sm._esStarted;
+
+                Assert.True(esStarted != startFailed);
+                _mockDiagnosticStore.Verify(ds => ds.AddStreamInit(esStarted, It.Is<TimeSpan>(ts => TimeSpan.Equals(ts, startFailed - esStarted)), true));
             }
         }
 
