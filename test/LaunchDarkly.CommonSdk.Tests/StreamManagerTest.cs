@@ -159,8 +159,9 @@ namespace LaunchDarkly.Common.Tests
             using (StreamManager sm = CreateManager())
             {
                 sm.Start();
-                Assert.True(_esStartedReady.Wait(TimeSpan.FromMilliseconds(100)));
+                Assert.True(_esStartedReady.Wait(TimeSpan.FromSeconds(1)));
                 DateTime esStarted = sm._esStarted;
+                Thread.Sleep(TimeSpan.FromMilliseconds(100));
                 _mockEventSource.Raise(es => es.Opened += null, new EventSource.StateChangedEventArgs(ReadyState.Open));
                 DateTime startCompleted = sm._esStarted;
 
@@ -177,8 +178,9 @@ namespace LaunchDarkly.Common.Tests
             using (StreamManager sm = CreateManager())
             {
                 sm.Start();
-                Assert.True(_esStartedReady.Wait(TimeSpan.FromMilliseconds(100)));
+                Assert.True(_esStartedReady.Wait(TimeSpan.FromSeconds(1)));
                 DateTime esStarted = sm._esStarted;
+                Thread.Sleep(TimeSpan.FromMilliseconds(100));
                 _mockEventSource.Raise(es => es.Error += null, new EventSource.ExceptionEventArgs(new EventSource.EventSourceServiceUnsuccessfulResponseException("test", 401)));
                 DateTime startFailed = sm._esStarted;
 
