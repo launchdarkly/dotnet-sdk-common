@@ -518,7 +518,9 @@ namespace LaunchDarkly.Common.Tests
             mockDiagnosticStore.Setup(diagStore => diagStore.InitEvent).Returns((DiagnosticEvent?)null);
             mockDiagnosticStore.Setup(diagStore => diagStore.DataSince).Returns((DateTime)DateTime.Now);
             mockDiagnosticStore.Setup(diagStore => diagStore.CreateEventAndReset(It.IsAny<long>())).Returns(new DiagnosticEvent(LdValue.Null));
-            _ep = MakeProcessor(_config, mockDiagnosticStore.Object, null, null);
+
+            CountdownEvent diagnosticCountdown = new CountdownEvent(1);
+            _ep = MakeProcessor(_config, mockDiagnosticStore.Object, null, diagnosticCountdown);
 
             var flag1 = new FlagEventPropertiesBuilder("flagkey1").Version(11).TrackEvents(true).Build();
             var value = LdValue.Of("value");
@@ -529,8 +531,8 @@ namespace LaunchDarkly.Common.Tests
             // Not flushing events, but assuring that fe1 has been processed by the main event loop before proceeding.
             _ep.WaitUntilInactive();
             _ep.DoDiagnosticSend(null);
-            // Again not flushing events, but ensuring the main event loop has processed the diagnostic event trigger.
-            _ep.WaitUntilInactive();
+
+            diagnosticCountdown.Wait();
             mockDiagnosticStore.Verify(diagStore => diagStore.CreateEventAndReset(2), Times.Once(), "Diagnostic store's CreateEventAndReset should be called with the number of events currently in the buffer before sending diagnostic event");
         }
 
@@ -547,7 +549,6 @@ namespace LaunchDarkly.Common.Tests
             PrepareDiagnosticResponse(OkResponse());
             var diagnosticCountdown = new CountdownEvent(1);
             _ep = MakeProcessor(_config, mockDiagnosticStore.Object, null, diagnosticCountdown);
-            mockDiagnosticStore.Verify(diagStore => diagStore.PersistedUnsentEvent, Times.Once());
 
             diagnosticCountdown.Wait();
             var retrieved = GetLastDiagnostic();
@@ -568,7 +569,6 @@ namespace LaunchDarkly.Common.Tests
             PrepareDiagnosticResponse(OkResponse());
             var diagnosticCountdown = new CountdownEvent(1);
             _ep = MakeProcessor(_config, mockDiagnosticStore.Object, null, diagnosticCountdown);
-            mockDiagnosticStore.Verify(diagStore => diagStore.InitEvent, Times.Once());
 
             diagnosticCountdown.Wait();
             var retrieved = GetLastDiagnostic();
@@ -611,8 +611,6 @@ namespace LaunchDarkly.Common.Tests
             PrepareDiagnosticResponse(OkResponse());
             var diagnosticCountdown = new CountdownEvent(2);
             _ep = MakeProcessor(_config, mockDiagnosticStore.Object, mockDiagnosticDisabler.Object, diagnosticCountdown);
-            mockDiagnosticStore.Verify(diagStore => diagStore.PersistedUnsentEvent, Times.Once());
-            mockDiagnosticStore.Verify(diagStore => diagStore.InitEvent, Times.Once());
 
             diagnosticCountdown.Wait();
 

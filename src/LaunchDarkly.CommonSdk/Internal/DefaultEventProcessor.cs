@@ -85,11 +85,11 @@ namespace LaunchDarkly.Common
                 var init = _diagnosticStore.InitEvent;
                 if (unsent.HasValue)
                 {
-                    _dispatcher.SendDiagnosticEventAsync(unsent.Value);
+                    Task.Run(() => _dispatcher.SendDiagnosticEventAsync(unsent.Value));
                 }
                 if (init.HasValue)
                 {
-                    _dispatcher.SendDiagnosticEventAsync(init.Value);
+                    Task.Run(() => _dispatcher.SendDiagnosticEventAsync(init.Value));
                 }
             }
         }
@@ -338,7 +338,7 @@ namespace LaunchDarkly.Common
             if (_diagnosticStore != null)
             {
                 long eventsInQueue = buffer.GetEventsInQueueCount();
-                SendDiagnosticEventAsync(_diagnosticStore.CreateEventAndReset(eventsInQueue));
+                Task.Run(() => SendDiagnosticEventAsync(_diagnosticStore.CreateEventAndReset(eventsInQueue)));
             }
         }
 
@@ -514,7 +514,7 @@ namespace LaunchDarkly.Common
 
             DefaultEventProcessor.Log.DebugFormat("Submitting {0} event(s) to {1} with json: {2}",
                 eventCount, _config.EventsUri.AbsoluteUri, jsonEvents);
-            await SendWithRetry(_config.EventsUri, jsonEvents, true, async (response, duration) =>
+            await SendWithRetry(_config.EventsUri, jsonEvents, true, (response, duration) =>
             {
                 if (response == null)
                 {
@@ -544,7 +544,7 @@ namespace LaunchDarkly.Common
             });
         }
 
-        private async Task SendWithRetry(Uri uri, string content, bool includeSchemaVersionHeader, Func<HttpResponseMessage, long, Task> onComplete)
+        private async Task SendWithRetry(Uri uri, string content, bool includeSchemaVersionHeader, Action<HttpResponseMessage, long> onComplete)
         {
             const int maxAttempts = 2;
             for (var attempt = 0; attempt < maxAttempts; attempt++)
@@ -569,7 +569,7 @@ namespace LaunchDarkly.Common
                         using (var response = await _httpClient.SendAsync(request, cts.Token))
                         {
                             timer.Stop();
-                            await onComplete(response, timer.ElapsedMilliseconds);
+                            onComplete(response, timer.ElapsedMilliseconds);
                         }
                         return; // success
                     }
@@ -583,7 +583,7 @@ namespace LaunchDarkly.Common
                                 {
                                     // Indicates the task was cancelled deliberately somehow; in this case don't retry
                                     DefaultEventProcessor.Log.Warn("Event sending task was cancelled");
-                                    await onComplete(null, 0);
+                                    onComplete(null, 0);
                                     return;
                                 }
                                 else
@@ -601,7 +601,7 @@ namespace LaunchDarkly.Common
                     }
                 }
             }
-            await onComplete(null, 0);
+            onComplete(null, 0);
         }
 
         internal async Task SendDiagnosticEventAsync(DiagnosticEvent diagnostic)
@@ -609,7 +609,7 @@ namespace LaunchDarkly.Common
             var jsonDiagnostic = diagnostic.JsonValue.ToJsonString();
             DefaultEventProcessor.Log.DebugFormat("Submitting diagnostic event to {0} with json: {1}",
                 _config.DiagnosticUri.AbsoluteUri, jsonDiagnostic);
-            await SendWithRetry(_config.DiagnosticUri, jsonDiagnostic, false, async (response, duration) =>
+            await SendWithRetry(_config.DiagnosticUri, jsonDiagnostic, false, (response, duration) =>
             {
                 _testActionOnDiagnosticSend?.Invoke();
 
