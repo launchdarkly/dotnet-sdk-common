@@ -1,6 +1,25 @@
 # Change log
 
-For full release notes for the projects that depend on this project, see their respective changelogs. This file describes changes only to the common code. This project adheres to [Semantic Versioning](http://semver.org).
+All notable changes to the LaunchDarkly.CommonSdk package will be documented in this file. For full release notes for the projects that depend on this project, see their respective changelogs. This file describes changes only to the common code. This project adheres to [Semantic Versioning](http://semver.org).
+
+## [2.9.1] - 2019-11-08
+### Fixed:
+- Fixed an exception when serializing user custom attributes in events (bug in 2.9.0).
+
+## [2.9.0] - 2019-11-08
+### Added:
+- `EvaluationReason` static methods and properties for creating reason instances.
+- `LdValue` helpers for dealing with array/object values, without having to use an intermediate `List` or `Dictionary`: `BuildArray`, `BuildObject`, `Count`, `Get`.
+- `LdValue.Parse()`. It is also possible to use `Newtonsoft.Json.JsonConvert` to parse or serialize `LdValue`, but since the implementation may change in the future, using the type's own methods is preferable.
+
+### Changed:
+- `EvaluationReason` properties all exist on the base class now, so for instance you do not need to cast to `RuleMatch` to get the `RuleId` property. This is in preparation for a future API change in which `EvaluationReason` will become a struct instead of a base class.
+
+### Fixed:
+- Improved memory usage and performance when processing analytics events: the SDK now encodes event data to JSON directly, instead of creating intermediate objects and serializing them via reflection.
+
+### Deprecated:
+- `EvaluationReason` subclasses. Use only the base class properties and methods to ensure compatibility with future versions.
 
 ## [2.8.0] - 2019-10-10
 ### Added:
