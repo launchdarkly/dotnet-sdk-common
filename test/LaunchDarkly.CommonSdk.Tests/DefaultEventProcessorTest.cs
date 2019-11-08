@@ -140,12 +140,12 @@ namespace LaunchDarkly.Common.Tests
             IFlagEventProperties flag = new FlagEventPropertiesBuilder("flagkey").Version(11).TrackEvents(true).Build();
             var reasons = new EvaluationReason[]
             {
-                EvaluationReason.Off.Instance,
-                EvaluationReason.Fallthrough.Instance,
-                EvaluationReason.TargetMatch.Instance,
-                new EvaluationReason.RuleMatch(1, "id"),
-                new EvaluationReason.PrerequisiteFailed("key"),
-                new EvaluationReason.Error(EvaluationErrorKind.WRONG_TYPE)
+                EvaluationReason.OffReason,
+                EvaluationReason.FallthroughReason,
+                EvaluationReason.TargetMatchReason,
+                EvaluationReason.RuleMatchReason(1, "id"),
+                EvaluationReason.PrerequisiteFailedReason("key"),
+                EvaluationReason.ErrorReason(EvaluationErrorKind.WRONG_TYPE)
             };
             foreach (var reason in reasons)
             {
