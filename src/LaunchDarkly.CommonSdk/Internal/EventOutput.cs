@@ -262,14 +262,14 @@ namespace LaunchDarkly.Common
                 _jsonWriter.WritePropertyName("anonymous");
                 _jsonWriter.WriteValue(eu.Anonymous.Value);
             }
-            if (eu.Custom != null)
+            if (eu.Custom != null && eu.Custom.Count > 0)
             {
                 _jsonWriter.WritePropertyName("custom");
                 _jsonWriter.WriteStartObject();
                 foreach (var kv in eu.Custom)
                 {
                     _jsonWriter.WritePropertyName(kv.Key);
-                    LdValueSerializer.Instance.WriteJson(_jsonWriter, kv.Value, _jsonSerializer);
+                    _jsonSerializer.Serialize(_jsonWriter, kv.Value);
                 }
                 _jsonWriter.WriteEndObject();
             }

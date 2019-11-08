@@ -16,6 +16,11 @@ namespace LaunchDarkly.Common
         // serialize them directly to JSON without ever allocating a JToken.
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
+            if (value is null)
+            {
+                writer.WriteNull();
+                return;
+            }
             if (value is LdValue jv)
             {
                 if (jv.HasWrappedJToken)
@@ -68,6 +73,10 @@ namespace LaunchDarkly.Common
                             break;
                     }
                 }
+            }
+            else
+            {
+                throw new ArgumentException("incompatible type " + value.GetType());
             }
         }
 
