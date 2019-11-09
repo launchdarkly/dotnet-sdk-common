@@ -891,24 +891,8 @@ namespace LaunchDarkly.Client
                     {
                         var d0 = AsDictionary(Convert.Json);
                         var d1 = o.AsDictionary(Convert.Json);
-                        if (d0.Count != d1.Count)
-                        {
-                            return false;
-                        }
-                        foreach (var kv in d0)
-                        {
-                            if (!d1.TryGetValue(kv.Key, out var v))
-                            {
-                                return false;
-                            }
-                            if (!kv.Value.Equals(v))
-                            {
-                                return false;
-                            }
-                        }
-                        return true;
-                        //return d0.Count == d1.Count && d0.All(kv =>
-                        //    d1.TryGetValue(kv.Key, out var v) && kv.Value.Equals(v));
+                        return d0.Count == d1.Count && d0.All(kv =>
+                            d1.TryGetValue(kv.Key, out var v) && kv.Value.Equals(v));
                     }
                 default:
                     return false;
