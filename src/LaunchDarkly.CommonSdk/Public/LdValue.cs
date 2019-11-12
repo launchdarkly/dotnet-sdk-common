@@ -888,9 +888,12 @@ namespace LaunchDarkly.Client
                 case LdValueType.Array:
                     return AsList(Convert.Json).SequenceEqual(o.AsList(Convert.Json));
                 case LdValueType.Object:
-                    var d0 = AsDictionary(Convert.Json);
-                    var d1 = AsDictionary(Convert.Json);
-                    return d0.Count == d1.Count && d0.All(kv => kv.Value.Equals(d1[kv.Key]));
+                    {
+                        var d0 = AsDictionary(Convert.Json);
+                        var d1 = o.AsDictionary(Convert.Json);
+                        return d0.Count == d1.Count && d0.All(kv =>
+                            d1.TryGetValue(kv.Key, out var v) && kv.Value.Equals(v));
+                    }
                 default:
                     return false;
             }
@@ -910,19 +913,26 @@ namespace LaunchDarkly.Client
                 case LdValueType.String:
                     return AsString.GetHashCode();
                 case LdValueType.Array:
-                    int ah = 0;
-                    foreach (var item in AsList(Convert.Json))
                     {
-                        ah = ah * 23 + item.GetHashCode();
+                        var h = new HashCodeBuilder();
+                        foreach (var item in AsList(Convert.Json))
+                        {
+                            h = h.With(item);
+                        }
+                        return h.Value;
                     }
-                    return ah;
                 case LdValueType.Object:
-                    int oh = 0;
-                    foreach (var kv in AsDictionary(Convert.Json))
                     {
-                        oh = (oh * 23 + kv.Key.GetHashCode()) * 23 + kv.Value.GetHashCode();
+                        var h = new HashCodeBuilder();
+                        var d = AsDictionary(Convert.Json);
+                        var keys = d.Keys.ToArray();
+                        Array.Sort(keys); // inefficient, but ensures determinacy
+                        foreach (var key in keys)
+                        {
+                            h = h.With(key).With(d[key]);
+                        }
+                        return h.Value;
                     }
-                    return oh;
                 default:
                     return 0;
             }

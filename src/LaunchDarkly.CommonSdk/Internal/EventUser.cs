@@ -78,6 +78,10 @@ namespace LaunchDarkly.Common
                     _result.Custom = _user.Custom;
                 }
             }
+            if (_result.PrivateAttrs != null)
+            {
+                _result.PrivateAttrs.Sort(); // for test determinacy
+            }
             return _result;
         }
 
