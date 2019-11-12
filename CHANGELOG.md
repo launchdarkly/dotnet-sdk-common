@@ -2,6 +2,11 @@
 
 All notable changes to the LaunchDarkly.CommonSdk package will be documented in this file. For full release notes for the projects that depend on this project, see their respective changelogs. This file describes changes only to the common code. This project adheres to [Semantic Versioning](http://semver.org).
 
+## [2.9.2] - 2019-11-12
+### Fixed:
+- `LdValue.Equals()` incorrectly returned true for object (dictionary) values that were not equal.
+- Summary events incorrectly had `unknown:true` for all evaluation errors, rather than just for "flag not found" errors (bug introduced in 2.9.0, not used in any current SDK).
+
 ## [2.9.1] - 2019-11-08
 ### Fixed:
 - Fixed an exception when serializing user custom attributes in events (bug in 2.9.0).
