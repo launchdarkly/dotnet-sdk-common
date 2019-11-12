@@ -178,17 +178,17 @@ namespace LaunchDarkly.Common
                             _jsonWriter.WritePropertyName("variation");
                             _jsonWriter.WriteValue(key.Variation.Value);
                         }
-                        else
-                        {
-                            _jsonWriter.WritePropertyName("unknown");
-                            _jsonWriter.WriteValue(true);
-                        }
                         _jsonWriter.WritePropertyName("value");
                         LdValueSerializer.Instance.WriteJson(_jsonWriter, counter.FlagValue, _jsonSerializer);
                         if (key.Version.HasValue)
                         {
                             _jsonWriter.WritePropertyName("version");
                             _jsonWriter.WriteValue(key.Version.Value);
+                        }
+                        else
+                        {
+                            _jsonWriter.WritePropertyName("unknown");
+                            _jsonWriter.WriteValue(true);
                         }
                         _jsonWriter.WritePropertyName("count");
                         _jsonWriter.WriteValue(counter.Count);

@@ -82,7 +82,7 @@ namespace LaunchDarkly.Common.Tests
             Assert.Null(eu.Email);
             Assert.Null(eu.Anonymous);
             Assert.Null(eu.Custom);
-            Assert.Equal(new List<string> { "ip", "country", "firstName", "lastName", "name", "avatar", "email", "bizzle", "dizzle" },
+            Assert.Equal(new List<string> { "avatar", "bizzle", "country", "dizzle", "email", "firstName", "ip", "lastName", "name" },
                 eu.PrivateAttrs);
         }
 
@@ -117,7 +117,7 @@ namespace LaunchDarkly.Common.Tests
             Assert.Equal(_baseUser.Email, eu.Email);
             Assert.Null(eu.Anonymous);
             Assert.Equal(new Dictionary<string, JToken> { { "dizzle", new JValue("ghi") } }, eu.Custom);
-            Assert.Equal(new List<string> { "firstName", "bizzle" }, eu.PrivateAttrs);
+            Assert.Equal(new List<string> { "bizzle", "firstName" }, eu.PrivateAttrs);
         }
 
         [Fact]
@@ -134,7 +134,7 @@ namespace LaunchDarkly.Common.Tests
             Assert.Equal(_baseUser.Email, eu.Email);
             Assert.Null(eu.Anonymous);
             Assert.Equal(new Dictionary<string, JToken> { { "dizzle", new JValue("ghi") } }, eu.Custom);
-            Assert.Equal(new List<string> { "firstName", "bizzle" }, eu.PrivateAttrs);
+            Assert.Equal(new List<string> { "bizzle", "firstName" }, eu.PrivateAttrs);
         }
     }
 }

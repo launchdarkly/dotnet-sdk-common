@@ -22,7 +22,7 @@ namespace LaunchDarkly.Common.Tests
                 .IPAddress("1.2.3.4")
                 .LastName("last")
                 .Name("me")
-                .SecondaryKey("secondary")
+                .SecondaryKey("s")
                 .Build();
             var userJson = LdValue.Parse(@"{
                 ""key"":""userkey"",
@@ -35,7 +35,7 @@ namespace LaunchDarkly.Common.Tests
                 ""ip"":""1.2.3.4"",
                 ""lastName"":""last"",
                 ""name"":""me"",
-                ""secondaryKey"":""secondary""
+                ""secondary"":""s""
                 }");
             TestInlineUserSerialization(user, userJson, new SimpleConfiguration());
         }
@@ -67,13 +67,13 @@ namespace LaunchDarkly.Common.Tests
                 .IPAddress("1.2.3.4")
                 .LastName("last")
                 .Name("me")
-                .SecondaryKey("secondary")
+                .SecondaryKey("s")
                 .Build();
             var userJson = LdValue.Parse(@"{
                 ""key"":""userkey"",
                 ""anonymous"":true,
-                ""secondaryKey"":""secondary"",
-                ""privateAttributeNames"":[
+                ""secondary"":""s"",
+                ""privateAttrs"":[
                     ""avatar"", ""country"", ""custom1"", ""custom2"", ""email"",
                     ""firstName"", ""ip"", ""lastName"", ""name""
                 ]
@@ -165,8 +165,9 @@ namespace LaunchDarkly.Common.Tests
                 LdValue.Of("defaultvalue"));
             var feJson1 = LdValue.Parse(@"{
                 ""kind"":""feature"",
-                ""creationTime"":""100000"",
+                ""creationDate"":100000,
                 ""key"":""flag"",
+                ""version"":11,
                 ""userKey"":""userkey"",
                 ""value"":""flagvalue"",
                 ""variation"":1,
@@ -179,8 +180,9 @@ namespace LaunchDarkly.Common.Tests
                 LdValue.Null);
             var feJson2 = LdValue.Parse(@"{
                 ""kind"":""feature"",
-                ""creationTime"":""100000"",
+                ""creationDate"":100000,
                 ""key"":""flag"",
+                ""version"":11,
                 ""userKey"":""userkey"",
                 ""value"":""flagvalue""
                 }");
@@ -191,8 +193,9 @@ namespace LaunchDarkly.Common.Tests
                 LdValue.Of("defaultvalue"));
             var feJson3 = LdValue.Parse(@"{
                 ""kind"":""feature"",
-                ""creationTime"":""100000"",
+                ""creationDate"":100000,
                 ""key"":""flag"",
+                ""version"":11,
                 ""userKey"":""userkey"",
                 ""value"":""flagvalue"",
                 ""variation"":1,
@@ -201,17 +204,31 @@ namespace LaunchDarkly.Common.Tests
                 }");
             TestEventSerialization(feWithReason, feJson3);
 
-            var debugEvent = factory.NewDebugEvent(feWithVariation);
+            var feUnknownFlag = factoryWithReason.NewUnknownFeatureRequestEvent("flag", user,
+                LdValue.Of("defaultvalue"), EvaluationErrorKind.FLAG_NOT_FOUND);
             var feJson4 = LdValue.Parse(@"{
-                ""kind"":""debug"",
-                ""creationTime"":""100000"",
+                ""kind"":""feature"",
+                ""creationDate"":100000,
                 ""key"":""flag"",
                 ""userKey"":""userkey"",
+                ""value"":""defaultvalue"",
+                ""default"":""defaultvalue"",
+                ""reason"":{""kind"":""FLAG_NOT_FOUND""}
+                }");
+            TestEventSerialization(feWithReason, feJson3);
+
+            var debugEvent = factory.NewDebugEvent(feWithVariation);
+            var feJson5 = LdValue.Parse(@"{
+                ""kind"":""debug"",
+                ""creationDate"":100000,
+                ""key"":""flag"",
+                ""version"":11,
+                ""user"":{""key"":""userkey"",""name"":""me""},
                 ""value"":""flagvalue"",
                 ""variation"":1,
                 ""default"":""defaultvalue""
                 }");
-            TestEventSerialization(debugEvent, feJson4);
+            TestEventSerialization(debugEvent, feJson5);
         }
 
         [Fact]
@@ -223,9 +240,9 @@ namespace LaunchDarkly.Common.Tests
             var ie = factory.NewIdentifyEvent(user);
             var ieJson = LdValue.Parse(@"{
                 ""kind"":""identify"",
-                ""creationTime"":""100000"",
+                ""creationDate"":100000,
                 ""key"":""userkey"",
-                ""userKey"":""userkey""
+                ""user"":{""key"":""userkey"",""name"":""me""}
                 }");
             TestEventSerialization(ie, ieJson);
         }
@@ -239,7 +256,7 @@ namespace LaunchDarkly.Common.Tests
             var ceWithoutData = factory.NewCustomEvent("custom", user, LdValue.Null);
             var ceJson1 = LdValue.Parse(@"{
                 ""kind"":""custom"",
-                ""creationTime"":""100000"",
+                ""creationDate"":100000,
                 ""key"":""custom"",
                 ""userKey"":""userkey""
                 }");
@@ -248,7 +265,7 @@ namespace LaunchDarkly.Common.Tests
             var ceWithData = factory.NewCustomEvent("custom", user, LdValue.Of("thing"));
             var ceJson2 = LdValue.Parse(@"{
                 ""kind"":""custom"",
-                ""creationTime"":""100000"",
+                ""creationDate"":100000,
                 ""key"":""custom"",
                 ""userKey"":""userkey"",
                 ""data"":""thing""
@@ -258,7 +275,7 @@ namespace LaunchDarkly.Common.Tests
             var ceWithMetric = factory.NewCustomEvent("custom", user, LdValue.Null, 2.5);
             var ceJson3 = LdValue.Parse(@"{
                 ""kind"":""custom"",
-                ""creationTime"":""100000"",
+                ""creationDate"":100000,
                 ""key"":""custom"",
                 ""userKey"":""userkey"",
                 ""metricValue"":2.5
@@ -268,7 +285,7 @@ namespace LaunchDarkly.Common.Tests
             var ceWithDataAndMetric = factory.NewCustomEvent("custom", user, LdValue.Of("thing"), 2.5);
             var ceJson4 = LdValue.Parse(@"{
                 ""kind"":""custom"",
-                ""creationTime"":""100000"",
+                ""creationDate"":100000,
                 ""key"":""custom"",
                 ""userKey"":""userkey"",
                 ""data"":""thing"",
@@ -277,7 +294,8 @@ namespace LaunchDarkly.Common.Tests
             TestEventSerialization(ceWithDataAndMetric, ceJson4);
         }
 
-        private void SummaryEventIsSerialized()
+        [Fact]
+        public void SummaryEventIsSerialized()
         {
             var summary = new EventSummary();
             summary.NoteTimestamp(1001);
@@ -290,8 +308,9 @@ namespace LaunchDarkly.Common.Tests
             summary.IncrementCounter("first", 1, 12, LdValue.Of("value1a"), LdValue.Of("default1"));
 
             summary.IncrementCounter("second", 2, 21, LdValue.Of("value2b"), LdValue.Of("default2"));
+            summary.IncrementCounter("second", null, 21, LdValue.Of("default2"), LdValue.Of("default2")); // flag exists (has version), but eval failed (no variation)
 
-            summary.IncrementCounter("third", null, null, LdValue.Of("default3"), LdValue.Of("default3"));
+            summary.IncrementCounter("third", null, null, LdValue.Of("default3"), LdValue.Of("default3")); // flag doesn't exist (no version)
 
             summary.NoteTimestamp(1000);
             summary.NoteTimestamp(1002);
@@ -305,32 +324,25 @@ namespace LaunchDarkly.Common.Tests
             Assert.Equal(1002, outputEvent.Get("endDate").AsInt);
 
             var featuresJson = outputEvent.Get("features");
-            Assert.Equal(2, featuresJson.Count);
+            Assert.Equal(3, featuresJson.Count);
 
             var firstJson = featuresJson.Get("first");
             Assert.Equal("default1", firstJson.Get("default").AsString);
-            var firstCounters = firstJson.Get("counters");
-            Assert.Equal(2, firstCounters.Count);
-            Assert.Contains(LdValue.Parse(@"{""value"":""value1a"",""variation"":1,""version"":11,""count"":2}"),
-                firstCounters.AsList(LdValue.Convert.Json));
-            Assert.Contains(LdValue.Parse(@"{""value"":""value1a"",""variation"":1,""version"":12,""count"":1}"),
-                firstCounters.AsList(LdValue.Convert.Json));
+            TestUtil.AssertContainsInAnyOrder(firstJson.Get("counters").AsList(LdValue.Convert.Json),
+                LdValue.Parse(@"{""value"":""value1a"",""variation"":1,""version"":11,""count"":2}"),
+                LdValue.Parse(@"{""value"":""value1a"",""variation"":1,""version"":12,""count"":1}"));
 
             var secondJson = featuresJson.Get("second");
             Assert.Equal("default2", secondJson.Get("default").AsString);
-            var secondCounters = secondJson.Get("counters");
-            Assert.Equal(2, secondCounters.Count);
-            Assert.Contains(LdValue.Parse(@"{""value"":""value2a"",""variation"":1,""version"":21,""count"":1}"),
-                secondCounters.AsList(LdValue.Convert.Json));
-            Assert.Contains(LdValue.Parse(@"{""value"":""value2a"",""variation"":2,""version"":22,""count"":1}"),
-                secondCounters.AsList(LdValue.Convert.Json));
+            TestUtil.AssertContainsInAnyOrder(secondJson.Get("counters").AsList(LdValue.Convert.Json),
+                LdValue.Parse(@"{""value"":""value2a"",""variation"":1,""version"":21,""count"":1}"),
+                LdValue.Parse(@"{""value"":""value2b"",""variation"":2,""version"":21,""count"":1}"),
+                LdValue.Parse(@"{""value"":""default2"",""version"":21,""count"":1}"));
 
             var thirdJson = featuresJson.Get("third");
             Assert.Equal("default3", thirdJson.Get("default").AsString);
-            var thirdCounters = thirdJson.Get("counters");
-            Assert.Equal(1, thirdCounters.Count);
-            Assert.Contains(LdValue.Parse(@"{""value"":""default3"",""count"":1}"),
-                thirdCounters.AsList(LdValue.Convert.Json));
+            TestUtil.AssertContainsInAnyOrder(thirdJson.Get("counters").AsList(LdValue.Convert.Json),
+                LdValue.Parse(@"{""unknown"":true,""value"":""default3"",""count"":1}"));
         }
 
         private void TestInlineUserSerialization(User user, LdValue expectedJsonValue, SimpleConfiguration config)
@@ -372,8 +384,11 @@ namespace LaunchDarkly.Common.Tests
         {
             var builder = User.Builder("userkey")
                 .Anonymous(true)
-                .SecondaryKey("secondary");
-            var topJsonBuilder = LdValue.BuildObject();
+                .SecondaryKey("s");
+            var topJsonBuilder = LdValue.BuildObject()
+                .Add("key", "userkey")
+                .Add("anonymous", true)
+                .Add("secondary", "s");
             var customJsonBuilder = LdValue.BuildObject();
             Action<string, Func<string, IUserBuilderCanMakeAttributePrivate>, string, LdValue.ObjectBuilder> setAttr =
                 (attrName, setter, value, jsonBuilder) =>
@@ -406,6 +421,7 @@ namespace LaunchDarkly.Common.Tests
             setAttr("name", builder.Name, "me", topJsonBuilder);
 
             topJsonBuilder.Add("custom", customJsonBuilder.Build());
+            topJsonBuilder.Add("privateAttrs", LdValue.ArrayOf(LdValue.Of(privateAttrName)));
             var userJson = topJsonBuilder.Build();
             var config = new SimpleConfiguration();
             if (globallyPrivate)
