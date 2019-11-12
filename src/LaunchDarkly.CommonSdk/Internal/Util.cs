@@ -92,13 +92,17 @@ namespace LaunchDarkly.Common
 
     internal struct HashCodeBuilder
     {
-        private int _value;
+        private readonly int _value;
         public int Value => _value;
         
+        internal HashCodeBuilder(int value)
+        {
+            _value = value;
+        }
+
         public HashCodeBuilder With(object o)
         {
-            _value = _value * 17 + (o == null ? 0 : o.GetHashCode());
-            return this;
+            return new HashCodeBuilder(_value * 17 + (o == null ? 0 : o.GetHashCode()));
         }
     }
 }
