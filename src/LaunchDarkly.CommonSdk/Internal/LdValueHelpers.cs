@@ -13,6 +13,11 @@ namespace LaunchDarkly.Common
         
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
+            if (value is null)
+            {
+                writer.WriteNull();
+                return;
+            }
             if (!(value is LdValue jv))
             {
                 throw new ArgumentException();

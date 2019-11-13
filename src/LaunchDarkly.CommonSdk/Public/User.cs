@@ -285,11 +285,11 @@ namespace LaunchDarkly.Client
                 .With(Anonymous);
             foreach (var c in Custom)
             {
-                hashBuilder.With(c.Key).With(c.Value);
+                hashBuilder = hashBuilder.With(c.Key).With(c.Value);
             }
             foreach (var p in PrivateAttributeNames)
             {
-                hashBuilder.With(p);
+                hashBuilder = hashBuilder.With(p);
             }
             return hashBuilder.Value;
         }

@@ -58,6 +58,15 @@ _The 4.0.0 release was broken._
 ### Fixed:
 - No longer assumes that we are overriding the `HttpMessageHandler` (if it is null in the configuration, just use the default `HttpClient` constructor). This is important for Xamarin.
 
+## [2.9.2] - 2019-11-12
+### Fixed:
+- `LdValue.Equals()` incorrectly returned true for object (dictionary) values that were not equal.
+- Summary events incorrectly had `unknown:true` for all evaluation errors, rather than just for "flag not found" errors (bug introduced in 2.9.0, not used in any current SDK).
+
+## [2.9.1] - 2019-11-08
+### Fixed:
+- Fixed an exception when serializing user custom attributes in events (bug in 2.9.0).
+
 ## [2.9.0] - 2019-11-08
 ### Added:
 - `EvaluationReason` static methods and properties for creating reason instances.

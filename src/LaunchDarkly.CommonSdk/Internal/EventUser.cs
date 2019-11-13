@@ -89,10 +89,9 @@ namespace LaunchDarkly.Common
                     }
                 }
             }
-            var custom = customAttrsBuilder is null ? _user.Custom : customAttrsBuilder.ToImmutableDictionary();
+            var custom = customAttrsBuilder is null ? _user.Custom : customAttrsBuilder.ToImmutable();
             _result.Custom = custom.Count == 0 ? null : custom;
-            _result.PrivateAttrs = _privateAttrs is null ? null : _privateAttrs.ToImmutableSortedSet();
-
+            _result.PrivateAttrs = _privateAttrs is null ? null : _privateAttrs.ToImmutable();
             return _result;
         }
         
