@@ -20,7 +20,7 @@ namespace LaunchDarkly.Common.Tests
         };
 
         static readonly User _baseUser = User.Builder("abc")
-            .SecondaryKey("xyz")
+            .Secondary("xyz")
             .FirstName("Sue")
             .LastName("Storm")
             .Name("Susan")
@@ -33,7 +33,7 @@ namespace LaunchDarkly.Common.Tests
             .Build();
 
         static readonly User _userSpecifyingOwnPrivateAttrs = User.Builder("abc")
-            .SecondaryKey("xyz")
+            .Secondary("xyz")
             .FirstName("Sue").AsPrivateAttribute()
             .LastName("Storm")
             .Name("Susan")
@@ -56,12 +56,12 @@ namespace LaunchDarkly.Common.Tests
         {
             EventUser eu = EventUser.FromUser(_baseUser, _baseConfig);
             Assert.Equal(_baseUser.Key, eu.Key);
-            Assert.Equal(_baseUser.SecondaryKey, eu.SecondaryKey);
+            Assert.Equal(_baseUser.Secondary, eu.Secondary);
             Assert.Equal(_baseUser.FirstName, eu.FirstName);
             Assert.Equal(_baseUser.LastName, eu.LastName);
             Assert.Equal(_baseUser.Name, eu.Name);
             Assert.Equal(_baseUser.Avatar, eu.Avatar);
-            Assert.Equal(_baseUser.IPAddress, eu.IpAddress);
+            Assert.Equal(_baseUser.IPAddress, eu.IPAddress);
             Assert.Equal(_baseUser.Email, eu.Email);
             Assert.Null(eu.Anonymous);
             Assert.Equal(_baseUser.Custom, eu.Custom);
@@ -73,16 +73,16 @@ namespace LaunchDarkly.Common.Tests
         {
             EventUser eu = EventUser.FromUser(_baseUser, _configWithAllAttrsPrivate);
             Assert.Equal(_baseUser.Key, eu.Key);
-            Assert.Equal(_baseUser.SecondaryKey, eu.SecondaryKey);
+            Assert.Null(eu.Secondary);
             Assert.Null(eu.FirstName);
             Assert.Null(eu.LastName);
             Assert.Null(eu.Name);
             Assert.Null(eu.Avatar);
-            Assert.Null(eu.IpAddress);
+            Assert.Null(eu.IPAddress);
             Assert.Null(eu.Email);
             Assert.Null(eu.Anonymous);
             Assert.Null(eu.Custom);
-            Assert.Equal(new List<string> { "avatar", "bizzle", "country", "dizzle", "email", "firstName", "ip", "lastName", "name" },
+            Assert.Equal(new List<string> { "avatar", "bizzle", "country", "dizzle", "email", "firstName", "ip", "lastName", "name", "secondary" },
                 eu.PrivateAttrs);
         }
 
@@ -91,12 +91,12 @@ namespace LaunchDarkly.Common.Tests
         {
             EventUser eu = EventUser.FromUser(_anonUser, _configWithAllAttrsPrivate);
             Assert.Equal(_anonUser.Key, eu.Key);
-            Assert.Equal(_anonUser.SecondaryKey, eu.SecondaryKey);
+            Assert.Equal(_anonUser.Secondary, eu.Secondary);
             Assert.Null(eu.FirstName);
             Assert.Null(eu.LastName);
             Assert.Null(eu.Name);
             Assert.Null(eu.Avatar);
-            Assert.Null(eu.IpAddress);
+            Assert.Null(eu.IPAddress);
             Assert.Null(eu.Email);
             Assert.True(eu.Anonymous);
             Assert.Null(eu.Custom);
@@ -108,12 +108,12 @@ namespace LaunchDarkly.Common.Tests
         {
             EventUser eu = EventUser.FromUser(_baseUser, _configWithSomeAttrsPrivate);
             Assert.Equal(_baseUser.Key, eu.Key);
-            Assert.Equal(_baseUser.SecondaryKey, eu.SecondaryKey);
+            Assert.Equal(_baseUser.Secondary, eu.Secondary);
             Assert.Null(eu.FirstName);
             Assert.Equal(_baseUser.LastName, eu.LastName);
             Assert.Equal(_baseUser.Name, eu.Name);
             Assert.Equal(_baseUser.Avatar, eu.Avatar);
-            Assert.Equal(_baseUser.IPAddress, eu.IpAddress);
+            Assert.Equal(_baseUser.IPAddress, eu.IPAddress);
             Assert.Equal(_baseUser.Email, eu.Email);
             Assert.Null(eu.Anonymous);
             Assert.Equal(new Dictionary<string, JToken> { { "dizzle", new JValue("ghi") } }, eu.Custom);
@@ -125,12 +125,12 @@ namespace LaunchDarkly.Common.Tests
         {
             EventUser eu = EventUser.FromUser(_userSpecifyingOwnPrivateAttrs, _baseConfig);
             Assert.Equal(_baseUser.Key, eu.Key);
-            Assert.Equal(_baseUser.SecondaryKey, eu.SecondaryKey);
+            Assert.Equal(_baseUser.Secondary, eu.Secondary);
             Assert.Null(eu.FirstName);
             Assert.Equal(_baseUser.LastName, eu.LastName);
             Assert.Equal(_baseUser.Name, eu.Name);
             Assert.Equal(_baseUser.Avatar, eu.Avatar);
-            Assert.Equal(_baseUser.IPAddress, eu.IpAddress);
+            Assert.Equal(_baseUser.IPAddress, eu.IPAddress);
             Assert.Equal(_baseUser.Email, eu.Email);
             Assert.Null(eu.Anonymous);
             Assert.Equal(new Dictionary<string, JToken> { { "dizzle", new JValue("ghi") } }, eu.Custom);

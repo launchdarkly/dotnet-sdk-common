@@ -49,7 +49,7 @@ namespace LaunchDarkly.Common.Tests
 
         public static IEnumerable<object[]> AllStringProperties => MakeParams(
             new StringPropertyDesc("key", b => b.Key, u => u.Key),
-            new StringPropertyDesc("secondary", b => b.SecondaryKey, u => u.SecondaryKey),
+            new StringPropertyDesc("secondary", b => b.Secondary, u => u.Secondary),
             new StringPropertyDesc("ip", b => b.IPAddress, u => u.IPAddress),
             new StringPropertyDesc("country", b => b.Country, u => u.Country),
             new StringPropertyDesc("firstName", b => b.FirstName, u => u.FirstName),
@@ -60,6 +60,7 @@ namespace LaunchDarkly.Common.Tests
         );
 
         public static IEnumerable<object[]> PrivateStringProperties = MakeParams(
+            new StringPropertyCanBePrivateDesc("secondary", b => b.Secondary, u => u.Secondary),
             new StringPropertyCanBePrivateDesc("ip", b => b.IPAddress, u => u.IPAddress),
             new StringPropertyCanBePrivateDesc("country", b => b.Country, u => u.Country),
             new StringPropertyCanBePrivateDesc("firstName", b => b.FirstName, u => u.FirstName),
@@ -122,6 +123,15 @@ namespace LaunchDarkly.Common.Tests
             var user = p.Setter(User.Builder(key))(expectedValue).AsPrivateAttribute().Build();
             Assert.Equal(expectedValue, p.Getter(user));
             Assert.Equal(new HashSet<string> { p.Name }, user.PrivateAttributeNames);
+        }
+
+        [Fact]
+        public void BuilderCanSetSecondaryWithDeprecatedSetter()
+        {
+#pragma warning disable 0618
+            var user = User.Builder(key).SecondaryKey("s").Build();
+#pragma warning restore 0618
+            Assert.Equal("s", user.Secondary);
         }
 
         [Fact]
@@ -248,8 +258,8 @@ namespace LaunchDarkly.Common.Tests
         public void TestUserInequalityWithModifiedBuilder()
         {
             Func<IUserBuilder, IUserBuilder>[] mods = {
-                b => b.SecondaryKey("x"),
-                b => b.SecondaryKey(null),
+                b => b.Secondary("x"),
+                b => b.Secondary(null),
                 b => b.IPAddress("x"),
                 b => b.IPAddress(null),
                 b => b.Country("FR"),
