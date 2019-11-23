@@ -9,12 +9,8 @@ namespace LaunchDarkly.Client
     /// An object returned by the "variation detail" methods of the client, combining the result
     /// of a flag evaluation with an explanation of how it was calculated.
     /// </summary>
-    /// <remarks>
-    /// In future versions of the SDK, this may change from a class to a struct; avoid relying on it
-    /// being a class.
-    /// </remarks>
     /// <typeparam name="T">the type of the flag value</typeparam>
-    public class EvaluationDetail<T>
+    public struct EvaluationDetail<T>
     {
         private readonly T _value;
         private readonly int? _variationIndex;
