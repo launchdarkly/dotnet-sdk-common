@@ -40,6 +40,6 @@ namespace LaunchDarkly.Common
         /// </summary>
         /// <param name="reason">the evaluation reason for the result, if available</param>
         /// <returns>true if experiment mode should be used for this combination of flag and reason</returns>
-        bool IsExperiment(EvaluationReason reason);
+        bool IsExperiment(EvaluationReason? reason);
     }
 }

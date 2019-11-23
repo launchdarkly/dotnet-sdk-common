@@ -90,7 +90,7 @@ namespace LaunchDarkly.Common.Tests
             _ep = MakeProcessor(_config);
             IFlagEventProperties flag = new FlagEventPropertiesBuilder("flagkey").Version(11).TrackEvents(true).Build();
             FeatureRequestEvent fe = EventFactory.Default.NewFeatureRequestEvent(flag, _user,
-                new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, null), LdValue.Null);
+                new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, EvaluationReason.OffReason), LdValue.Null);
             _ep.SendEvent(fe);
 
             var output = FlushAndGetEvents(OkResponse());
@@ -107,7 +107,7 @@ namespace LaunchDarkly.Common.Tests
             _ep = MakeProcessor(_config);
             IFlagEventProperties flag = new FlagEventPropertiesBuilder("flagkey").Version(11).TrackEvents(true).Build();
             FeatureRequestEvent fe = EventFactory.Default.NewFeatureRequestEvent(flag, _user,
-                new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, null), LdValue.Null);
+                new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, EvaluationReason.OffReason), LdValue.Null);
             _ep.SendEvent(fe);
 
             var output = FlushAndGetEvents(OkResponse());
@@ -124,7 +124,7 @@ namespace LaunchDarkly.Common.Tests
             _ep = MakeProcessor(_config);
             IFlagEventProperties flag = new FlagEventPropertiesBuilder("flagkey").Version(11).TrackEvents(true).Build();
             FeatureRequestEvent fe = EventFactory.Default.NewFeatureRequestEvent(flag, _user,
-                new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, null), LdValue.Null);
+                new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, EvaluationReason.OffReason), LdValue.Null);
             _ep.SendEvent(fe);
 
             var output = FlushAndGetEvents(OkResponse());
@@ -169,7 +169,7 @@ namespace LaunchDarkly.Common.Tests
             _ep = MakeProcessor(_config);
             IFlagEventProperties flag = new FlagEventPropertiesBuilder("flagkey").Version(11).TrackEvents(true).Build();
             FeatureRequestEvent fe = EventFactory.Default.NewFeatureRequestEvent(flag, _user,
-                new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, null), LdValue.Null);
+                new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, EvaluationReason.OffReason), LdValue.Null);
             _ep.SendEvent(fe);
 
             var output = FlushAndGetEvents(OkResponse());
@@ -184,7 +184,7 @@ namespace LaunchDarkly.Common.Tests
              _ep = MakeProcessor(_config);
             IFlagEventProperties flag = new FlagEventPropertiesBuilder("flagkey").Version(11).TrackEvents(true).Build();
             FeatureRequestEvent fe = EventFactory.Default.NewFeatureRequestEvent(flag, null,
-                new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, null), LdValue.Null);
+                new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, EvaluationReason.OffReason), LdValue.Null);
             _ep.SendEvent(fe);
 
             var output = FlushAndGetEvents(OkResponse());
@@ -200,7 +200,7 @@ namespace LaunchDarkly.Common.Tests
             _ep = MakeProcessor(_config);
             IFlagEventProperties flag = new FlagEventPropertiesBuilder("flagkey").Version(11).TrackEvents(false).Build();
             FeatureRequestEvent fe = EventFactory.Default.NewFeatureRequestEvent(flag, _user,
-                new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, null), LdValue.Null);
+                new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, EvaluationReason.OffReason), LdValue.Null);
             _ep.SendEvent(fe);
 
             var output = FlushAndGetEvents(OkResponse());
@@ -216,7 +216,7 @@ namespace LaunchDarkly.Common.Tests
             long futureTime = Util.GetUnixTimestampMillis(DateTime.Now) + 1000000;
             IFlagEventProperties flag = new FlagEventPropertiesBuilder("flagkey").Version(11).DebugEventsUntilDate(futureTime).Build();
             FeatureRequestEvent fe = EventFactory.Default.NewFeatureRequestEvent(flag, _user,
-                new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, null), LdValue.Null);
+                new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, EvaluationReason.OffReason), LdValue.Null);
             _ep.SendEvent(fe);
 
             var output = FlushAndGetEvents(OkResponse());
@@ -234,7 +234,7 @@ namespace LaunchDarkly.Common.Tests
             IFlagEventProperties flag = new FlagEventPropertiesBuilder("flagkey").Version(11).TrackEvents(true)
                 .DebugEventsUntilDate(futureTime).Build();
             FeatureRequestEvent fe = EventFactory.Default.NewFeatureRequestEvent(flag, _user,
-                new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, null), LdValue.Null);
+                new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, EvaluationReason.OffReason), LdValue.Null);
             _ep.SendEvent(fe);
 
             var output = FlushAndGetEvents(OkResponse());
@@ -270,7 +270,7 @@ namespace LaunchDarkly.Common.Tests
             long debugUntil = serverTime + 1000;
             IFlagEventProperties flag = new FlagEventPropertiesBuilder("flagkey").Version(11).DebugEventsUntilDate(debugUntil).Build();
             FeatureRequestEvent fe = EventFactory.Default.NewFeatureRequestEvent(flag, _user,
-                new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, null), LdValue.Null);
+                new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, EvaluationReason.OffReason), LdValue.Null);
             _ep.SendEvent(fe);
 
             // Should get a summary event only, not a full feature event
@@ -297,7 +297,7 @@ namespace LaunchDarkly.Common.Tests
             long debugUntil = serverTime - 1000;
             IFlagEventProperties flag = new FlagEventPropertiesBuilder("flagkey").Version(11).DebugEventsUntilDate(debugUntil).Build();
             FeatureRequestEvent fe = EventFactory.Default.NewFeatureRequestEvent(flag, _user,
-                new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, null), LdValue.Null);
+                new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, EvaluationReason.OffReason), LdValue.Null);
             _ep.SendEvent(fe);
 
             // Should get a summary event only, not a full feature event
@@ -316,9 +316,9 @@ namespace LaunchDarkly.Common.Tests
             IFlagEventProperties flag2 = new FlagEventPropertiesBuilder("flagkey2").Version(22).TrackEvents(true).Build();
             var value = LdValue.Of("value");
             FeatureRequestEvent fe1 = EventFactory.Default.NewFeatureRequestEvent(flag1, _user,
-                new EvaluationDetail<LdValue>(value, 1, null), LdValue.Null);
+                new EvaluationDetail<LdValue>(value, 1, EvaluationReason.OffReason), LdValue.Null);
             FeatureRequestEvent fe2 = EventFactory.Default.NewFeatureRequestEvent(flag2, _user,
-                new EvaluationDetail<LdValue>(value, 1, null), LdValue.Null);
+                new EvaluationDetail<LdValue>(value, 1, EvaluationReason.OffReason), LdValue.Null);
             _ep.SendEvent(fe1);
             _ep.SendEvent(fe2);
 
@@ -341,13 +341,13 @@ namespace LaunchDarkly.Common.Tests
             var default1 = LdValue.Of("default1");
             var default2 = LdValue.Of("default2");
             FeatureRequestEvent fe1a = EventFactory.Default.NewFeatureRequestEvent(flag1, _user,
-                new EvaluationDetail<LdValue>(value1, 1, null), default1);
+                new EvaluationDetail<LdValue>(value1, 1, EvaluationReason.OffReason), default1);
             FeatureRequestEvent fe1b = EventFactory.Default.NewFeatureRequestEvent(flag1, _user,
-                new EvaluationDetail<LdValue>(value1, 1, null), default1);
+                new EvaluationDetail<LdValue>(value1, 1, EvaluationReason.OffReason), default1);
             FeatureRequestEvent fe1c = EventFactory.Default.NewFeatureRequestEvent(flag1, _user,
-                new EvaluationDetail<LdValue>(value2, 2, null), default1);
+                new EvaluationDetail<LdValue>(value2, 2, EvaluationReason.OffReason), default1);
             FeatureRequestEvent fe2 = EventFactory.Default.NewFeatureRequestEvent(flag2, _user,
-                new EvaluationDetail<LdValue>(value2, 2, null), default2);
+                new EvaluationDetail<LdValue>(value2, 2, EvaluationReason.OffReason), default2);
             _ep.SendEvent(fe1a);
             _ep.SendEvent(fe1b);
             _ep.SendEvent(fe1c);
@@ -582,7 +582,7 @@ namespace LaunchDarkly.Common.Tests
             Assert.Equal(userJson, t.Get("user"));
         }
 
-        private void CheckFeatureEvent(LdValue t, FeatureRequestEvent fe, IFlagEventProperties flag, bool debug, LdValue userJson, EvaluationReason reason = null)
+        private void CheckFeatureEvent(LdValue t, FeatureRequestEvent fe, IFlagEventProperties flag, bool debug, LdValue userJson, EvaluationReason? reason = null)
         {
             Assert.Equal(LdValue.Of(debug ? "debug" : "feature"), t.Get("kind"));
             Assert.Equal(LdValue.Of(fe.CreationDate), t.Get("creationDate"));

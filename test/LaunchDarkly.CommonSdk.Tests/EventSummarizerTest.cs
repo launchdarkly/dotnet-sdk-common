@@ -38,7 +38,7 @@ namespace LaunchDarkly.Common.Tests
         {
             EventSummarizer es = new EventSummarizer();
             IFlagEventProperties flag = new FlagEventPropertiesBuilder("key").Build();
-            var nullResult = new EvaluationDetail<LdValue>(LdValue.Null, null, null);
+            var nullResult = new EvaluationDetail<LdValue>(LdValue.Null, null, EvaluationReason.OffReason);
             var factory1 = new EventFactory(() => 2000, false);
             Event event1 = factory1.NewFeatureRequestEvent(flag, _user, nullResult, LdValue.Null);
             var factory2 = new EventFactory(() => 1000, false);
@@ -65,13 +65,13 @@ namespace LaunchDarkly.Common.Tests
             var default2 = LdValue.Of("default2");
             var default3 = LdValue.Of("default3");
             Event event1 = _eventFactory.NewFeatureRequestEvent(flag1, _user,
-                new EvaluationDetail<LdValue>(LdValue.Of("value1"), 1, null), default1);
+                new EvaluationDetail<LdValue>(LdValue.Of("value1"), 1, EvaluationReason.OffReason), default1);
             Event event2 = _eventFactory.NewFeatureRequestEvent(flag1, _user,
-                new EvaluationDetail<LdValue>(LdValue.Of("value2"), 2, null), default1);
+                new EvaluationDetail<LdValue>(LdValue.Of("value2"), 2, EvaluationReason.OffReason), default1);
             Event event3 = _eventFactory.NewFeatureRequestEvent(flag2, _user,
-                new EvaluationDetail<LdValue>(LdValue.Of("value99"), 1, null), default2);
+                new EvaluationDetail<LdValue>(LdValue.Of("value99"), 1, EvaluationReason.OffReason), default2);
             Event event4 = _eventFactory.NewFeatureRequestEvent(flag1, _user,
-                new EvaluationDetail<LdValue>(LdValue.Of("value1"), 1, null), default1);
+                new EvaluationDetail<LdValue>(LdValue.Of("value1"), 1, EvaluationReason.OffReason), default1);
             Event event5 = _eventFactory.NewUnknownFeatureRequestEvent(unknownFlagKey, _user, default3, EvaluationErrorKind.FLAG_NOT_FOUND);
             es.SummarizeEvent(event1);
             es.SummarizeEvent(event2);
