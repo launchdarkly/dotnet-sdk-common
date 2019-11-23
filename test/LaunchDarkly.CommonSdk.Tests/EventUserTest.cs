@@ -21,7 +21,7 @@ namespace LaunchDarkly.Common.Tests
         };
 
         static readonly User _baseUser = User.Builder("abc")
-            .SecondaryKey("xyz")
+            .Secondary("xyz")
             .FirstName("Sue")
             .LastName("Storm")
             .Name("Susan")
@@ -34,7 +34,7 @@ namespace LaunchDarkly.Common.Tests
             .Build();
 
         static readonly User _userSpecifyingOwnPrivateAttrs = User.Builder("abc")
-            .SecondaryKey("xyz")
+            .Secondary("xyz")
             .FirstName("Sue").AsPrivateAttribute()
             .LastName("Storm")
             .Name("Susan")
@@ -57,7 +57,7 @@ namespace LaunchDarkly.Common.Tests
         {
             EventUser eu = EventUser.FromUser(_baseUser, _baseConfig);
             Assert.Equal(_baseUser.Key, eu.Key);
-            Assert.Equal(_baseUser.SecondaryKey, eu.SecondaryKey);
+            Assert.Equal(_baseUser.Secondary, eu.Secondary);
             Assert.Equal(_baseUser.FirstName, eu.FirstName);
             Assert.Equal(_baseUser.LastName, eu.LastName);
             Assert.Equal(_baseUser.Name, eu.Name);
@@ -74,7 +74,7 @@ namespace LaunchDarkly.Common.Tests
         {
             EventUser eu = EventUser.FromUser(_baseUser, _configWithAllAttrsPrivate);
             Assert.Equal(_baseUser.Key, eu.Key);
-            Assert.Equal(_baseUser.SecondaryKey, eu.SecondaryKey);
+            Assert.Null(eu.Secondary);
             Assert.Null(eu.FirstName);
             Assert.Null(eu.LastName);
             Assert.Null(eu.Name);
@@ -83,7 +83,7 @@ namespace LaunchDarkly.Common.Tests
             Assert.Null(eu.Email);
             Assert.Null(eu.Anonymous);
             Assert.Null(eu.Custom);
-            Assert.Equal(ImmutableSortedSet.Create<string>("ip", "country", "firstName", "lastName", "name", "avatar", "email", "bizzle", "dizzle"),
+            Assert.Equal(ImmutableSortedSet.Create<string>("secondary", "ip", "country", "firstName", "lastName", "name", "avatar", "email", "bizzle", "dizzle"),
                 eu.PrivateAttrs);
         }
 
@@ -92,7 +92,7 @@ namespace LaunchDarkly.Common.Tests
         {
             EventUser eu = EventUser.FromUser(_anonUser, _configWithAllAttrsPrivate);
             Assert.Equal(_anonUser.Key, eu.Key);
-            Assert.Equal(_anonUser.SecondaryKey, eu.SecondaryKey);
+            Assert.Equal(_anonUser.Secondary, eu.Secondary);
             Assert.Null(eu.FirstName);
             Assert.Null(eu.LastName);
             Assert.Null(eu.Name);
@@ -109,7 +109,7 @@ namespace LaunchDarkly.Common.Tests
         {
             EventUser eu = EventUser.FromUser(_baseUser, _configWithSomeAttrsPrivate);
             Assert.Equal(_baseUser.Key, eu.Key);
-            Assert.Equal(_baseUser.SecondaryKey, eu.SecondaryKey);
+            Assert.Equal(_baseUser.Secondary, eu.Secondary);
             Assert.Null(eu.FirstName);
             Assert.Equal(_baseUser.LastName, eu.LastName);
             Assert.Equal(_baseUser.Name, eu.Name);
@@ -126,7 +126,7 @@ namespace LaunchDarkly.Common.Tests
         {
             EventUser eu = EventUser.FromUser(_userSpecifyingOwnPrivateAttrs, _baseConfig);
             Assert.Equal(_baseUser.Key, eu.Key);
-            Assert.Equal(_baseUser.SecondaryKey, eu.SecondaryKey);
+            Assert.Equal(_baseUser.Secondary, eu.Secondary);
             Assert.Null(eu.FirstName);
             Assert.Equal(_baseUser.LastName, eu.LastName);
             Assert.Equal(_baseUser.Name, eu.Name);

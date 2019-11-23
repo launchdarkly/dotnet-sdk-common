@@ -22,7 +22,7 @@ namespace LaunchDarkly.Common.Tests
                 .IPAddress("1.2.3.4")
                 .LastName("last")
                 .Name("me")
-                .SecondaryKey("s")
+                .Secondary("s")
                 .Build();
             var userJson = LdValue.Parse(@"{
                 ""key"":""userkey"",
@@ -67,15 +67,14 @@ namespace LaunchDarkly.Common.Tests
                 .IPAddress("1.2.3.4")
                 .LastName("last")
                 .Name("me")
-                .SecondaryKey("s")
+                .Secondary("s")
                 .Build();
             var userJson = LdValue.Parse(@"{
                 ""key"":""userkey"",
                 ""anonymous"":true,
-                ""secondary"":""s"",
                 ""privateAttrs"":[
                     ""avatar"", ""country"", ""custom1"", ""custom2"", ""email"",
-                    ""firstName"", ""ip"", ""lastName"", ""name""
+                    ""firstName"", ""ip"", ""lastName"", ""name"", ""secondary""
                 ]
                 }");
             var config = new SimpleConfiguration() { AllAttributesPrivate = true };
@@ -384,7 +383,7 @@ namespace LaunchDarkly.Common.Tests
         {
             var builder = User.Builder("userkey")
                 .Anonymous(true)
-                .SecondaryKey("s");
+                .Secondary("s");
             var topJsonBuilder = LdValue.BuildObject()
                 .Add("key", "userkey")
                 .Add("anonymous", true)

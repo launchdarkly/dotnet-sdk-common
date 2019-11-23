@@ -74,6 +74,13 @@ namespace LaunchDarkly.Client
         /// otherwise identical according to that attribute.
         /// </remarks>
         [JsonProperty(PropertyName = "secondary", NullValueHandling = NullValueHandling.Ignore)]
+        public string Secondary => _secondary;
+
+        /// <summary>
+        /// Obsolete name for <see cref="Secondary"/>.
+        /// </summary>
+        [Obsolete("use Secondary")]
+        [JsonIgnore]
         public string SecondaryKey => _secondary;
         
         /// <summary>
@@ -205,12 +212,12 @@ namespace LaunchDarkly.Client
         /// Creates a user by specifying all properties.
         /// </summary>
         [JsonConstructor]
-        public User(string key, string secondaryKey, string ip, string country, string firstName,
+        public User(string key, string secondary, string ip, string country, string firstName,
                     string lastName, string name, string avatar, string email, bool? anonymous,
                     ImmutableDictionary<string, LdValue> custom, ImmutableHashSet<string> privateAttributeNames)
         {
             _key = key;
-            _secondary = secondaryKey;
+            _secondary = secondary;
             _ip = ip;
             _country = country;
             _firstName = firstName;
@@ -255,7 +262,7 @@ namespace LaunchDarkly.Client
                 return true;
             }
             return Object.Equals(Key, u.Key) &&
-                Object.Equals(SecondaryKey, u.SecondaryKey) &&
+                Object.Equals(Secondary, u.Secondary) &&
                 Object.Equals(IPAddress, u.IPAddress) &&
                 Object.Equals(Country, u.Country) &&
                 Object.Equals(FirstName, u.FirstName) &&
@@ -274,7 +281,7 @@ namespace LaunchDarkly.Client
         {
             var hashBuilder = Util.Hash()
                 .With(Key)
-                .With(SecondaryKey)
+                .With(Secondary)
                 .With(IPAddress)
                 .With(Country)
                 .With(FirstName)

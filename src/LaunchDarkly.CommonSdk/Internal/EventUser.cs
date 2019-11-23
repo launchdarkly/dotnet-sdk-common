@@ -9,7 +9,7 @@ namespace LaunchDarkly.Common
     internal struct EventUser
     {
         public string Key { get; internal set; }
-        public string SecondaryKey { get; internal set; }
+        public string Secondary { get; internal set; }
         public string IPAddress { get; internal set; }
         public string Country { get; internal set; }
         public string FirstName { get; internal set; }
@@ -46,7 +46,7 @@ namespace LaunchDarkly.Common
         internal EventUser Build()
         {
             _result.Key = _user.Key;
-            _result.SecondaryKey = _user.SecondaryKey;
+            _result.Secondary = StringAttrIfNotPrivate("secondary", _user.Secondary);
             _result.Anonymous = _user.Anonymous ? (bool?)true : null;
             _result.IPAddress = StringAttrIfNotPrivate("ip", _user.IPAddress);
             _result.Country = StringAttrIfNotPrivate("country", _user.Country);
