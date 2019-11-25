@@ -40,7 +40,7 @@ namespace LaunchDarkly.Common
             }
             writer.WriteStartObject();
             MaybeWriteString(writer, "key", u.Key);
-            MaybeWriteString(writer, "secondary", u.SecondaryKey);
+            MaybeWriteString(writer, "secondary", u.Secondary);
             MaybeWriteString(writer, "ip", u.IPAddress);
             MaybeWriteString(writer, "country", u.Country);
             MaybeWriteString(writer, "firstName", u.FirstName);
