@@ -22,7 +22,7 @@ TEST_APP=packaging-test/bin/Debug/netcoreapp2.0/DumpDllTypes.dll
 
 dotnet build "${TEST_PROJ}" -f netcoreapp2.0
 
-TEMP_DIR=$(mktemp -d -t dotnet-sdk-packaging-test.xxxxxx)
+TEMP_DIR=$(mktemp -d -t dotnet-sdk-packaging-test.XXXXXX)
 trap "rm -rf ${TEMP_DIR}" EXIT
 
 TYPES_LIST_1="${TEMP_DIR}/LaunchDarkly.CommonSdk_types"
