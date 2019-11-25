@@ -55,7 +55,7 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void TestDeserializeNullReason()
         {
-            var reason = JsonConvert.DeserializeObject<EvaluationReason>("null");
+            var reason = JsonConvert.DeserializeObject<EvaluationReason?>("null");
             Assert.Null(reason);
         }
         

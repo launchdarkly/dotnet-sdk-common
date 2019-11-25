@@ -88,12 +88,12 @@ namespace LaunchDarkly.Client
         /// <summary>
         /// An explanation of how the value was calculated, or null if the reason was not requested.
         /// </summary>
-        public EvaluationReason Reason { get; private set; }
+        public EvaluationReason? Reason { get; private set; }
 
         internal FeatureRequestEvent(long creationDate, string key, User user, int? variation,
             LdValue value, LdValue defaultValue, int? version, string prereqOf,
             bool trackEvents, long? debugEventsUntilDate,
-            bool debug, EvaluationReason reason) : base(creationDate, key, user)
+            bool debug, EvaluationReason? reason) : base(creationDate, key, user)
         {
             Variation = variation;
             Value = value;

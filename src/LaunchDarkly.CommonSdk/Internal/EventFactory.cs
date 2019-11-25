@@ -42,7 +42,7 @@ namespace LaunchDarkly.Common
             bool experiment = flag.IsExperiment(result.Reason);
             return new FeatureRequestEvent(GetTimestamp(), flag.Key, user, result.VariationIndex, result.Value, defaultVal,
                 flag.EventVersion, null, experiment || flag.TrackEvents, flag.DebugEventsUntilDate, false,
-                (experiment || IncludeReasons) ? result.Reason : null);
+                (experiment || IncludeReasons) ? (EvaluationReason?)result.Reason : null);
         }
 
         /// <summary>
@@ -59,7 +59,7 @@ namespace LaunchDarkly.Common
         {
             return new FeatureRequestEvent(GetTimestamp(), flag.Key, user, null, defaultVal, defaultVal,
                 flag.EventVersion, null, flag.TrackEvents, flag.DebugEventsUntilDate, false,
-                IncludeReasons ? EvaluationReason.ErrorReason(errorKind) : null);
+                IncludeReasons ? (EvaluationReason?)EvaluationReason.ErrorReason(errorKind) : null);
         }
 
         /// <summary>
@@ -76,7 +76,7 @@ namespace LaunchDarkly.Common
         {
             return new FeatureRequestEvent(GetTimestamp(), key, user, null, defaultVal, defaultVal,
                 null, null, false, null, false,
-                IncludeReasons ? EvaluationReason.ErrorReason(errorKind) : null);
+                IncludeReasons ? (EvaluationReason?)EvaluationReason.ErrorReason(errorKind) : null);
         }
 
         /// <summary>
@@ -93,7 +93,7 @@ namespace LaunchDarkly.Common
             bool experiment = prereqFlag.IsExperiment(result.Reason);
             return new FeatureRequestEvent(GetTimestamp(), prereqFlag.Key, user, result.VariationIndex, result.Value, LdValue.Null,
                 prereqFlag.EventVersion, prereqOf.Key, experiment || prereqFlag.TrackEvents, prereqFlag.DebugEventsUntilDate, false,
-                (experiment || IncludeReasons) ? result.Reason : null);
+                (experiment || IncludeReasons) ? (EvaluationReason?)result.Reason : null);
         }
 
         /// <summary>

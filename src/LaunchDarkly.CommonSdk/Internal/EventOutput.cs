@@ -286,14 +286,14 @@ namespace LaunchDarkly.Common
             _jsonWriter.WriteEndObject();
         }
 
-        private void WriteReason(EvaluationReason reason)
+        private void WriteReason(EvaluationReason? reason)
         {
-            if (reason is null)
+            if (!reason.HasValue)
             {
                 return;
             }
             _jsonWriter.WritePropertyName("reason");
-            EvaluationReasonConverter.Instance.WriteJson(_jsonWriter, reason, _jsonSerializer);
+            EvaluationReasonConverter.Instance.WriteJson(_jsonWriter, reason.Value, _jsonSerializer);
         }
     }
 }

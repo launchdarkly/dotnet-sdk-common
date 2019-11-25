@@ -77,24 +77,15 @@ namespace LaunchDarkly.Client
     /// Describes the reason that a flag evaluation produced a particular value. Subclasses of
     /// <see cref="EvaluationReason"/> describe specific reasons.
     /// </summary>
-    /// <remarks>
-    /// Note that this is currently a base class with subclasses corresponding to each <see cref="EvaluationReasonKind"/>.
-    /// In a future version of the SDK, it will instead be a value type (struct). Therefore, instead of checking for the
-    /// subclasses, use the <see cref="Kind"/> property to distinguish between reasons, and instead of constructing the
-    /// subclasses directly, use factory methods/properties such as <see cref="RuleMatchReason(int, string)"/> or
-    /// <see cref="FallthroughReason"/>.
-    /// </remarks>
     [JsonConverter(typeof(EvaluationReasonConverter))]
-    public abstract class EvaluationReason
+    public struct EvaluationReason
     {
-#pragma warning disable 0618
-        private static readonly EvaluationReason ErrorClientNotReady = new Error(EvaluationErrorKind.CLIENT_NOT_READY);
-        private static readonly EvaluationReason ErrorFlagNotFound = new Error(EvaluationErrorKind.FLAG_NOT_FOUND);
-        private static readonly EvaluationReason ErrorUserNotSpecified = new Error(EvaluationErrorKind.USER_NOT_SPECIFIED);
-        private static readonly EvaluationReason ErrorMalformedFlag = new Error(EvaluationErrorKind.MALFORMED_FLAG);
-        private static readonly EvaluationReason ErrorWrongType = new Error(EvaluationErrorKind.WRONG_TYPE);
-        private static readonly EvaluationReason ErrorException = new Error(EvaluationErrorKind.EXCEPTION);
-#pragma warning restore 0618
+        private static readonly EvaluationReason _offInstance =
+            new EvaluationReason(EvaluationReasonKind.OFF, -1, null, null, EvaluationErrorKind.NONE);
+        private static readonly EvaluationReason _fallthroughInstance =
+            new EvaluationReason(EvaluationReasonKind.FALLTHROUGH, -1, null, null, EvaluationErrorKind.NONE);
+        private static readonly EvaluationReason _targetMatchInstance =
+            new EvaluationReason(EvaluationReasonKind.TARGET_MATCH, -1, null, null, EvaluationErrorKind.NONE);
 
         private readonly EvaluationReasonKind _kind;
         private readonly int _ruleIndex;
@@ -146,17 +137,17 @@ namespace LaunchDarkly.Client
         /// <summary>
         /// Returns an EvaluationReason of the kind <see cref="EvaluationReasonKind.OFF"/>.
         /// </summary>
-        public static EvaluationReason OffReason => Off.Instance;
+        public static EvaluationReason OffReason => _offInstance;
 
         /// <summary>
         /// Returns an EvaluationReason of the kind <see cref="EvaluationReasonKind.FALLTHROUGH"/>.
         /// </summary>
-        public static EvaluationReason FallthroughReason => Fallthrough.Instance;
+        public static EvaluationReason FallthroughReason => _fallthroughInstance;
 
         /// <summary>
         /// Returns an EvaluationReason of the kind <see cref="EvaluationReasonKind.TARGET_MATCH"/>.
         /// </summary>
-        public static EvaluationReason TargetMatchReason => TargetMatch.Instance;
+        public static EvaluationReason TargetMatchReason => _targetMatchInstance;
 
         /// <summary>
         /// Returns an EvaluationReason of the kind <see cref="EvaluationReasonKind.RULE_MATCH"/>.
@@ -164,34 +155,24 @@ namespace LaunchDarkly.Client
         /// <param name="ruleIndex">the rule index</param>
         /// <param name="ruleId">the unique rule ID</param>
         /// <returns>a reason descriptor</returns>
-        public static EvaluationReason RuleMatchReason(int ruleIndex, string ruleId) => new RuleMatch(ruleIndex, ruleId);
+        public static EvaluationReason RuleMatchReason(int ruleIndex, string ruleId) =>
+            new EvaluationReason(EvaluationReasonKind.RULE_MATCH, ruleIndex, ruleId, null, EvaluationErrorKind.NONE);
 
         /// <summary>
         /// Returns an EvaluationReason of the kind <see cref="EvaluationReasonKind.PREREQUISITE_FAILED"/>.
         /// </summary>
         /// <param name="key">the key of the prerequisite flag</param>
         /// <returns>a reason descriptor</returns>
-        public static EvaluationReason PrerequisiteFailedReason(string key) => new PrerequisiteFailed(key);
+        public static EvaluationReason PrerequisiteFailedReason(string key) =>
+            new EvaluationReason(EvaluationReasonKind.PREREQUISITE_FAILED, -1, null, key, EvaluationErrorKind.NONE);
 
         /// <summary>
         /// Returns an EvaluationReason of the kind <see cref="EvaluationReasonKind.ERROR"/>.
         /// </summary>
         /// <param name="errorKind"></param>
         /// <returns></returns>
-        public static EvaluationReason ErrorReason(EvaluationErrorKind errorKind)
-        {
-            switch (errorKind)
-            {
-                case EvaluationErrorKind.CLIENT_NOT_READY: return ErrorClientNotReady;
-                case EvaluationErrorKind.FLAG_NOT_FOUND: return ErrorFlagNotFound;
-                case EvaluationErrorKind.USER_NOT_SPECIFIED: return ErrorUserNotSpecified;
-                case EvaluationErrorKind.MALFORMED_FLAG: return ErrorMalformedFlag;
-                case EvaluationErrorKind.WRONG_TYPE: return ErrorWrongType;
-                case EvaluationErrorKind.EXCEPTION: return ErrorException;
-            }
-            return new Error(errorKind);
-        }
-#pragma warning restore 0618
+        public static EvaluationReason ErrorReason(EvaluationErrorKind errorKind) =>
+            new EvaluationReason(EvaluationReasonKind.ERROR, -1, null, null, errorKind);
 
         /// <inheritdoc/>
         public override bool Equals(object obj)
@@ -213,118 +194,16 @@ namespace LaunchDarkly.Client
         /// <inheritdoc/>
         public override string ToString()
         {
+            switch (_kind)
+            {
+                case EvaluationReasonKind.RULE_MATCH:
+                    return _kind.ToString() + "(" + _ruleIndex + "," + _ruleId + ")";
+                case EvaluationReasonKind.PREREQUISITE_FAILED:
+                    return _kind.ToString() + "(" + _prerequisiteKey + ")";
+                case EvaluationReasonKind.ERROR:
+                    return _kind.ToString() + "(" + _errorKind.ToString() + ")";
+            }
             return Kind.ToString();
-        }
-
-        /// <summary>
-        /// Indicates that the flag was off and therefore returned its configured off value.
-        /// </summary>
-        [Obsolete("EvaluationReason will become a struct and will no longer have subclasses; use its factory methods and Kind")]
-        public class Off : EvaluationReason
-        {
-            private static readonly Off _instance = new Off();
-
-            /// <summary>
-            /// The singleton instance of Off.
-            /// </summary>
-            public static Off Instance => _instance;
-
-            private Off() : base(EvaluationReasonKind.OFF, -1, null, null, EvaluationErrorKind.NONE) { }
-        }
-
-        /// <summary>
-        /// Indicates that the flag was on but the user did not match any targets or rules.
-        /// </summary>
-        [Obsolete("EvaluationReason will become a struct and will no longer have subclasses; use its factory methods and Kind")]
-        public class Fallthrough : EvaluationReason
-        {
-            private static readonly Fallthrough _instance = new Fallthrough();
-
-            /// <summary>
-            /// The singleton instance of Fallthrough.
-            /// </summary>
-            public static Fallthrough Instance => _instance;
-
-            private Fallthrough() : base(EvaluationReasonKind.FALLTHROUGH, -1, null, null, EvaluationErrorKind.NONE) { }
-        }
-
-        /// <summary>
-        /// Indicates that the user key was specifically targeted for this flag.
-        /// </summary>
-        [Obsolete("EvaluationReason will become a struct and will no longer have subclasses; use its factory methods and Kind")]
-        public class TargetMatch : EvaluationReason
-        {
-            private static readonly TargetMatch _instance = new TargetMatch();
-
-            /// <summary>
-            /// The singleton instance of TargetMatch.
-            /// </summary>
-            public static TargetMatch Instance => _instance;
-
-            private TargetMatch() : base(EvaluationReasonKind.TARGET_MATCH, -1, null, null, EvaluationErrorKind.NONE) { }
-        }
-
-        /// <summary>
-        /// Indicates that the flag was considered off because it had at least one prerequisite flag
-        /// that either was off or did not return the desired variation.
-        /// </summary>
-        [Obsolete("EvaluationReason will become a struct and will no longer have subclasses; use its factory methods and Kind")]
-        public class RuleMatch : EvaluationReason
-        {
-            /// <summary>
-            /// Constructs a new RuleMatch instance.
-            /// </summary>
-            /// <param name="index">the rule index</param>
-            /// <param name="id">the rule ID</param>
-            [JsonConstructor]
-            public RuleMatch(int index, string id) : base(EvaluationReasonKind.RULE_MATCH, index, id, null, EvaluationErrorKind.NONE) { }
-            
-            /// <inheritdoc/>
-            public override string ToString()
-            {
-                return Kind + "(" + RuleIndex + "," + RuleId + ")";
-            }
-        }
-
-        /// <summary>
-        /// Indicates that the flag was considered off because it had at least one prerequisite flag
-        /// that either was off or did not return the desired variation.
-        /// </summary>
-        [Obsolete("EvaluationReason will become a struct and will no longer have subclasses; use its factory methods and Kind")]
-        public class PrerequisiteFailed : EvaluationReason
-        {
-            /// <summary>
-            /// Constructs a new PrerequisitesFailed instance.
-            /// </summary>
-            /// <param name="key">the key of the failed prerequisite</param>
-            [JsonConstructor]
-            public PrerequisiteFailed(string key) : base(EvaluationReasonKind.PREREQUISITE_FAILED, -1, null, key, EvaluationErrorKind.NONE) { }
-
-            /// <inheritdoc/>
-            public override string ToString()
-            {
-                return Kind + "(" + PrerequisiteKey + ")";
-            }
-        }
-
-        /// <summary>
-        /// Indicates that the flag could not be evaluated, e.g. because it does not exist or due to an unexpected
-        /// error. In this case the result value will be the default value that the caller passed to the client.
-        /// </summary>
-        [Obsolete("EvaluationReason will become a struct and will no longer have subclasses; use its factory methods and Kind")]
-        public class Error : EvaluationReason
-        {
-            /// <summary>
-            /// Constructs a new Error instance.
-            /// </summary>
-            /// <param name="errorKind">the type of error</param>
-            public Error(EvaluationErrorKind errorKind) : base(EvaluationReasonKind.ERROR, -1, null, null, errorKind) { }
-
-            /// <inheritdoc/>
-            public override string ToString()
-            {
-                return Kind + "(" + ErrorKind + ")";
-            }
         }
     }
 

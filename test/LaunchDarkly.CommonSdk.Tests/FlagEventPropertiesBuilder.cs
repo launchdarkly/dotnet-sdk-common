@@ -12,9 +12,9 @@ namespace LaunchDarkly.Common.Tests
 
         public EvaluationReason ExperimentReason { get; internal set; }
 
-        public bool IsExperiment(EvaluationReason reason)
+        public bool IsExperiment(EvaluationReason? reason)
         {
-            return reason != null && reason.Equals(ExperimentReason);
+            return reason.HasValue && reason.Value.Equals(ExperimentReason);
         }
     }
 
