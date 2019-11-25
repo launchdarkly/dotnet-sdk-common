@@ -1,12 +1,18 @@
-version: 2
+version: 2.1
+
 workflows:
   version: 2
   test:
     jobs:
-      - test-1.1
-      - test-2.0
+      - test-netcore-1-1
+      - test-netcore-2-0
+      - test-windows-netframework-4-5
+
+orbs:
+  win: circleci/windows@1.0.0
+
 jobs:
-  test-1.1:
+  test-netcore-1-1:
     docker:
       - image: microsoft/dotnet:1.1-sdk
     steps:
@@ -15,7 +21,8 @@ jobs:
       - run: dotnet build src/LaunchDarkly.CommonSdk -f netstandard1.4
       - run: dotnet build src/LaunchDarkly.CommonSdk -f netstandard1.6
       - run: dotnet test test/LaunchDarkly.CommonSdk.Tests/LaunchDarkly.CommonSdk.Tests.csproj -f netcoreapp1.1
-  test-2.0:
+
+  test-netcore-2-0:
     docker:
       - image: microsoft/dotnet:2.0-sdk-jessie
     steps:
