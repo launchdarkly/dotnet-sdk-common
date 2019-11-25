@@ -9,8 +9,12 @@
     <PackageId>LaunchDarkly.CommonSdk.StrongName</PackageId>
     <Description>LaunchDarkly common code for .NET and Xamarin clients</Description>
     <Copyright>Copyright 2018 LaunchDarkly</Copyright>
+
+    <!-- ensure that dependency DLLs are copied to output folder too - this makes life easier for the packaging-test script -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="..\LaunchDarkly.CommonSdk\*.cs" Exclude="..\LaunchDarkly.CommonSdk\AssemblyInfo.cs" />
     <Compile Include="..\LaunchDarkly.CommonSdk\Base\*.cs" />
     <Compile Include="..\LaunchDarkly.CommonSdk\Interfaces\*.cs" />
     <Compile Include="..\LaunchDarkly.CommonSdk\Internal\**\*.cs" />

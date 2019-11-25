@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netcoreapp2.0</TargetFrameworks>
+    <AssemblyName>DumpDllTypes</AssemblyName>
+    <OutputType>exe</OutputType>
+    <StartupObject>LaunchDarkly.Build.Helpers.DumpDllTypes</StartupObject>
+  </PropertyGroup>
+
+</Project>
