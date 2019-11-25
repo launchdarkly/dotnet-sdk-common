@@ -58,6 +58,9 @@ jobs:
       - run:
           name: run tests in .NET Core 2.0
           command: dotnet test test/LaunchDarkly.CommonSdk.Tests/LaunchDarkly.CommonSdk.Tests.csproj -f netcoreapp2.0
+      - run:
+          name: verify that both CommonSdk assemblies contain the same types
+          command: ./packaging-test/compare-assembly-contents.sh netstandard2.0
 
   test-windows-netframework-4-5:
     executor:
