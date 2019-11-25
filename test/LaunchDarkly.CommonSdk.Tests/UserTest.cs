@@ -8,7 +8,7 @@ namespace LaunchDarkly.Common.Tests
         private const string key = "UserKey";
         
         public static readonly User UserToCopy = User.Builder("userkey")
-                .SecondaryKey("s")
+                .Secondary("s")
                 .IPAddress("1")
                 .Country("US")
                 .FirstName("f")
@@ -40,7 +40,7 @@ namespace LaunchDarkly.Common.Tests
         public void TestPropertyDefaults()
         {
             var user = User.WithKey(key);
-            Assert.Null(user.SecondaryKey);
+            Assert.Null(user.Secondary);
             Assert.Null(user.IPAddress);
             Assert.Null(user.Country);
             Assert.Null(user.FirstName);
@@ -72,6 +72,28 @@ namespace LaunchDarkly.Common.Tests
             user.IPAddress = ip;
 #pragma warning disable 618
             Assert.Equal(ip, user.IpAddress);
+#pragma warning restore 618
+        }
+
+        [Fact]
+        public void SettingDeprecatedSecondaryKeySetsSecondary()
+        {
+            var s = "1.2.3.4";
+            var user = User.WithKey(key);
+#pragma warning disable 618
+            user.SecondaryKey = s;
+#pragma warning restore 618
+            Assert.Equal(s, user.Secondary);
+        }
+
+        [Fact]
+        public void GettingDeprecatedSecondaryKeyGetsSecondary()
+        {
+            var s = "1.2.3.4";
+            var user = User.WithKey(key);
+            user.Secondary = s;
+#pragma warning disable 618
+            Assert.Equal(s, user.SecondaryKey);
 #pragma warning restore 618
         }
 

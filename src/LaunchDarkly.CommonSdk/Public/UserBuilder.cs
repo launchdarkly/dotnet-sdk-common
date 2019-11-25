@@ -48,6 +48,17 @@ namespace LaunchDarkly.Client
         /// </remarks>
         /// <param name="secondaryKey">the secondary key</param>
         /// <returns>the same builder</returns>
+        IUserBuilderCanMakeAttributePrivate Secondary(string secondaryKey);
+
+        /// <summary>
+        /// Sets the secondary key for a user. Obsolete equivalent of <see cref="Secondary(string)"/>.
+        /// </summary>
+        /// <remarks>
+        /// Besides the different method name, <see cref="Secondary(string)"/> allows you to make the attribute private; this method incorrectly does not.
+        /// </remarks>
+        /// <param name="secondaryKey">the secondary key</param>
+        /// <returns>the same builder</returns>
+        [Obsolete("Use Secondary instead")]
         IUserBuilder SecondaryKey(string secondaryKey);
 
         /// <summary>
@@ -262,7 +273,7 @@ namespace LaunchDarkly.Client
     internal class UserBuilder : IUserBuilder
     {
         private string _key;
-        private string _secondaryKey;
+        private string _secondary;
         private string _ipAddress;
         private string _country;
         private string _firstName;
@@ -282,7 +293,7 @@ namespace LaunchDarkly.Client
         internal UserBuilder(User fromUser)
         {
             _key = fromUser.Key;
-            _secondaryKey = fromUser.SecondaryKey;
+            _secondary = fromUser.Secondary;
             _ipAddress = fromUser.IPAddress;
             _country = fromUser.Country;
             _firstName = fromUser.FirstName;
@@ -302,10 +313,8 @@ namespace LaunchDarkly.Client
 #pragma warning disable 618
             return new User(_key)
             {
-                SecondaryKey = _secondaryKey,
-#pragma warning disable 618
-                IpAddress = _ipAddress,
-#pragma warning restore 618
+                Secondary = _secondary,
+                IPAddress = _ipAddress,
                 Country = _country,
                 FirstName = _firstName,
                 LastName = _lastName,
@@ -327,9 +336,15 @@ namespace LaunchDarkly.Client
             return this;
         }
 
+        public IUserBuilderCanMakeAttributePrivate Secondary(string secondary)
+        {
+            _secondary = secondary;
+            return CanMakeAttributePrivate("secondary");
+        }
+
         public IUserBuilder SecondaryKey(string secondaryKey)
         {
-            _secondaryKey = secondaryKey;
+            _secondary = secondaryKey;
             return this;
         }
 
@@ -457,6 +472,11 @@ namespace LaunchDarkly.Client
         public IUserBuilder Key(string key)
         {
             return _builder.Key(key);
+        }
+
+        public IUserBuilderCanMakeAttributePrivate Secondary(string secondary)
+        {
+            return _builder.Secondary(secondary);
         }
 
         public IUserBuilder SecondaryKey(string secondaryKey)
