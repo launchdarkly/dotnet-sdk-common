@@ -16,21 +16,11 @@ namespace LaunchDarkly.Build.Helpers
                 return;
             }
             var dllPath = args[0];
-            Console.Error.WriteLine(dllPath);
             Type[] types;
             try
             {
                 var assembly = Assembly.LoadFrom(dllPath);
                 types = assembly.GetTypes();
-            }
-            catch (ReflectionTypeLoadException e)
-            {
-                Console.Error.WriteLine(e);
-                foreach (var e1 in e.LoaderExceptions)
-                {
-                    Console.Error.WriteLine(e1);
-                }
-                types = e.Types;
             }
             catch (Exception e)
             {
