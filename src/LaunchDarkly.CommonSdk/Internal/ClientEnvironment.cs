@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Reflection;
 
-namespace LaunchDarkly.Common
+namespace LaunchDarkly.Sdk.Internal
 {
     /// <summary>
     /// Defines basic properties that differ between the server-side and mobile clients.

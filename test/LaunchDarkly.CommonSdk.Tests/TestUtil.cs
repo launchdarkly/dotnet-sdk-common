@@ -1,9 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
-using LaunchDarkly.Client;
 using Xunit;
 
-namespace LaunchDarkly.Common.Tests
+namespace LaunchDarkly.Sdk
 {
     public class TestUtil
     {
