@@ -33,5 +33,47 @@ namespace LaunchDarkly.Sdk.Internal.Helpers
             IDictionary<string, string> headers = Util.GetRequestHeaders(config, SimpleClientEnvironment.Instance);
             Assert.Equal("CommonClient/1.0.0", headers["User-Agent"]);
         }
+
+        [Fact]
+        public void CommonRequestHeadersDontIncludeWrapperWhenNotSet()
+        {
+            var config = new SimpleConfiguration();
+            IDictionary<string, string> headers = Util.GetRequestHeaders(config, SimpleClientEnvironment.Instance);
+            Assert.False(headers.ContainsKey("X-LaunchDarkly-Wrapper"));
+        }
+
+        [Fact]
+        public void CommonRequestHeadersIncludeWrapperNameWhenSet()
+        {
+            var config = new SimpleConfiguration
+            {
+                WrapperName = "Xamarin"
+            };
+            IDictionary<string, string> headers = Util.GetRequestHeaders(config, SimpleClientEnvironment.Instance);
+            Assert.Equal("Xamarin", headers["X-LaunchDarkly-Wrapper"]);
+        }
+
+        [Fact]
+        public void CommonRequestHeadersIgnoreWrapperVersionWithoutName()
+        {
+            var config = new SimpleConfiguration
+            {
+                WrapperVersion = "1.0.0"
+            };
+            IDictionary<string, string> headers = Util.GetRequestHeaders(config, SimpleClientEnvironment.Instance);
+            Assert.False(headers.ContainsKey("X-LaunchDarkly-Wrapper"));
+        }
+
+        [Fact]
+        public void CommonRequestHeadersIncludeWrapperNameAndVersionWhenSet()
+        {
+            var config = new SimpleConfiguration
+            {
+                WrapperName = "Xamarin",
+                WrapperVersion = "1.0.0"
+            };
+            IDictionary<string, string> headers = Util.GetRequestHeaders(config, SimpleClientEnvironment.Instance);
+            Assert.Equal("Xamarin/1.0.0", headers["X-LaunchDarkly-Wrapper"]);
+        }
     }
 }

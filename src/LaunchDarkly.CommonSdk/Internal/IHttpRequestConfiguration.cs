@@ -9,5 +9,7 @@ namespace LaunchDarkly.Sdk.Internal
     {
         string HttpAuthorizationKey { get; }
         HttpMessageHandler HttpMessageHandler { get; }
+        string WrapperName { get; }
+        string WrapperVersion { get; }
     }
 }

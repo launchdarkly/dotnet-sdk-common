@@ -20,7 +20,6 @@ namespace LaunchDarkly.Sdk
         public TimeSpan ReadTimeout { get; set; }
         public TimeSpan ReconnectTime { get; set;  }
         public int EventCapacity { get; set; } = 1000;
-        public int EventQueueCapacity => EventCapacity;
         public TimeSpan EventFlushInterval { get; set; }
         public TimeSpan EventQueueFrequency => EventFlushInterval;
         public bool AllAttributesPrivate { get; set; }
@@ -30,10 +29,15 @@ namespace LaunchDarkly.Sdk
         public bool InlineUsersInEvents { get; set; }
         public TimeSpan HttpClientTimeout { get; set; } = TimeSpan.FromSeconds(30);
         public HttpMessageHandler HttpMessageHandler { get; set; }
+        public HttpClientHandler HttpClientHandler { get; set; } = new HttpClientHandler();
+        public TimeSpan DiagnosticRecordingInterval { get; set; }
+        public Uri DiagnosticUri { get; set; }
+        public string WrapperName { get; set; }
+        public string WrapperVersion { get; set; }
 
         public Exception TranslateHttpException(Exception e) =>
             TranslateHttpExceptionFn is null ? e : TranslateHttpExceptionFn(e);
 
         public Func<Exception, Exception> TranslateHttpExceptionFn { get; set; }
-    }
+   }
 }

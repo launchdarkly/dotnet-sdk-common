@@ -9,6 +9,8 @@ namespace LaunchDarkly.Sdk.Internal.Events
     internal interface IEventProcessorConfiguration
     {
         bool AllAttributesPrivate { get; }
+        TimeSpan DiagnosticRecordingInterval { get; }
+        Uri DiagnosticUri { get; }
         int EventCapacity { get; }
         TimeSpan EventFlushInterval { get; }
         Uri EventsUri { get; }
