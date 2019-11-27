@@ -11,10 +11,22 @@ namespace LaunchDarkly.Sdk.Internal.Helpers
         internal static Dictionary<string, string> GetRequestHeaders(IHttpRequestConfiguration config,
             ClientEnvironment env)
         {
-            return new Dictionary<string, string> {
+            Dictionary<string, string> headers =  new Dictionary<string, string> {
                 { "Authorization", config.HttpAuthorizationKey },
                 { "User-Agent", env.UserAgentType + "/" + env.VersionString }
             };
+
+            if (config.WrapperName != null)
+            {
+                string wrapperVersion = "";
+                if (config.WrapperVersion != null)
+                {
+                    wrapperVersion = "/" + config.WrapperVersion;
+                }
+                headers.Add("X-LaunchDarkly-Wrapper", config.WrapperName + wrapperVersion);
+            }
+
+            return headers;
         }
 
         internal static HttpClient MakeHttpClient(IHttpRequestConfiguration config, ClientEnvironment env)
@@ -32,6 +44,14 @@ namespace LaunchDarkly.Sdk.Internal.Helpers
         internal static long GetUnixTimestampMillis(DateTime dateTime)
         {
             return (long) (dateTime - UnixEpoch).TotalMilliseconds;
+        }
+
+        internal static T Clamp<T>(T value, T min, T max)
+            where T : IComparable
+        {
+            if (value.CompareTo(min) < 0) return min;
+            if (value.CompareTo(max) > 0) return max;
+            return value;
         }
 
         internal static string ExceptionMessage(Exception e)
