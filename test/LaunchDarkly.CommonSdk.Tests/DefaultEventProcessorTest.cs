@@ -511,13 +511,14 @@ namespace LaunchDarkly.Common.Tests
         }
 
         [Fact]
-        public void DiagnosticStoreCreateEventGivenEventsInQueueCount()
+        public void EventsInBatchRecorded()
         {
             var mockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
             mockDiagnosticStore.Setup(diagStore => diagStore.PersistedUnsentEvent).Returns((DiagnosticEvent?)null);
             mockDiagnosticStore.Setup(diagStore => diagStore.InitEvent).Returns((DiagnosticEvent?)null);
             mockDiagnosticStore.Setup(diagStore => diagStore.DataSince).Returns((DateTime)DateTime.Now);
-            mockDiagnosticStore.Setup(diagStore => diagStore.CreateEventAndReset(It.IsAny<long>())).Returns(new DiagnosticEvent(LdValue.Null));
+            mockDiagnosticStore.Setup(diagStore => diagStore.RecordEventsInBatch(It.IsAny<long>()));
+            mockDiagnosticStore.Setup(diagStore => diagStore.CreateEventAndReset()).Returns(new DiagnosticEvent(LdValue.Null));
 
             CountdownEvent diagnosticCountdown = new CountdownEvent(1);
             _ep = MakeProcessor(_config, mockDiagnosticStore.Object, null, diagnosticCountdown);
@@ -528,12 +529,13 @@ namespace LaunchDarkly.Common.Tests
                 new EvaluationDetail<LdValue>(value, 1, null), LdValue.Null);
             _ep.SendEvent(fe1);
 
-            // Not flushing events, but assuring that fe1 has been processed by the main event loop before proceeding.
-            _ep.WaitUntilInactive();
-            _ep.DoDiagnosticSend(null);
+            FlushAndGetEvents(OkResponse());
 
+            mockDiagnosticStore.Verify(diagStore => diagStore.RecordEventsInBatch(2), Times.Once(), "Diagnostic store's RecordEventsInBatch should be called with the number of events in last flush");
+
+            _ep.DoDiagnosticSend(null);
             diagnosticCountdown.Wait();
-            mockDiagnosticStore.Verify(diagStore => diagStore.CreateEventAndReset(2), Times.Once(), "Diagnostic store's CreateEventAndReset should be called with the number of events currently in the buffer before sending diagnostic event");
+            mockDiagnosticStore.Verify(diagStore => diagStore.CreateEventAndReset(), Times.Once());
         }
 
         [Fact]
