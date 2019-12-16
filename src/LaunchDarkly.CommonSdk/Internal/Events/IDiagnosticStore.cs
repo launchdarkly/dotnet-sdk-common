@@ -41,18 +41,22 @@ namespace LaunchDarkly.Sdk.Internal.Events
         /// </summary>
         void IncrementDroppedEvents();
         /// <summary>
-        /// Called when a stream init completes
+        /// Called when a stream init completes with details of the initialization.
         /// </summary>
         /// <param name="timestamp">The time at which the stream began attempted initialization. </param>
         /// <param name="duration">The duration of the stream initialization attempt. </param>
         /// <param name="failed">True if the initialization failed, false otherwise. </param>
         void AddStreamInit(DateTime timestamp, TimeSpan duration, bool failed);
         /// <summary>
+        /// Called when flushing events, recording how many events were contained in the flush payload.
+        /// </summary>
+        /// <param name="eventsInBatch">The number of events that were flushed. </param>
+        void RecordEventsInBatch(long eventsInBatch);
+        /// <summary>
         /// Called to generate a periodic diagnostic event, resetting the store counts and stream
         /// initializations.
         /// </summary>
-        /// <param name="eventsInQueue">The current number of events in the event buffer</param>
         /// <returns>A dictionary representing the periodic diagnostic event</returns>
-        DiagnosticEvent CreateEventAndReset(long eventsInQueue);
+        DiagnosticEvent CreateEventAndReset();
     }
 }

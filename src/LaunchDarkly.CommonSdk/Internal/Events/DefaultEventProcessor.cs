@@ -358,8 +358,7 @@ namespace LaunchDarkly.Sdk.Internal.Events
         {
             if (_diagnosticStore != null)
             {
-                long eventsInQueue = buffer.GetEventsInQueueCount();
-                Task.Run(() => SendDiagnosticEventAsync(_diagnosticStore.CreateEventAndReset(eventsInQueue)));
+                Task.Run(() => SendDiagnosticEventAsync(_diagnosticStore.CreateEventAndReset()));
             }
         }
 
@@ -475,6 +474,10 @@ namespace LaunchDarkly.Sdk.Internal.Events
                 return;
             }
             FlushPayload payload = buffer.GetPayload();
+            if (_diagnosticStore != null)
+            {
+                _diagnosticStore.RecordEventsInBatch(payload.Events.Length);
+            }
             if (payload.Events.Length > 0 || !payload.Summary.Empty)
             {
                 lock (_flushWorkersCounter)
@@ -691,11 +694,6 @@ namespace LaunchDarkly.Sdk.Internal.Events
         {
             _events.Clear();
             _summarizer.Clear();
-        }
-
-        internal long GetEventsInQueueCount()
-        {
-            return _events.Count;
         }
     }
 }
