@@ -2,6 +2,15 @@
 
 All notable changes to the LaunchDarkly.CommonSdk package will be documented in this file. For full release notes for the projects that depend on this project, see their respective changelogs. This file describes changes only to the common code. This project adheres to [Semantic Versioning](http://semver.org).
 
+## [2.10.0] - 2020-01-03
+### Added:
+- `IUserBuilder.Secondary` is a new name for `SecondaryKey` (for consistency with other SDKs), and allows you to make the `secondary` attribute private.
+- `User.Secondary` (same as `SecondaryKey`).
+
+### Deprecated:
+- `IUserBuilder.SecondaryKey`, `User.SecondaryKey`.
+
+
 ## [2.9.2] - 2019-11-12
 ### Fixed:
 - `LdValue.Equals()` incorrectly returned true for object (dictionary) values that were not equal.
