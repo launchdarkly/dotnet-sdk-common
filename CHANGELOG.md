@@ -58,6 +58,15 @@ _The 4.0.0 release was broken._
 ### Fixed:
 - No longer assumes that we are overriding the `HttpMessageHandler` (if it is null in the configuration, just use the default `HttpClient` constructor). This is important for Xamarin.
 
+## [2.10.0] - 2020-01-03
+### Added:
+- `IUserBuilder.Secondary` is a new name for `SecondaryKey` (for consistency with other SDKs), and allows you to make the `secondary` attribute private.
+- `User.Secondary` (same as `SecondaryKey`).
+
+### Deprecated:
+- `IUserBuilder.SecondaryKey`, `User.SecondaryKey`.
+
+
 ## [2.9.2] - 2019-11-12
 ### Fixed:
 - `LdValue.Equals()` incorrectly returned true for object (dictionary) values that were not equal.
