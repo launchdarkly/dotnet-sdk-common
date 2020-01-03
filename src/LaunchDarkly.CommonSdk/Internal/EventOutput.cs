@@ -249,8 +249,8 @@ namespace LaunchDarkly.Common
             _jsonWriter.WritePropertyName("user");
             _jsonWriter.WriteStartObject();
             MaybeWriteString("key", eu.Key);
-            MaybeWriteString("secondary", eu.SecondaryKey);
-            MaybeWriteString("ip", eu.IpAddress);
+            MaybeWriteString("secondary", eu.Secondary);
+            MaybeWriteString("ip", eu.IPAddress);
             MaybeWriteString("country", eu.Country);
             MaybeWriteString("firstName", eu.FirstName);
             MaybeWriteString("lastName", eu.LastName);
