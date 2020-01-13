@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using Xunit;
 using LaunchDarkly.Client;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace LaunchDarkly.Common.Tests
 {
@@ -13,14 +12,14 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void TestIsDefaultValueTrue()
         {
-            var detail = new EvaluationDetail<string>("default", null, EvaluationReason.Off.Instance);
+            var detail = new EvaluationDetail<string>("default", null, EvaluationReason.OffReason);
             Assert.True(detail.IsDefaultValue);
         }
 
         [Fact]
         public void TestIsDefaultValueFalse()
         {
-            var detail = new EvaluationDetail<string>("default", 0, EvaluationReason.Off.Instance);
+            var detail = new EvaluationDetail<string>("default", 0, EvaluationReason.OffReason);
             Assert.False(detail.IsDefaultValue);
         }
 
@@ -36,18 +35,18 @@ namespace LaunchDarkly.Common.Tests
 
         public static IEnumerable ReasonTestData => new List<object[]>
         {
-            new object[] { EvaluationReason.Off.Instance, @"{""kind"":""OFF""}", "OFF" },
-            new object[] { EvaluationReason.Fallthrough.Instance, @"{""kind"":""FALLTHROUGH""}", "FALLTHROUGH" },
-            new object[] { EvaluationReason.TargetMatch.Instance, @"{""kind"":""TARGET_MATCH""}", "TARGET_MATCH" },
-            new object[] { new EvaluationReason.RuleMatch(1, "id"),
+            new object[] { EvaluationReason.OffReason, @"{""kind"":""OFF""}", "OFF" },
+            new object[] { EvaluationReason.FallthroughReason, @"{""kind"":""FALLTHROUGH""}", "FALLTHROUGH" },
+            new object[] { EvaluationReason.TargetMatchReason, @"{""kind"":""TARGET_MATCH""}", "TARGET_MATCH" },
+            new object[] { EvaluationReason.RuleMatchReason(1, "id"),
                 @"{""kind"":""RULE_MATCH"",""ruleIndex"":1,""ruleId"":""id""}",
                 "RULE_MATCH(1,id)"
             },
-            new object[] { new EvaluationReason.PrerequisiteFailed("key"),
+            new object[] { EvaluationReason.PrerequisiteFailedReason("key"),
                 @"{""kind"":""PREREQUISITE_FAILED"",""prerequisiteKey"":""key""}",
                 "PREREQUISITE_FAILED(key)"
             },
-            new object[] { new EvaluationReason.Error(EvaluationErrorKind.EXCEPTION),
+            new object[] { EvaluationReason.ErrorReason(EvaluationErrorKind.EXCEPTION),
                 @"{""kind"":""ERROR"",""errorKind"":""EXCEPTION""}",
                 "ERROR(EXCEPTION)"
             }
@@ -65,12 +64,12 @@ namespace LaunchDarkly.Common.Tests
         {
             // For parameterless (singleton) reasons, object.Equals and object.HashCode() already do what
             // we want. Test our implementations for the parameterized reasons.
-            VerifyEqualityAndHashCode(() => new EvaluationReason.RuleMatch(0, "rule1"),
-                () => new EvaluationReason.RuleMatch(1, "rule2"));
-            VerifyEqualityAndHashCode(() => new EvaluationReason.PrerequisiteFailed("a"),
-                () => new EvaluationReason.PrerequisiteFailed("b"));
-            VerifyEqualityAndHashCode(() => new EvaluationReason.Error(EvaluationErrorKind.FLAG_NOT_FOUND),
-                () => new EvaluationReason.Error(EvaluationErrorKind.EXCEPTION));
+            VerifyEqualityAndHashCode(() => EvaluationReason.RuleMatchReason(0, "rule1"),
+                () => EvaluationReason.RuleMatchReason(1, "rule2"));
+            VerifyEqualityAndHashCode(() => EvaluationReason.PrerequisiteFailedReason("a"),
+                () => EvaluationReason.PrerequisiteFailedReason("b"));
+            VerifyEqualityAndHashCode(() => EvaluationReason.ErrorReason(EvaluationErrorKind.FLAG_NOT_FOUND),
+                () => EvaluationReason.ErrorReason(EvaluationErrorKind.EXCEPTION));
         }
 
         private void VerifyEqualityAndHashCode(Func<EvaluationReason> createA, Func<EvaluationReason> createB)
@@ -83,12 +82,7 @@ namespace LaunchDarkly.Common.Tests
 
         private void AssertJsonEqual(string expectedString, string actualString)
         {
-            JToken expected = JsonConvert.DeserializeObject<JToken>(expectedString);
-            JToken actual = JsonConvert.DeserializeObject<JToken>(actualString);
-            if (!JToken.DeepEquals(expected, actual))
-            {
-                Assert.True(false, "JSON did not match: expected " + expectedString + ", got " + actualString);
-            }
+            Assert.Equal(LdValue.Parse(expectedString), LdValue.Parse(actualString));
         }
     }
 }

@@ -1,5 +1,4 @@
 ﻿using System;
-using Newtonsoft.Json.Linq;
 using LaunchDarkly.Client;
 
 namespace LaunchDarkly.Common
@@ -60,7 +59,7 @@ namespace LaunchDarkly.Common
         {
             return new FeatureRequestEvent(GetTimestamp(), flag.Key, user, null, defaultVal, defaultVal,
                 flag.EventVersion, null, flag.TrackEvents, flag.DebugEventsUntilDate, false,
-                IncludeReasons ? new EvaluationReason.Error(errorKind) : null);
+                IncludeReasons ? EvaluationReason.ErrorReason(errorKind) : null);
         }
 
         /// <summary>
@@ -77,7 +76,7 @@ namespace LaunchDarkly.Common
         {
             return new FeatureRequestEvent(GetTimestamp(), key, user, null, defaultVal, defaultVal,
                 null, null, false, null, false,
-                IncludeReasons ? new EvaluationReason.Error(errorKind) : null);
+                IncludeReasons ? EvaluationReason.ErrorReason(errorKind) : null);
         }
 
         /// <summary>

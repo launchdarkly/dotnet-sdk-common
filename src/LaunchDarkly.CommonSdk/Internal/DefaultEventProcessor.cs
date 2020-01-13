@@ -7,7 +7,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Common.Logging;
-using Newtonsoft.Json;
 using LaunchDarkly.Client;
 
 namespace LaunchDarkly.Common
@@ -433,13 +432,12 @@ namespace LaunchDarkly.Common
         private async Task FlushEventsAsync(FlushPayload payload)
         {
             EventOutputFormatter formatter = new EventOutputFormatter(_config);
-            List<EventOutput> eventsOut;
             string jsonEvents;
+            int eventCount;
             const int maxAttempts = 2;
             try
             {
-                eventsOut = formatter.MakeOutputEvents(payload.Events, payload.Summary);
-                jsonEvents = JsonConvert.SerializeObject(eventsOut, Formatting.None);
+                jsonEvents = formatter.SerializeOutputEvents(payload.Events, payload.Summary, out eventCount);
             }
             catch (Exception e)
             {
@@ -458,7 +456,7 @@ namespace LaunchDarkly.Common
                 {
                     try
                     {
-                        await SendEventsAsync(jsonEvents, eventsOut.Count, cts.Token);
+                        await SendEventsAsync(jsonEvents, eventCount, cts.Token);
                         return; // success
                     }
                     catch (Exception e)
@@ -483,7 +481,7 @@ namespace LaunchDarkly.Common
                                 break;
                         }
                         DefaultEventProcessor.Log.WarnFormat(errorMessage + " sending {0} event(s); {1}",
-                            eventsOut.Count,
+                            eventCount,
                             attempt == maxAttempts - 1 ? "will not retry" : "will retry after one second",
                             Util.ExceptionMessage(e));
                     }

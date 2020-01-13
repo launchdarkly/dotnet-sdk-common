@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Immutable;
-using Newtonsoft.Json.Linq;
 
 namespace LaunchDarkly.Client
 {
@@ -51,6 +50,17 @@ namespace LaunchDarkly.Client
         /// </remarks>
         /// <param name="secondaryKey">the secondary key</param>
         /// <returns>the same builder</returns>
+        IUserBuilderCanMakeAttributePrivate Secondary(string secondaryKey);
+
+        /// <summary>
+        /// Sets the secondary key for a user. Obsolete equivalent of <see cref="Secondary(string)"/>.
+        /// </summary>
+        /// <remarks>
+        /// Besides the different method name, <see cref="Secondary(string)"/> allows you to make the attribute private; this method incorrectly does not.
+        /// </remarks>
+        /// <param name="secondaryKey">the secondary key</param>
+        /// <returns>the same builder</returns>
+        [Obsolete("Use Secondary instead")]
         IUserBuilder SecondaryKey(string secondaryKey);
 
         /// <summary>
@@ -242,7 +252,7 @@ namespace LaunchDarkly.Client
     internal class UserBuilder : IUserBuilder
     {
         private string _key;
-        private string _secondaryKey;
+        private string _secondary;
         private string _ipAddress;
         private string _country;
         private string _firstName;
@@ -262,7 +272,7 @@ namespace LaunchDarkly.Client
         internal UserBuilder(User fromUser)
         {
             _key = fromUser.Key;
-            _secondaryKey = fromUser.SecondaryKey;
+            _secondary = fromUser.Secondary;
             _ipAddress = fromUser.IPAddress;
             _country = fromUser.Country;
             _firstName = fromUser.FirstName;
@@ -278,7 +288,7 @@ namespace LaunchDarkly.Client
 
         public User Build()
         {
-            return new User(_key, _secondaryKey, _ipAddress, _country, _firstName, _lastName, _name, _avatar, _email,
+            return new User(_key, _secondary, _ipAddress, _country, _firstName, _lastName, _name, _avatar, _email,
                 _anonymous,
                 _custom is null ? ImmutableDictionary.Create<string, LdValue>() : _custom.ToImmutableDictionary(),
                 _privateAttributeNames is null ? ImmutableHashSet.Create<string>() : _privateAttributeNames.ToImmutableHashSet());
@@ -290,9 +300,15 @@ namespace LaunchDarkly.Client
             return this;
         }
 
+        public IUserBuilderCanMakeAttributePrivate Secondary(string secondary)
+        {
+            _secondary = secondary;
+            return CanMakeAttributePrivate("secondary");
+        }
+
         public IUserBuilder SecondaryKey(string secondaryKey)
         {
-            _secondaryKey = secondaryKey;
+            _secondary = secondaryKey;
             return this;
         }
 
@@ -415,6 +431,11 @@ namespace LaunchDarkly.Client
         public IUserBuilder Key(string key)
         {
             return _builder.Key(key);
+        }
+
+        public IUserBuilderCanMakeAttributePrivate Secondary(string secondary)
+        {
+            return _builder.Secondary(secondary);
         }
 
         public IUserBuilder SecondaryKey(string secondaryKey)

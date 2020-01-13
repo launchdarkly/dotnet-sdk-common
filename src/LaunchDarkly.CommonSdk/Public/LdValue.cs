@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using LaunchDarkly.Common;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace LaunchDarkly.Client
 {
@@ -75,27 +75,19 @@ namespace LaunchDarkly.Client
     {
         #region Private fields
 
-        private static readonly LdValue _nullInstance = new LdValue(LdValueType.Null, null);
-        private static readonly JToken _jsonFalse = new JValue(false);
-        private static readonly JToken _jsonTrue = new JValue(true);
-        private static readonly JToken _jsonIntZero = new JValue(0);
-        private static readonly JToken _jsonDoubleZero = new JValue((double)0);
-        private static readonly JToken _jsonStringEmpty = new JValue("");
+        private static readonly LdValue _nullInstance = new LdValue(LdValueType.Null, false, 0, null);
+        private static readonly JsonSerializerSettings _serializerSettings = new JsonSerializerSettings
+        {
+            DateParseHandling = DateParseHandling.None,
+            Formatting = Formatting.None
+        };
 
-        // Often, LdValue wraps an existing JToken. In that case, it will be in _wrappedJTokenValue,
-        // and _type will be set to one of our type constants as appropriate. However, when creating a value of
-        // a primitive type, we'd like to be able to access that value without having to create a JToken on the
-        // heap. In that case, _type will indicate the type, and the value will be in _boolValue, _intValue,
-        // etc. If we ever need to convert these primitives to a JToken, InnerValue will lazily create this and
-        // keep it in _synthesizedJTokenValue (which is only used by InnerValue).
         private readonly LdValueType _type;
-        private readonly JToken _wrappedJTokenValue; // is never null unless _type is Null
         private readonly bool _boolValue;
         private readonly double _doubleValue; // all numbers are stored as double
         private readonly string _stringValue;
-        private readonly IList<LdValue> _arrayValue; // will be IImmutableList in the future, but we don't have System.Collections.Immutables yet
-        private readonly IDictionary<string, LdValue> _objectValue; // same
-        private volatile JToken _synthesizedJTokenValue; // see InnerValue
+        private readonly ImmutableList<LdValue> _arrayValue;
+        private readonly ImmutableDictionary<string, LdValue> _objectValue;
 
         #endregion
 
@@ -110,198 +102,47 @@ namespace LaunchDarkly.Client
 
         #region Internal/private constructors, factory, and properties
 
-        // Constructor from an existing JToken
-        private LdValue(LdValueType type, JToken value)
-        {
-            _type = type;
-            _wrappedJTokenValue = value;
-            _boolValue = false;
-            _doubleValue = 0;
-            _stringValue = null;
-            _arrayValue = null;
-            _objectValue = null;
-            _synthesizedJTokenValue = null;
-        }
-
         // Constructor from a primitive type
         private LdValue(LdValueType type, bool boolValue, double doubleValue, string stringValue)
         {
             _type = type;
-            _wrappedJTokenValue = null;
             _boolValue = boolValue;
             _doubleValue = doubleValue;
             _stringValue = stringValue;
             _arrayValue = null;
             _objectValue = null;
-            _synthesizedJTokenValue = null;
         }
 
         // Constructor from a read-only list
-        private LdValue(IList<LdValue> list)
+        private LdValue(ImmutableList<LdValue> list)
         {
             _type = LdValueType.Array;
             _arrayValue = list;
-            _wrappedJTokenValue = null;
             _boolValue = false;
             _doubleValue = 0;
             _stringValue = null;
             _objectValue = null;
-            _synthesizedJTokenValue = null;
         }
 
         // Constructor from a read-only dictionary
-        private LdValue(IDictionary<string, LdValue> dict)
+        private LdValue(ImmutableDictionary<string, LdValue> dict)
         {
             _type = LdValueType.Object;
             _objectValue = dict;
-            _wrappedJTokenValue = null;
             _boolValue = false;
             _doubleValue = 0;
             _stringValue = null;
             _arrayValue = null;
-            _synthesizedJTokenValue = null;
         }
 
-        /// <summary>
-        /// For internal use only. Accesses the wrapped value as a JToken.
-        /// </summary>
-        /// <remarks>
-        /// <para>
-        /// This internal method is used for efficiency only during flag evaluation or JSON serialization,
-        /// where we know we will not be modifying any mutable objects or arrays and we will not be
-        /// exposing the value to any external code.
-        /// </para>
-        /// <para>
-        /// For values that were initialized from primitive types and do not have a wrapped JToken,
-        /// this lazily creates one if necessary. Note that for efficiency, no synchronization is used
-        /// when doing this, so there is a race condition where we might do it twice but the result
-        /// will be the same.
-        /// </para>
-        /// </remarks>
-        internal JToken InnerValue
-        {
-            get
-            {
-                if (Type == LdValueType.Null)
-                {
-                    return null;
-                }
-                // Were we created to wrap a JToken in the first place?
-                if (!(_wrappedJTokenValue is null))
-                {
-                    return _wrappedJTokenValue;
-                }
-                // Perhaps we already converted our value to a JToken?
-                if (!(_synthesizedJTokenValue is null))
-                {
-                    return _synthesizedJTokenValue;
-                }
-                // No - create one now as appropriate.
-                JToken value = null;
-                switch (Type)
-                {
-                    case LdValueType.Bool:
-                        value = _boolValue ? _jsonTrue : _jsonFalse;
-                        break;
-                    case LdValueType.Number:
-                        if (IsInt)
-                        {
-                            value = _doubleValue == 0 ? _jsonIntZero : new JValue((int)_doubleValue);
-                        }
-                        else
-                        {
-                            value = _doubleValue == 0 ? _jsonDoubleZero : new JValue(_doubleValue);
-                        }
-                        break;
-                    case LdValueType.String:
-                        // _stringValue should never be null in this case because we would have
-                        // stored the type as Null
-                        value = _stringValue.Length == 0 ? _jsonStringEmpty : new JValue(_stringValue);
-                        break;
-                    case LdValueType.Array:
-                        var a = new JArray();
-                        foreach (var item in _arrayValue)
-                        {
-                            a.Add(item.InnerValue);
-                        }
-                        value = a;
-                        break;
-                    case LdValueType.Object:
-                        var o = new JObject();
-                        foreach (var e in _objectValue)
-                        {
-                            o.Add(e.Key, e.Value.InnerValue);
-                        }
-                        value = o;
-                        break;
-                }
-                _synthesizedJTokenValue = value;
-                return value;
-            }
-        }
+        internal ImmutableList<LdValue> List => _arrayValue;
 
-        /// <summary>
-        /// True if this value was created from an existing JToken. Used only in serialization.
-        /// </summary>
-        internal bool HasWrappedJToken => !(_wrappedJTokenValue is null);
-
-        /// <summary>
-        /// For internal use only. Initializes an <see cref="LdValue"/> from an arbitrary JSON
-        /// value that we know will not be modified.
-        /// </summary>
-        /// <remarks>
-        /// <para>
-        /// This method is to be used internally when the SDK has a JToken instance that has not been
-        /// exposed to any application code, and the SDK code is never going to call any mutative
-        /// methods on that value. In that case, we do not need to perform a deep copy on the value
-        /// just to wrap it in an <see cref="LdValue"/>; a deep copy will be performed anyway
-        /// if the application tries to access the JToken.
-        /// </para>
-        /// <para>
-        /// It also performs minor optimizations by using our static JToken instances for true, 0, etc.
-        /// </para>
-        /// </remarks>
-        /// <param name="value">the initial value</param>
-        /// <returns>a struct that wraps the value</returns>
-        internal static LdValue FromSafeValue(JToken value)
-        {
-            if (value is null || value.Type == JTokenType.Null)
-            {
-                return _nullInstance;
-            }
-            switch (value.Type)
-            {
-                case JTokenType.Boolean:
-                    return Of(value.Value<bool>()); // this uses static instances for true and false
-                case JTokenType.Integer:
-                case JTokenType.Float:
-                    return new LdValue(LdValueType.Number, value);
-                case JTokenType.String:
-                    // JToken can unfortunately claim that the type is string but actually have a null in it.
-                    var s = value.Value<string>();
-                    return s is null ? _nullInstance : new LdValue(LdValueType.String, value);
-                case JTokenType.Array:
-                    return new LdValue(LdValueType.Array, value);
-                case JTokenType.Object:
-                    return new LdValue(LdValueType.Object, value);
-                // JTokenType also defines a few nonstandard types like TimeSpan, which can only be created
-                // programmatically - we will never see them in parsed input. These are meaningless in
-                // LaunchDarkly logic, which only supports standard JSON types, so we will convert them
-                // to strings except for dates, which we will encode as Unix milliseconds because that's
-                // what our date logic uses in flag evaluations.
-                case JTokenType.Date:
-                    var t = value.Value<DateTime>().ToUniversalTime();
-                    float millis = Util.GetUnixTimestampMillis(t);
-                    return Of(millis);
-                default:
-                    return Of(value.Value<string>());
-            }
-        }
+        internal ImmutableDictionary<string, LdValue> Dictionary => _objectValue;
 
         #endregion
 
         #region Public factory methods
-        
+
         /// <summary>
         /// Initializes an <see cref="LdValue"/> from a boolean value.
         /// </summary>
@@ -394,6 +235,15 @@ namespace LaunchDarkly.Client
             Convert.Json.ArrayOf(values);
 
         /// <summary>
+        /// Starts building an array value.
+        /// </summary>
+        /// <returns>an <see cref="ArrayBuilder"/></returns>
+        public static ArrayBuilder BuildArray()
+        {
+            return new ArrayBuilder();
+        }
+
+        /// <summary>
         /// Initializes an <see cref="LdValue"/> as a JSON object, from a dictionary.
         /// </summary>
         /// <remarks>
@@ -403,6 +253,40 @@ namespace LaunchDarkly.Client
         /// <returns>a struct representing a JSON object, or <see cref="Null"/> if the parameter was null</returns>
         public static LdValue ObjectFrom(IReadOnlyDictionary<string, LdValue> dictionary) =>
             Convert.Json.ObjectFrom(dictionary);
+
+        /// <summary>
+        /// Starts building an object value.
+        /// </summary>
+        /// <returns>an <see cref="ObjectBuilder"/></returns>
+        public static ObjectBuilder BuildObject()
+        {
+            return new ObjectBuilder();
+        }
+
+        /// <summary>
+        /// Parses a value from a JSON-encoded string.
+        /// </summary>
+        /// <example>
+        /// <code>
+        ///     var myValue = LdValue.Parse("[1,2]");
+        ///     Assert.Equal(LdValue.BuildArray().Add(1).Add(2).Build(), myValue); // true
+        /// </code>
+        /// </example>
+        /// <param name="jsonString">a JSON string</param>
+        /// <returns>the equivalent <see cref="LdValue"/></returns>
+        /// <exception cref="ArgumentException">if the string could not be parsed as JSON</exception>
+        /// <see cref="ToJsonString"/>
+        public static LdValue Parse(string jsonString)
+        {
+            try
+            {
+                return JsonConvert.DeserializeObject<LdValue>(jsonString, _serializerSettings);
+            }
+            catch (JsonException e)
+            {
+                throw new ArgumentException(e.Message);
+            }
+        }
 
         #endregion
 
@@ -452,8 +336,7 @@ namespace LaunchDarkly.Client
         /// <see cref="LdValue.Convert.Bool"/>.
         /// </para>
         /// </remarks>
-        public bool AsBool => Type == LdValueType.Bool &&
-            (_wrappedJTokenValue is null ? _boolValue : _wrappedJTokenValue.Value<bool>());
+        public bool AsBool => Type == LdValueType.Bool && _boolValue;
 
         /// <summary>
         /// Gets the string value if this is a string.
@@ -469,8 +352,7 @@ namespace LaunchDarkly.Client
         /// <see cref="LdValue.Convert.String"/>.
         /// </para>
         /// </remarks>
-        public string AsString => Type == LdValueType.String ?
-            (_wrappedJTokenValue is null ? _stringValue : _wrappedJTokenValue.Value<string>()) : null;
+        public string AsString => Type == LdValueType.String ? _stringValue : null;
 
         /// <summary>
         /// Gets the value as an <see langword="int"/> if it is numeric.
@@ -546,21 +428,60 @@ namespace LaunchDarkly.Client
         /// <see cref="LdValue.Convert.Double"/>.
         /// </para>
         /// </remarks>
-        public double AsDouble
+        public double AsDouble => Type == LdValueType.Number ? _doubleValue : 0;
+
+        /// <summary>
+        /// The number of values if this is an array or object; otherwise zero.
+        /// </summary>
+        public int Count
         {
             get
             {
-                if (Type == LdValueType.Number)
+                switch (_type)
                 {
-                    return _wrappedJTokenValue is null ? _doubleValue : _wrappedJTokenValue.Value<double>();
+                    case LdValueType.Array:
+                        return _arrayValue.Count;
+                    case LdValueType.Object:
+                        return _objectValue.Count;
+                    default:
+                        return 0;
                 }
-                return 0;
             }
         }
-
+        
         #endregion
 
         #region Public methods
+
+        /// <summary>
+        /// Retrieves an array item or object key by index. Never throws an exception.
+        /// </summary>
+        /// <param name="index">the item index</param>
+        /// <returns>the item value if this is an array; the key if this is an object; otherwise <see cref="Null"/></returns>
+        public LdValue Get(int index)
+        {
+            switch (_type)
+            {
+                case LdValueType.Array:
+                    return index >= 0 && index < _arrayValue.Count ? _arrayValue[index] : LdValue.Null;
+                case LdValueType.Object:
+                    return index >= 0 && index < _objectValue.Count ? LdValue.Of(_objectValue.Keys.ElementAt(index)) : LdValue.Null;
+                default:
+                    return LdValue.Null;
+            }
+        }
+
+        /// <summary>
+        /// Retrieves a object value by key. Never throws an exception.
+        /// </summary>
+        /// <param name="key">the key to retrieve</param>
+        /// <returns>the value for the key, if this is an object; <see cref="Null"/> if not found, or if this is not an object</returns>
+        public LdValue Get(string key)
+        {
+            return _type == LdValueType.Object && _objectValue.TryGetValue(key, out var value)
+                ? value
+                : LdValue.Null;
+        }
 
         /// <summary>
         /// Converts the value to a read-only list of elements of some type.
@@ -585,14 +506,7 @@ namespace LaunchDarkly.Client
         {
             if (_type == LdValueType.Array)
             {
-                if (!(_arrayValue is null))
-                {
-                    return new LdValueListConverter<LdValue, T>(_arrayValue, desiredType.ToType);
-                }
-                else if (_wrappedJTokenValue is JArray a)
-                {
-                    return new LdValueListConverter<JToken, T>(a, v => desiredType.ToType(LdValue.FromSafeValue(v)));
-                }
+                return new LdValueListConverter<LdValue, T>(_arrayValue, desiredType.ToType);
             }
             return new LdValueListConverter<T, T>(null, null);
         }
@@ -615,14 +529,7 @@ namespace LaunchDarkly.Client
         {
             if (_type == LdValueType.Object)
             {
-                if (!(_objectValue is null))
-                {
-                    return new LdValueDictionaryConverter<LdValue, T>(_objectValue, desiredType.ToType);
-                }
-                else if (_wrappedJTokenValue is JObject o)
-                {
-                    return new LdValueDictionaryConverter<JToken, T>(o, v => desiredType.ToType(LdValue.FromSafeValue(v)));
-                }
+                return new LdValueDictionaryConverter<LdValue, T>(_objectValue, desiredType.ToType);
             }
             return new LdValueDictionaryConverter<T, T>(null, null);
         }
@@ -636,9 +543,10 @@ namespace LaunchDarkly.Client
         /// <c>LdValue.Null.ToJsonString()</c> returns <c>"null"</c>.
         /// </remarks>
         /// <returns>the JSON encoding of the value</returns>
+        /// <see cref="Parse(string)"/>
         public string ToJsonString()
         {
-            return IsNull ? "null" : JsonConvert.SerializeObject(InnerValue);
+            return IsNull ? "null" : JsonConvert.SerializeObject(this, _serializerSettings);
         }
 
         /// <summary>
@@ -668,9 +576,12 @@ namespace LaunchDarkly.Client
                 case LdValueType.Array:
                     return AsList(Convert.Json).SequenceEqual(o.AsList(Convert.Json));
                 case LdValueType.Object:
-                    var d0 = AsDictionary(Convert.Json);
-                    var d1 = AsDictionary(Convert.Json);
-                    return d0.Count == d1.Count && d0.All(kv => kv.Value.Equals(d1[kv.Key]));
+                    {
+                        var d0 = AsDictionary(Convert.Json);
+                        var d1 = o.AsDictionary(Convert.Json);
+                        return d0.Count == d1.Count && d0.All(kv =>
+                            d1.TryGetValue(kv.Key, out var v) && kv.Value.Equals(v));
+                    }
                 default:
                     return false;
             }
@@ -690,19 +601,26 @@ namespace LaunchDarkly.Client
                 case LdValueType.String:
                     return AsString.GetHashCode();
                 case LdValueType.Array:
-                    int ah = 0;
-                    foreach (var item in AsList(Convert.Json))
                     {
-                        ah = ah * 23 + item.GetHashCode();
+                        var h = new HashCodeBuilder();
+                        foreach (var item in AsList(Convert.Json))
+                        {
+                            h = h.With(item);
+                        }
+                        return h.Value;
                     }
-                    return ah;
                 case LdValueType.Object:
-                    int oh = 0;
-                    foreach (var kv in AsDictionary(Convert.Json))
                     {
-                        oh = (oh * 23 + kv.Key.GetHashCode()) * 23 + kv.Value.GetHashCode();
+                        var h = new HashCodeBuilder();
+                        var d = AsDictionary(Convert.Json);
+                        var keys = d.Keys.ToArray();
+                        Array.Sort(keys); // inefficient, but ensures determinacy
+                        foreach (var key in keys)
+                        {
+                            h = h.With(key).With(d[key]);
+                        }
+                        return h.Value;
                     }
-                    return oh;
                 default:
                     return 0;
             }
@@ -720,6 +638,159 @@ namespace LaunchDarkly.Client
         #endregion
 
         #region Inner types
+
+        /// <summary>
+        /// An object returned by <see cref="LdValue.BuildArray"/> for building an array of values.
+        /// </summary>
+        public sealed class ArrayBuilder
+        {
+            private ImmutableList<LdValue>.Builder _builder = ImmutableList.CreateBuilder<LdValue>();
+
+            internal ArrayBuilder() { }
+
+            /// <summary>
+            /// Adds a value to the array being built.
+            /// </summary>
+            /// <param name="value">the value to add</param>
+            /// <returns>the same builder</returns>
+            public ArrayBuilder Add(LdValue value)
+            {
+                _builder.Add(value);
+                return this;
+            }
+
+            /// <summary>
+            /// Adds a value to the array being built.
+            /// </summary>
+            /// <param name="value">the value to add</param>
+            /// <returns>the same builder</returns>
+            public ArrayBuilder Add(bool value)
+            {
+                _builder.Add(LdValue.Of(value));
+                return this;
+            }
+
+            /// <summary>
+            /// Adds a value to the array being built.
+            /// </summary>
+            /// <param name="value">the value to add</param>
+            /// <returns>the same builder</returns>
+            public ArrayBuilder Add(long value)
+            {
+                _builder.Add(LdValue.Of(value));
+                return this;
+            }
+
+            /// <summary>
+            /// Adds a value to the array being built.
+            /// </summary>
+            /// <param name="value">the value to add</param>
+            /// <returns>the same builder</returns>
+            public ArrayBuilder Add(double value)
+            {
+                _builder.Add(LdValue.Of(value));
+                return this;
+            }
+
+            /// <summary>
+            /// Adds a value to the array being built.
+            /// </summary>
+            /// <param name="value">the value to add</param>
+            /// <returns>the same builder</returns>
+            public ArrayBuilder Add(string value)
+            {
+                _builder.Add(LdValue.Of(value));
+                return this;
+            }
+
+            /// <summary>
+            /// Returns an array value containing the items provided so far.
+            /// </summary>
+            /// <returns>an immutable array <see cref="LdValue"/></returns>
+            public LdValue Build()
+            {
+                return new LdValue(_builder.ToImmutable());
+            }
+        }
+
+        /// <summary>
+        /// An object returned by <see cref="LdValue.BuildObject"/> for building an object from keys and values.
+        /// </summary>
+        public sealed class ObjectBuilder
+        {
+            private ImmutableDictionary<string, LdValue>.Builder _builder = ImmutableDictionary.CreateBuilder<string, LdValue>();
+
+            internal ObjectBuilder() { }
+
+            /// <summary>
+            /// Adds a key-value pair to the object being built.
+            /// </summary>
+            /// <param name="key">the key to add</param>
+            /// <param name="value">the value to add</param>
+            /// <returns>the same builder</returns>
+            public ObjectBuilder Add(string key, LdValue value)
+            {
+                _builder.Add(key, value);
+                return this;
+            }
+
+            /// <summary>
+            /// Adds a key-value pair to the object being built.
+            /// </summary>
+            /// <param name="key">the key to add</param>
+            /// <param name="value">the value to add</param>
+            /// <returns>the same builder</returns>
+            public ObjectBuilder Add(string key, bool value)
+            {
+                _builder.Add(key, LdValue.Of(value));
+                return this;
+            }
+
+            /// <summary>
+            /// Adds a key-value pair to the object being built.
+            /// </summary>
+            /// <param name="key">the key to add</param>
+            /// <param name="value">the value to add</param>
+            /// <returns>the same builder</returns>
+            public ObjectBuilder Add(string key, long value)
+            {
+                _builder.Add(key, LdValue.Of(value));
+                return this;
+            }
+
+            /// <summary>
+            /// Adds a key-value pair to the object being built.
+            /// </summary>
+            /// <param name="key">the key to add</param>
+            /// <param name="value">the value to add</param>
+            /// <returns>the same builder</returns>
+            public ObjectBuilder Add(string key, double value)
+            {
+                _builder.Add(key, LdValue.Of(value));
+                return this;
+            }
+
+            /// <summary>
+            /// Adds a key-value pair to the object being built.
+            /// </summary>
+            /// <param name="key">the key to add</param>
+            /// <param name="value">the value to add</param>
+            /// <returns>the same builder</returns>
+            public ObjectBuilder Add(string key, string value)
+            {
+                _builder.Add(key, LdValue.Of(value));
+                return this;
+            }
+
+            /// <summary>
+            /// Returns an object value containing the keys and values provided so far.
+            /// </summary>
+            /// <returns>an immutable object <see cref="LdValue"/></returns>
+            public LdValue Build()
+            {
+                return new LdValue(_builder.ToImmutable());
+            }
+        }
 
         /// <summary>
         /// Defines a conversion between <see cref="LdValue"/> and some other type.
@@ -781,12 +852,7 @@ namespace LaunchDarkly.Client
                 {
                     return Null;
                 }
-                var list = new List<LdValue>(values.Count());
-                foreach (var value in values)
-                {
-                    list.Add(FromType(value));
-                }
-                return new LdValue(list);
+                return new LdValue(ImmutableList.CreateRange<LdValue>(values.Select(FromType)));
             }
 
             /// <summary>
@@ -829,11 +895,8 @@ namespace LaunchDarkly.Client
                 {
                     return Null;
                 }
-                var d = new Dictionary<string, LdValue>(dictionary.Count);
-                foreach (var e in dictionary)
-                {
-                    d[e.Key] = FromType(e.Value);
-                }
+                var d = ImmutableDictionary.CreateRange<string, LdValue>(dictionary.Select(kv =>
+                    new KeyValuePair<string, LdValue>(kv.Key, FromType(kv.Value))));
                 return new LdValue(d);
             }
         }
@@ -936,14 +999,6 @@ namespace LaunchDarkly.Client
             public static readonly Converter<LdValue> Json = new ConverterImpl<LdValue>(
                 v => v,
                 j => j
-            );
-
-            /// <summary>
-            /// Used internally by SDK methods that have to deal with JToken values. Not exposed to applications.
-            /// </summary>
-            internal static readonly Converter<JToken> UnsafeJToken = new ConverterImpl<JToken>(
-                LdValue.FromSafeValue,
-                j => j.InnerValue
             );
         }
 

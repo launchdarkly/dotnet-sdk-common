@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using LaunchDarkly.Client;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Xunit;
 
 namespace LaunchDarkly.Common.Tests
@@ -15,8 +14,6 @@ namespace LaunchDarkly.Common.Tests
         const float someFloat = 3.25f;
         const double someDouble = 3.25d;
         const string someString = "hi";
-        static readonly JArray someArray = new JArray() { new JValue(3) };
-        static readonly JObject someObject = new JObject() { { "1", new JValue("x") } };
 
         static readonly LdValue aTrueBoolValue = LdValue.Of(true);
         static readonly LdValue anIntValue = LdValue.Of(someInt);
@@ -27,69 +24,13 @@ namespace LaunchDarkly.Common.Tests
         static readonly LdValue aNumericLookingStringValue = LdValue.Of("3");
         static readonly LdValue anArrayValue = LdValue.Convert.Int.ArrayOf(3);
         static readonly LdValue anObjectValue = LdValue.Convert.String.ObjectFrom(MakeDictionary("x"));
-        static readonly LdValue aTrueBoolValueFromJToken = LdValue.FromSafeValue(new JValue(true));
-        static readonly LdValue anIntValueFromJToken = LdValue.FromSafeValue(new JValue(someInt));
-        static readonly LdValue aLongValueFromJToken = LdValue.FromSafeValue(new JValue(someLong));
-        static readonly LdValue aFloatValueFromJToken = LdValue.FromSafeValue(new JValue(someFloat));
-        static readonly LdValue aDoubleValueFromJToken = LdValue.FromSafeValue(new JValue(someDouble));
-        static readonly LdValue aStringValueFromJToken = LdValue.FromSafeValue(new JValue(someString));
-        static readonly LdValue anArrayValueFromJToken = LdValue.FromSafeValue(
-            new JArray() { new JValue(3) });
-        static readonly LdValue anObjectValueFromJToken = LdValue.FromSafeValue(
-            new JObject() { { "1", new JValue("x") } });
-
-        [Fact]
-        public void ValuesCreatedFromPrimitivesDoNotHaveJToken()
-        {
-            Assert.False(aTrueBoolValue.HasWrappedJToken);
-            Assert.False(anIntValue.HasWrappedJToken);
-            Assert.False(aLongValue.HasWrappedJToken);
-            Assert.False(aFloatValue.HasWrappedJToken);
-            Assert.False(aDoubleValue.HasWrappedJToken);
-            Assert.False(aStringValue.HasWrappedJToken);
-            Assert.False(anArrayValue.HasWrappedJToken);
-            Assert.False(anObjectValue.HasWrappedJToken);
-
-            Assert.True(anIntValueFromJToken.HasWrappedJToken);
-            Assert.True(aLongValueFromJToken.HasWrappedJToken);
-            Assert.True(aFloatValueFromJToken.HasWrappedJToken);
-            Assert.True(aDoubleValueFromJToken.HasWrappedJToken);
-            Assert.True(aStringValueFromJToken.HasWrappedJToken);
-            Assert.True(anArrayValueFromJToken.HasWrappedJToken);
-            Assert.True(anObjectValueFromJToken.HasWrappedJToken);
-
-            // Boolean is a special case where we never create a token because we reuse two static ones
-            Assert.False(aTrueBoolValueFromJToken.HasWrappedJToken);
-        }
-
-        [Fact]
-        public void DefaultValueJTokensAreReused()
-        {
-            TestValuesUseSameJTokenInstance(() => LdValue.Of(true));
-            TestValuesUseSameJTokenInstance(() => LdValue.Of(false));
-            TestValuesUseSameJTokenInstance(() => LdValue.Of((int)0));
-            TestValuesUseSameJTokenInstance(() => LdValue.Of((long)0));
-            TestValuesUseSameJTokenInstance(() => LdValue.Of((float)0));
-            TestValuesUseSameJTokenInstance(() => LdValue.Of((double)0));
-            TestValuesUseSameJTokenInstance(() => LdValue.Of(""));
-        }
-
-        private void TestValuesUseSameJTokenInstance(Func<LdValue> constructor)
-        {
-            var value1 = constructor();
-            var value2 = constructor();
-            Assert.Same(value1.InnerValue, value2.InnerValue);
-        }
-
+        
         [Fact]
         public void CanGetValueAsBool()
         {
             Assert.Equal(LdValueType.Bool, aTrueBoolValue.Type);
             Assert.True(aTrueBoolValue.AsBool);
             Assert.True(LdValue.Convert.Bool.ToType(aTrueBoolValue));
-            Assert.Equal(LdValueType.Bool, aTrueBoolValueFromJToken.Type);
-            Assert.True(aTrueBoolValueFromJToken.AsBool);
-            Assert.True(LdValue.Convert.Bool.ToType(aTrueBoolValueFromJToken));
         }
 
         [Fact]
@@ -99,19 +40,12 @@ namespace LaunchDarkly.Common.Tests
             {
                 LdValue.Null,
                 aStringValue,
-                aStringValueFromJToken,
                 anIntValue,
-                anIntValueFromJToken,
                 aLongValue,
-                aLongValueFromJToken,
                 aFloatValue,
-                aFloatValueFromJToken,
                 aDoubleValue,
-                aDoubleValueFromJToken,
                 anArrayValue,
-                anArrayValueFromJToken,
-                anObjectValue,
-                anObjectValueFromJToken
+                anObjectValue
             };
             foreach (var value in values)
             {
@@ -126,9 +60,6 @@ namespace LaunchDarkly.Common.Tests
             Assert.Equal(LdValueType.String, aStringValue.Type);
             Assert.Equal(someString, aStringValue.AsString);
             Assert.Equal(someString, LdValue.Convert.String.ToType(aStringValue));
-            Assert.Equal(LdValueType.String, aStringValueFromJToken.Type);
-            Assert.Equal(someString, aStringValueFromJToken.AsString);
-            Assert.Equal(someString, LdValue.Convert.String.ToType(aStringValueFromJToken));
         }
 
         [Fact]
@@ -138,15 +69,10 @@ namespace LaunchDarkly.Common.Tests
             {
                 LdValue.Null,
                 aTrueBoolValue,
-                aTrueBoolValueFromJToken,
                 anIntValue,
-                anIntValueFromJToken,
                 aFloatValue,
-                aFloatValueFromJToken,
                 anArrayValue,
-                anArrayValueFromJToken,
-                anObjectValue,
-                anObjectValueFromJToken
+                anObjectValue
             };
             foreach (var value in values)
             {
@@ -164,9 +90,7 @@ namespace LaunchDarkly.Common.Tests
             TestConvertIntegerToNumericType(LdValue.Convert.Float, v => v.AsFloat);
             TestConvertIntegerToNumericType(LdValue.Convert.Double, v => v.AsDouble);
             Assert.Equal(LdValueType.Number, anIntValue.Type);
-            Assert.Equal(LdValueType.Number, anIntValueFromJToken.Type);
             Assert.Equal(LdValueType.Number, aLongValue.Type);
-            Assert.Equal(LdValueType.Number, aLongValueFromJToken.Type);
         }
 
         private void TestConvertIntegerToNumericType<T>(LdValue.Converter<T> converter, Func<LdValue, T> getter)
@@ -209,9 +133,7 @@ namespace LaunchDarkly.Common.Tests
             TestTypeConversion(2.5d, 2.5d, n => LdValue.Of(n), LdValue.Convert.Double, v => v.AsDouble);
             TestTypeConversion(2.5d, 2.5d, n => LdValue.Of(n), LdValue.Convert.Double, v => v.AsDouble);
             Assert.Equal(LdValueType.Number, aFloatValue.Type);
-            Assert.Equal(LdValueType.Number, aFloatValueFromJToken.Type);
             Assert.Equal(LdValueType.Number, aDoubleValue.Type);
-            Assert.Equal(LdValueType.Number, aDoubleValueFromJToken.Type);
         }
         
         [Fact]
@@ -230,14 +152,10 @@ namespace LaunchDarkly.Common.Tests
             {
                 LdValue.Null,
                 aTrueBoolValue,
-                aTrueBoolValueFromJToken,
                 aStringValue,
-                aStringValueFromJToken,
                 aNumericLookingStringValue,
                 anArrayValue,
-                anArrayValueFromJToken,
-                anObjectValue,
-                anObjectValueFromJToken
+                anObjectValue
             };
             foreach (var value in values)
             {
@@ -259,31 +177,28 @@ namespace LaunchDarkly.Common.Tests
         {
             Assert.Equal(new bool[] { true, false }, LdValue.Convert.Bool.ArrayFrom(new bool[] { true, false }).AsList(LdValue.Convert.Bool));
             Assert.Equal(new bool[] { true, false }, LdValue.Convert.Bool.ArrayOf(true, false).AsList(LdValue.Convert.Bool));
+            Assert.Equal(new bool[] { true, false }, LdValue.BuildArray().Add(true).Add(false).Build().AsList(LdValue.Convert.Bool));
             Assert.Equal(new int[] { 1, 2 }, LdValue.Convert.Int.ArrayFrom(new int[] { 1, 2 }).AsList(LdValue.Convert.Int));
             Assert.Equal(new int[] { 1, 2 }, LdValue.Convert.Int.ArrayOf(1, 2).AsList(LdValue.Convert.Int));
+            Assert.Equal(new int[] { 1, 2 }, LdValue.BuildArray().Add(1).Add(2).Build().AsList(LdValue.Convert.Int));
             Assert.Equal(new long[] { 1, 2 }, LdValue.Convert.Long.ArrayFrom(new long[] { 1, 2 }).AsList(LdValue.Convert.Long));
             Assert.Equal(new long[] { 1, 2 }, LdValue.Convert.Long.ArrayOf(1, 2).AsList(LdValue.Convert.Long));
+            Assert.Equal(new long[] { 1, 2 }, LdValue.BuildArray().Add(1).Add(2).Build().AsList(LdValue.Convert.Long));
             Assert.Equal(new float[] { 1.0f, 2.0f }, LdValue.Convert.Float.ArrayFrom(new float[] { 1.0f, 2.0f }).AsList(LdValue.Convert.Float));
             Assert.Equal(new float[] { 1.0f, 2.0f }, LdValue.Convert.Float.ArrayOf(1.0f, 2.0f).AsList(LdValue.Convert.Float));
+            Assert.Equal(new float[] { 1.0f, 2.0f }, LdValue.BuildArray().Add(1.0f).Add(2.0f).Build().AsList(LdValue.Convert.Float));
             Assert.Equal(new double[] { 1.0d, 2.0d }, LdValue.Convert.Double.ArrayFrom(new double[] { 1.0d, 2.0d }).AsList(LdValue.Convert.Double));
             Assert.Equal(new double[] { 1.0d, 2.0d }, LdValue.Convert.Double.ArrayOf(1.0d, 2.0d).AsList(LdValue.Convert.Double));
+            Assert.Equal(new double[] { 1.0f, 2.0f }, LdValue.BuildArray().Add(1.0d).Add(2.0d).Build().AsList(LdValue.Convert.Double));
             Assert.Equal(new string[] { "a", "b" }, LdValue.Convert.String.ArrayFrom(new string[] { "a", "b" }).AsList(LdValue.Convert.String));
             Assert.Equal(new string[] { "a", "b" }, LdValue.Convert.String.ArrayOf("a", "b").AsList(LdValue.Convert.String));
+            Assert.Equal(new string[] { "a", "b" }, LdValue.BuildArray().Add("a").Add("b").Build().AsList(LdValue.Convert.String));
             Assert.Equal(new LdValue[] { anIntValue, aStringValue },
                 LdValue.ArrayFrom(new LdValue[] { anIntValue, aStringValue }).AsList(LdValue.Convert.Json));
             Assert.Equal(new LdValue[] { anIntValue, aStringValue },
                 LdValue.ArrayOf(anIntValue, aStringValue).AsList(LdValue.Convert.Json));
-
-#pragma warning disable 0618
-            Assert.Equal(new bool[] { true, false }, LdValue.FromSafeValue(new JArray { new JValue(true), new JValue(false) }).AsList(LdValue.Convert.Bool));
-            Assert.Equal(new int[] { 1, 2 }, LdValue.FromSafeValue(new JArray { new JValue(1), new JValue(2) }).AsList(LdValue.Convert.Int));
-            Assert.Equal(new long[] { 1, 2 }, LdValue.FromSafeValue(new JArray { new JValue(1L), new JValue(2L) }).AsList(LdValue.Convert.Long));
-            Assert.Equal(new float[] { 1.0f, 2.0f }, LdValue.FromSafeValue(new JArray { new JValue(1.0f), new JValue(2.0f) }).AsList(LdValue.Convert.Float));
-            Assert.Equal(new double[] { 1.0d, 2.0d }, LdValue.FromSafeValue(new JArray { new JValue(1.0d), new JValue(2.0d) }).AsList(LdValue.Convert.Double));
-            Assert.Equal(new string[] { "a", "b" }, LdValue.FromSafeValue(new JArray { new JValue("a"), new JValue("b") }).AsList(LdValue.Convert.String));
-            Assert.Equal(new LdValue[] { anIntValue, aStringValue }, LdValue.FromSafeValue(new JArray { new JValue(someInt), new JValue(someString) }).AsList(LdValue.Convert.Json));
-#pragma warning restore 0618
-
+            Assert.Equal(new LdValue[] { anIntValue, aStringValue },
+                LdValue.BuildArray().Add(anIntValue).Add(aStringValue).Build().AsList(LdValue.Convert.Json));
             Assert.Equal(LdValue.Null, LdValue.Convert.Int.ArrayFrom((IEnumerable<int>)null));
         }
         
@@ -291,6 +206,12 @@ namespace LaunchDarkly.Common.Tests
         public void ListCanGetItemByIndex()
         {
             var v = LdValue.Convert.Int.ArrayOf(1, 2, 3);
+
+            Assert.Equal(3, v.Count);
+            Assert.Equal(LdValue.Of(2), v.Get(1));
+            Assert.Equal(LdValue.Null, v.Get(-1));
+            Assert.Equal(LdValue.Null, v.Get(3));
+
             var list = v.AsList(LdValue.Convert.Int);
             Assert.Equal(2, list[1]);
             Assert.Throws<IndexOutOfRangeException>(() => list[-1]);
@@ -323,9 +244,9 @@ namespace LaunchDarkly.Common.Tests
                 aStringValue,
                 anObjectValue
             };
-            var emptyArray = new JArray();
             foreach (var value in values)
             {
+                // use list conversion
                 var emptyList = value.AsList(LdValue.Convert.Bool);
                 Assert.Equal(0, emptyList.Count);
                 Assert.Throws<IndexOutOfRangeException>(() => emptyList[0]);
@@ -337,52 +258,93 @@ namespace LaunchDarkly.Common.Tests
         }
 
         [Fact]
+        public void PrimitiveTypesCannotBeEnumerated()
+        {
+            var values = new LdValue[]
+            {
+                LdValue.Null,
+                aTrueBoolValue,
+                anIntValue,
+                aFloatValue,
+                aStringValue
+            };
+            foreach (var value in values)
+            {
+                Assert.Equal(0, value.Count);
+                Assert.Equal(LdValue.Null, value.Get(0));
+                Assert.Equal(LdValue.Null, value.Get(-1));
+            }
+        }
+
+        [Fact]
         public void CanGetValueAsDictionary()
         {
             AssertDictsEqual(MakeDictionary(true, false),
                 LdValue.Convert.Bool.ObjectFrom(MakeDictionary(true, false)).AsDictionary(LdValue.Convert.Bool));
+            AssertDictsEqual(MakeDictionary(true, false),
+                LdValue.BuildObject().Add("1", true).Add("2", false).Build().AsDictionary(LdValue.Convert.Bool));
             AssertDictsEqual(MakeDictionary(1, 2),
                 LdValue.Convert.Int.ObjectFrom(MakeDictionary(1, 2)).AsDictionary(LdValue.Convert.Int));
+            AssertDictsEqual(MakeDictionary(1, 2),
+                LdValue.BuildObject().Add("1", 1).Add("2", 2).Build().AsDictionary(LdValue.Convert.Int));
             AssertDictsEqual(MakeDictionary(1L, 2L),
                 LdValue.Convert.Long.ObjectFrom(MakeDictionary(1L, 2L)).AsDictionary(LdValue.Convert.Long));
+            AssertDictsEqual(MakeDictionary(1L, 2L),
+                LdValue.BuildObject().Add("1", 1L).Add("2", 2L).Build().AsDictionary(LdValue.Convert.Long));
             AssertDictsEqual(MakeDictionary(1.0f, 2.0f),
                 LdValue.Convert.Float.ObjectFrom(MakeDictionary(1.0f, 2.0f)).AsDictionary(LdValue.Convert.Float));
+            AssertDictsEqual(MakeDictionary(1.0f, 2.0f),
+                LdValue.BuildObject().Add("1", 1.0f).Add("2", 2.0f).Build().AsDictionary(LdValue.Convert.Float));
             AssertDictsEqual(MakeDictionary(1.0d, 2.0d),
                 LdValue.Convert.Double.ObjectFrom(MakeDictionary(1.0d, 2.0d)).AsDictionary(LdValue.Convert.Double));
+            AssertDictsEqual(MakeDictionary(1.0d, 2.0d),
+                LdValue.BuildObject().Add("1", 1.0d).Add("2", 2.0d).Build().AsDictionary(LdValue.Convert.Double));
             AssertDictsEqual(MakeDictionary("a", "b"),
                 LdValue.Convert.String.ObjectFrom(MakeDictionary("a", "b")).AsDictionary(LdValue.Convert.String));
+            AssertDictsEqual(MakeDictionary("a", "b"),
+                LdValue.BuildObject().Add("1", "a").Add("2", "b").Build().AsDictionary(LdValue.Convert.String));
             AssertDictsEqual(MakeDictionary(anIntValue, aStringValue),
                 LdValue.Convert.Json.ObjectFrom(MakeDictionary(anIntValue, aStringValue)).AsDictionary(LdValue.Convert.Json));
+            AssertDictsEqual(MakeDictionary(anIntValue, aStringValue),
+                LdValue.BuildObject().Add("1", anIntValue).Add("2", aStringValue).Build().AsDictionary(LdValue.Convert.Json));
             Assert.Equal(LdValue.Null, LdValue.Convert.String.ObjectFrom((IReadOnlyDictionary<string, string>)null));
         }
 
         [Fact]
         public void DictionaryCanGetValueByKey()
         {
-            var v = LdValue.Convert.Int.ObjectFrom(MakeDictionary(100, 200, 300));
+            var v = LdValue.BuildObject().Add("a", 100).Add("b", 200).Add("c", 300).Build();
+
+            Assert.Equal(3, v.Count);
+            Assert.Equal(LdValue.Of(200), v.Get("b"));
+            Assert.NotEqual(LdValue.Null, v.Get(1));
+            Assert.Equal(LdValue.Null, v.Get("x"));
+            Assert.Equal(LdValue.Null, v.Get(-1));
+            Assert.Equal(LdValue.Null, v.Get(3));
+
             var d = v.AsDictionary(LdValue.Convert.Int);
-            Assert.True(d.ContainsKey("2"));
-            Assert.Equal(200, d["2"]);
-            Assert.True(d.TryGetValue("1", out var n));
+            Assert.True(d.ContainsKey("b"));
+            Assert.Equal(200, d["b"]);
+            Assert.True(d.TryGetValue("a", out var n));
             Assert.Equal(100, n);
-            Assert.False(d.ContainsKey("000"));
-            Assert.Throws<KeyNotFoundException>(() => d["000"]);
-            Assert.False(d.TryGetValue("000", out n));
+            Assert.False(d.ContainsKey("x"));
+            Assert.Throws<KeyNotFoundException>(() => d["x"]);
+            Assert.False(d.TryGetValue("x", out n));
         }
 
         [Fact]
         public void DictionaryCanBeEnumerated()
         {
-            var v = LdValue.Convert.Int.ObjectFrom(MakeDictionary(100, 200, 300));
+            var v = LdValue.BuildObject().Add("a", 100).Add("b", 200).Add("c", 300).Build();
             var d = v.AsDictionary(LdValue.Convert.Int);
             Assert.Equal(3, d.Count);
-            Assert.Equal(new string[] { "1", "2", "3" }, new List<string>(d.Keys).OrderBy(s => s));
+            Assert.Equal(new string[] { "a", "b", "c" }, new List<string>(d.Keys).OrderBy(s => s));
             Assert.Equal(new int[] { 100, 200, 300 }, new List<int>(d.Values).OrderBy(n => n));
             Assert.Equal(new KeyValuePair<string, int>[]
             {
-                new KeyValuePair<string, int>("1", 100),
-                new KeyValuePair<string, int>("2", 200),
-                new KeyValuePair<string, int>("3", 300),
+                new KeyValuePair<string, int>("a", 100),
+                new KeyValuePair<string, int>("b", 200),
+                new KeyValuePair<string, int>("c", 300),
             }, d.OrderBy(e => e.Key));
         }
 
@@ -398,9 +360,10 @@ namespace LaunchDarkly.Common.Tests
                 aStringValue,
                 anArrayValue
             };
-            var emptyObject = new JObject();
             foreach (var value in values)
             {
+                Assert.Equal(LdValue.Null, value.Get("1"));
+
                 var emptyDict = value.AsDictionary(LdValue.Convert.Bool);
                 Assert.Equal(0, emptyDict.Count);
                 Assert.False(emptyDict.ContainsKey("1"));
@@ -416,42 +379,84 @@ namespace LaunchDarkly.Common.Tests
         }
 
         [Fact]
-        public void SamePrimitivesWithOrWithoutJTokenAreEqual()
+        public void TestEqualsAndHashCodeForPrimitives()
         {
-            Assert.Equal(aTrueBoolValue, aTrueBoolValueFromJToken);
-            Assert.Equal(anIntValue, anIntValueFromJToken);
-            Assert.Equal(aFloatValue, aFloatValueFromJToken);
-            Assert.Equal(aStringValue, aStringValueFromJToken);
+            AssertValueAndHashEqual(LdValue.Null, LdValue.Null);
+            AssertValueAndHashEqual(LdValue.Of(true), LdValue.Of(true));
+            AssertValueAndHashNotEqual(LdValue.Of(true), LdValue.Of(false));
+            AssertValueAndHashEqual(LdValue.Of(1), LdValue.Of(1));
+            AssertValueAndHashEqual(LdValue.Of(1), LdValue.Of(1.0f));
+            AssertValueAndHashNotEqual(LdValue.Of(1), LdValue.Of(2));
+            AssertValueAndHashEqual(LdValue.Of("a"), LdValue.Of("a"));
+            AssertValueAndHashNotEqual(LdValue.Of("a"), LdValue.Of("b"));
+            Assert.NotEqual(LdValue.Of(false), LdValue.Of(0));
+        }
+
+        private void AssertValueAndHashEqual<T>(T a, T b)
+        {
+            Assert.Equal(a, b);
+            Assert.Equal(a.GetHashCode(), b.GetHashCode());
+        }
+
+        private void AssertValueAndHashNotEqual<T>(T a, T b)
+        {
+            Assert.NotEqual(a, b);
+            Assert.NotEqual(a.GetHashCode(), b.GetHashCode());
+        }
+        
+        [Fact]
+        public void EqualsUsesDeepEqualityForArrays()
+        {
+            var a0 = LdValue.BuildArray().Add("a")
+                .Add(LdValue.BuildArray().Add("b").Add("c").Build())
+                .Build();
+            var a1 = LdValue.BuildArray().Add("a")
+                .Add(LdValue.BuildArray().Add("b").Add("c").Build())
+                .Build();
+            AssertValueAndHashEqual(a0, a1);
+
+            var a2 = LdValue.BuildArray().Add("a").Build();
+            AssertValueAndHashNotEqual(a0, a2);
+
+            var a3 = LdValue.BuildArray().Add("a").Add("b").Add("c").Build();
+            AssertValueAndHashNotEqual(a0, a3);
+
+            var a4 = LdValue.BuildArray().Add("a")
+                .Add(LdValue.BuildArray().Add("b").Add("x").Build())
+                .Build();
+            AssertValueAndHashNotEqual(a0, a4);
         }
 
         [Fact]
-        public void SamePrimitivesWithOrWithoutJTokenHaveSameHashCode()
+        public void EqualsUsesDeepEqualityForObjects()
         {
-            Assert.Equal(aTrueBoolValue.GetHashCode(), aTrueBoolValueFromJToken.GetHashCode());
-            Assert.Equal(anIntValue.GetHashCode(), anIntValueFromJToken.GetHashCode());
-            Assert.Equal(aFloatValue.GetHashCode(), aFloatValueFromJToken.GetHashCode());
-            Assert.Equal(aStringValue.GetHashCode(), aStringValueFromJToken.GetHashCode());
-        }
+            var o0 = LdValue.BuildObject()
+                .Add("a", "b")
+                .Add("c", LdValue.BuildObject().Add("d", "e").Build())
+                .Build();
+            var o1 = LdValue.BuildObject()
+                .Add("c", LdValue.BuildObject().Add("d", "e").Build())
+                .Add("a", "b")
+                .Build();
+            AssertValueAndHashEqual(o0, o1);
 
-        [Fact]
-        public void IntAndFloatJTokensWithSameValueAreEqual()
-        {
-            Assert.Equal(LdValue.FromSafeValue(new JValue(2)),
-                LdValue.FromSafeValue(new JValue(2.0f)));
-        }
+            var o2 = LdValue.BuildObject()
+                .Add("a", "b")
+                .Build();
+            AssertValueAndHashNotEqual(o0, o2);
 
-        [Fact]
-        public void ComplexTypeEqualityUsesDeepEqual()
-        {
-            var a0 = LdValue.ArrayOf(LdValue.Of("a"), LdValue.ArrayOf(LdValue.Of("b")));
-            var a1 = LdValue.FromSafeValue(new JArray() { new JValue("a"),
-                new JArray() { new JValue("b") } });
-            Assert.Equal(a0, a1);
-            Assert.Equal(a0.GetHashCode(), a1.GetHashCode());
-            var o0 = LdValue.Convert.String.ObjectFrom(new Dictionary<string, string> { { "a", "b" } });
-            var o1 = LdValue.FromSafeValue(new JObject { { "a", new JValue("b") } });
-            Assert.Equal(o0, o1);
-            Assert.Equal(o0.GetHashCode(), o1.GetHashCode());
+            var o3 = LdValue.BuildObject()
+                .Add("a", "b")
+                .Add("c", LdValue.BuildObject().Add("d", "e").Build())
+                .Add("f", "g")
+                .Build();
+            AssertValueAndHashNotEqual(o0, o3);
+            
+            var o4 = LdValue.BuildObject()
+                .Add("a", "b")
+                .Add("c", LdValue.BuildObject().Add("d", "f").Build())
+                .Build();
+            AssertValueAndHashNotEqual(o0, o4);
         }
 
         [Fact]
@@ -475,54 +480,29 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void TestJsonSerialization()
         {
-            Assert.Equal("null", JsonConvert.SerializeObject(LdValue.Null));
-            Assert.Equal("true", JsonConvert.SerializeObject(aTrueBoolValue));
-            Assert.Equal("true", JsonConvert.SerializeObject(aTrueBoolValueFromJToken));
-            Assert.Equal("false", JsonConvert.SerializeObject(LdValue.Of(false)));
-            Assert.Equal(someInt.ToString(), JsonConvert.SerializeObject(anIntValue));
-            Assert.Equal(someInt.ToString(), JsonConvert.SerializeObject(anIntValueFromJToken));
-            Assert.Equal(someFloat.ToString(), JsonConvert.SerializeObject(aFloatValue));
-            Assert.Equal(someFloat.ToString(), JsonConvert.SerializeObject(aFloatValueFromJToken));
-            Assert.Equal("[3]", JsonConvert.SerializeObject(anArrayValue));
-            Assert.Equal("[3]", JsonConvert.SerializeObject(anArrayValueFromJToken));
-            Assert.Equal("{\"1\":\"x\"}", JsonConvert.SerializeObject(anObjectValue));
-            Assert.Equal("{\"1\":\"x\"}", JsonConvert.SerializeObject(anObjectValueFromJToken));
+            VerifySerializeAndParse(LdValue.Null, "null");
+            VerifySerializeAndParse(aTrueBoolValue, "true");
+            VerifySerializeAndParse(LdValue.Of(false), "false");
+            VerifySerializeAndParse(anIntValue, someInt.ToString());
+            VerifySerializeAndParse(aFloatValue, someFloat.ToString());
+            VerifySerializeAndParse(anArrayValue, "[3]");
+            VerifySerializeAndParse(anObjectValue, "{\"1\":\"x\"}");
+            Assert.Throws(typeof(JsonReaderException), () => JsonConvert.DeserializeObject<LdValue>("nono"));
+            Assert.Throws(typeof(ArgumentException), () => LdValue.Parse("nono"));
         }
         
-        [Fact]
-        public void TestJsonDeserialization()
+        private void VerifySerializeAndParse(LdValue value, string expectedJson)
         {
-            var json = "{\"a\":\"b\"}";
-            var actual = JsonConvert.DeserializeObject<LdValue>(json);
-            var expected = LdValue.Convert.String.ObjectFrom(new Dictionary<string, string> { { "a", "b" } });
-            Assert.Equal(expected, actual);
+            var json1 = JsonConvert.SerializeObject(value);
+            var json2 = value.ToJsonString();
+            Assert.Equal(expectedJson, json1);
+            Assert.Equal(json1, json2);
+            var parsed1 = JsonConvert.DeserializeObject<LdValue>(expectedJson);
+            var parsed2 = LdValue.Parse(expectedJson);
+            Assert.Equal(value, parsed1);
+            Assert.Equal(value, parsed2);
         }
-
-        [Fact]
-        public void TestValueToJToken()
-        {
-#pragma warning disable 0618
-            Assert.Null(LdValue.Null.InnerValue);
-            Assert.Equal(new JValue(true), LdValue.Of(true).InnerValue);
-            Assert.Equal(new JValue(1), LdValue.Of(1).InnerValue);
-            Assert.Equal(new JValue(1L), LdValue.Of(1L).InnerValue);
-            Assert.Equal(new JValue(1.0f), LdValue.Of(1.0f).InnerValue);
-            Assert.Equal(new JValue(1.0d), LdValue.Of(1.0d).InnerValue);
-            Assert.Equal(new JValue("x"), LdValue.Of("x").InnerValue);
-            Assert.True(JToken.DeepEquals(new JArray { new JValue(1), new JValue(2) },
-                LdValue.Convert.Int.ArrayOf(1, 2).InnerValue));
-            Assert.True(JToken.DeepEquals(new JObject { { "a", new JValue(1) } },
-                LdValue.Convert.Int.ObjectFrom(new Dictionary<string, int> { { "a", 1 } }).InnerValue));
-#pragma warning restore 0618
-        }
-
-        [Fact]
-        public void TestJsonDeserializationOfNull()
-        {
-            var v = JsonConvert.DeserializeObject<LdValue>("null");
-            Assert.Null(v.InnerValue);
-        }
-
+        
         [Fact]
         public void TestNullStringConstructorIsEquivalentToNullInstance()
         {
