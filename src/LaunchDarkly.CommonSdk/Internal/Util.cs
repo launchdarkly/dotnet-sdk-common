@@ -32,12 +32,19 @@ namespace LaunchDarkly.Common
             return (long) (dateTime - UnixEpoch).TotalMilliseconds;
         }
 
+        // Differs from e.ToString() by not including the stacktrace
+        internal static string DescribeException(Exception e)
+        {
+            return (e.Message is null && e.InnerException is null) ? e.GetType().Name :
+                (e.GetType().Name + " " + ExceptionMessage(e));
+        }
+
         internal static string ExceptionMessage(Exception e)
         {
             var msg = e.Message;
             if (e.InnerException != null)
             {
-                return msg + " with inner exception: " + e.InnerException.Message;
+                return msg + " (caused by: " + e.InnerException.Message + ")";
             }
             return msg;
         }
@@ -56,12 +63,18 @@ namespace LaunchDarkly.Common
 
         internal static string HttpErrorMessage(int status, string context, string recoverableMessage)
         {
-            return string.Format("HTTP error {0}{1} for {2} - {3}",
-                status,
-                (status == 401 || status == 403) ? " (invalid SDK key)" : "",
+            return string.Format("{0} for {1} - {2}",
+                HttpErrorMessageBase(status),
                 context,
                 IsHttpErrorRecoverable(status) ? recoverableMessage : "giving up permanently"
                 );
+        }
+
+        internal static string HttpErrorMessageBase(int status)
+        {
+            return string.Format("HTTP error {0}{1}",
+                status,
+               (status == 401 || status == 403) ? " (invalid SDK key)" : "");
         }
 
         internal static HashCodeBuilder Hash()

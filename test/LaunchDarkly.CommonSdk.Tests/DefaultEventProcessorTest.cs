@@ -464,6 +464,79 @@ namespace LaunchDarkly.Common.Tests
         }
 
         [Fact]
+        public void SendIsRetriedOnRecoverableFailure()
+        {
+            _ep = MakeProcessor(_config);
+
+            _server.Given(EventingRequest())
+                .InScenario("Send Retry")
+                .WillSetStateTo("Retry")
+                .RespondWith(Response.Create().WithStatusCode(429));
+
+            _server.Given(EventingRequest())
+                .InScenario("Send Retry")
+                .WhenStateIs("Retry")
+                .RespondWith(OkResponse());
+
+            Event e = EventFactory.Default.NewIdentifyEvent(_user);
+            _ep.SendEvent(e);
+            _ep.Flush();
+            ((DefaultEventProcessor)_ep).WaitUntilInactive();
+
+            var logEntries = _server.LogEntries.ToList();
+            Assert.Equal(
+                logEntries[0].RequestMessage.BodyAsJson,
+                logEntries[1].RequestMessage.BodyAsJson);
+        }
+
+        [Fact]
+        public void EventPayloadIdIsSent()
+        {
+            _ep = MakeProcessor(_config);
+            Event e = EventFactory.Default.NewIdentifyEvent(_user);
+            _ep.SendEvent(e);
+
+            RequestMessage r = FlushAndGetRequest(OkResponse());
+
+            string payloadHeaderValue = r.Headers["X-LaunchDarkly-Payload-ID"][0];
+            // Throws on null value or invalid format
+            new Guid(payloadHeaderValue);
+        }
+
+        [Fact]
+        private void EventPayloadIdReusedOnRetry()
+        {
+            _ep = MakeProcessor(_config);
+
+            _server.Given(EventingRequest())
+                .InScenario("Payload ID Retry")
+                .WillSetStateTo("Retry")
+                .RespondWith(Response.Create().WithStatusCode(429));
+
+            _server.Given(EventingRequest())
+                .InScenario("Payload ID Retry")
+                .WhenStateIs("Retry")
+                .RespondWith(OkResponse());
+
+            Event e = EventFactory.Default.NewIdentifyEvent(_user);
+            _ep.SendEvent(e);
+            _ep.Flush();
+            // Necessary to ensure the retry occurs before the second request for test assertion ordering
+            ((DefaultEventProcessor)_ep).WaitUntilInactive();
+            _ep.SendEvent(e);
+            _ep.Flush();
+            ((DefaultEventProcessor)_ep).WaitUntilInactive();
+
+            var logEntries = _server.LogEntries.ToList();
+
+            string payloadId = logEntries[0].RequestMessage.Headers["X-LaunchDarkly-Payload-ID"][0];
+            string retryId = logEntries[1].RequestMessage.Headers["X-LaunchDarkly-Payload-ID"][0];
+            Assert.Equal(payloadId, retryId);
+            payloadId = logEntries[2].RequestMessage.Headers["X-LaunchDarkly-Payload-ID"][0];
+            Assert.NotEqual(payloadId, retryId);
+        }
+
+        [Fact]
         public void EventsAreStillPostedAfterReceiving400Error()
         {
             VerifyRecoverableHttpError(400);
@@ -505,6 +578,7 @@ namespace LaunchDarkly.Common.Tests
             Event e = EventFactory.Default.NewIdentifyEvent(_user);
             _ep.SendEvent(e);
             FlushAndGetEvents(Response.Create().WithStatusCode(status));
+            Assert.Equal(1, _server.LogEntries.Count()); // did not retry the request
             _server.ResetLogEntries();
 
             _ep.SendEvent(e);
@@ -522,6 +596,7 @@ namespace LaunchDarkly.Common.Tests
             Event e = EventFactory.Default.NewIdentifyEvent(_user);
             _ep.SendEvent(e);
             FlushAndGetEvents(Response.Create().WithStatusCode(status));
+            Assert.Equal(2, _server.LogEntries.Count()); // did retry the request
             _server.ResetLogEntries();
 
             _ep.SendEvent(e);
@@ -673,6 +748,11 @@ namespace LaunchDarkly.Common.Tests
             return Response.Create().WithStatusCode(200);
         }
 
+        private IRequestBuilder EventingRequest()
+        {
+            return Request.Create().WithPath(EventsUriPath).UsingPost();
+        }
+
         private IResponseBuilder AddDateHeader(IResponseBuilder resp, long timestamp)
         {
             DateTime dt = Util.UnixEpoch.AddMilliseconds(timestamp);
@@ -681,8 +761,7 @@ namespace LaunchDarkly.Common.Tests
 
         private void PrepareResponse(IResponseBuilder resp)
         {
-            _server.Given(Request.Create().WithPath(EventsUriPath).UsingPost())
-                .RespondWith(resp);
+            _server.Given(EventingRequest()).RespondWith(resp);
             _server.ResetLogEntries();
         }
 
