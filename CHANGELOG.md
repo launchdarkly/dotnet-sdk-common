@@ -2,6 +2,11 @@
 
 All notable changes to `LaunchDarkly.CommonSdk` will be documented in this file. For full release notes for the projects that depend on this project, see their respective changelogs. This file describes changes only to the common code. This project adheres to [Semantic Versioning](http://semver.org).
 
+## [4.3.1] - 2020-01-15
+### Fixed:
+- A bug in the SDK prevented the sending of events from being retried after a failure. The SDK now retries once after an event flush fails as was intended.
+- The SDK now specifies a uniquely identifiable request header when sending events to LaunchDarkly to ensure that events are only processed once, even if the SDK sends them two times due to a failed initial attempt.
+
 ## [4.3.0] - 2020-01-13
 ### Added:
 - `EvaluationReason` static methods and properties for creating reason instances.
