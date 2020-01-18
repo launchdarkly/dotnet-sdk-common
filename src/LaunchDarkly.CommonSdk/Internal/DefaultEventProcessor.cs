@@ -515,9 +515,8 @@ namespace LaunchDarkly.Common
                 return;
             }
 
-            DefaultEventProcessor.Log.DebugFormat("Submitting {0} event(s) to {1} with json: {2}",
-                eventCount, _config.EventsUri.AbsoluteUri, jsonEvents);
-            await SendWithRetry(_config.EventsUri, jsonEvents, true, (response, duration) =>
+            string description = string.Format("{0} event(s)", eventCount);
+            await SendWithRetry(_config.EventsUri, jsonEvents, description, false, (response, duration) =>
             {
                 if (response == null)
                 {
@@ -535,21 +534,13 @@ namespace LaunchDarkly.Common
                             Util.GetUnixTimestampMillis(respDate.Value.DateTime));
                     }
                 }
-                else
-                {
-                    DefaultEventProcessor.Log.Error(Util.HttpErrorMessage((int)response.StatusCode,
-                        "event delivery", "some events were dropped"));
-                    if (!Util.IsHttpErrorRecoverable((int)response.StatusCode))
-                    {
-                        _disabled = true;
-                    }
-                }
             });
         }
 
-        private async Task SendWithRetry(Uri uri, string content, bool includeSchemaVersionHeader, Action<HttpResponseMessage, long> onComplete)
+        private async Task SendWithRetry(Uri uri, string content, string description, bool isDiagnostic, Action<HttpResponseMessage, long> onComplete)
         {
             const int maxAttempts = 2;
+            string payloadId = isDiagnostic ? null : Guid.NewGuid().ToString();
             for (var attempt = 0; attempt < maxAttempts; attempt++)
             {
                 if (attempt > 0)
@@ -557,62 +548,68 @@ namespace LaunchDarkly.Common
                     await Task.Delay(TimeSpan.FromSeconds(1));
                 }
 
-                using (var request = new HttpRequestMessage(HttpMethod.Post, uri))
-                using (var stringContent = new StringContent(content, Encoding.UTF8, "application/json"))
+                DefaultEventProcessor.Log.DebugFormat("Submitting {0} to {1} with json: {2}",
+                    description, uri.AbsoluteUri, content);
+
                 using (var cts = new CancellationTokenSource(_config.HttpClientTimeout))
                 {
-                    request.Content = stringContent;
-                    if (includeSchemaVersionHeader)
-                    {
-                        request.Headers.Add("X-LaunchDarkly-Event-Schema", DefaultEventProcessor.CurrentSchemaVersion);
-                    }
+                    string errorMessage = null;
+                    bool canRetry = false;
                     try
                     {
-                        Stopwatch timer = new Stopwatch();
-                        using (var response = await _httpClient.SendAsync(request, cts.Token))
-                        {
-                            timer.Stop();
-                            onComplete(response, timer.ElapsedMilliseconds);
-                        }
+                        await SendEventsAsync(uri, content, payloadId, cts.Token, onComplete);
                         return; // success
+                    }
+                    catch (TaskCanceledException e)
+                    {
+                        if (e.CancellationToken == cts.Token)
+                        {
+                            // Indicates the task was cancelled deliberately somehow; in this case don't retry
+                            DefaultEventProcessor.Log.Warn("Event sending task was cancelled");
+                            return;
+                        }
+                        else
+                        {
+                            // Otherwise this was a request timeout.
+                            errorMessage = "Timed out";
+                            canRetry = true;
+                        }
+                    }
+                    catch (UnsuccessfulResponseException e)
+                    {
+                        errorMessage = Util.HttpErrorMessageBase(e.StatusCode);
+                        if (Util.IsHttpErrorRecoverable(e.StatusCode))
+                        {
+                            canRetry = true;
+                        }
+                        else
+                        {
+                            _disabled = true; // for error 401, etc.
+                        }
                     }
                     catch (Exception e)
                     {
-                        var errorMessage = "Error ({1})";
-                        switch (e)
-                        {
-                            case TaskCanceledException tce:
-                                if (tce.CancellationToken == cts.Token)
-                                {
-                                    // Indicates the task was cancelled deliberately somehow; in this case don't retry
-                                    DefaultEventProcessor.Log.Warn("Event sending task was cancelled");
-                                    onComplete(null, 0);
-                                    return;
-                                }
-                                else
-                                {
-                                    // Otherwise this was a request timeout.
-                                    errorMessage = "Timed out";
-                                }
-                                break;
-                            default:
-                                break;
-                        }
-                        DefaultEventProcessor.Log.WarnFormat(errorMessage + " sending event(s); {0}",
-                            attempt == maxAttempts - 1 ? "will not retry" : "will retry after one second",
-                            Util.ExceptionMessage(e));
+                        errorMessage = string.Format("Error ({0})", Util.DescribeException(e));
+                        canRetry = true;
+                    }
+                    string nextStepDesc = canRetry ?
+                        (maxAttempts == maxAttempts - 1 ? "will not retry" : "will retry after one second") :
+                        "giving up permanently";
+                    DefaultEventProcessor.Log.WarnFormat(errorMessage + " sending {0}; {1}",
+                        description,
+                        nextStepDesc);
+                    if (!canRetry)
+                    {
+                        return;
                     }
                 }
             }
-            onComplete(null, 0);
         }
 
         internal async Task SendDiagnosticEventAsync(DiagnosticEvent diagnostic)
         {
             var jsonDiagnostic = diagnostic.JsonValue.ToJsonString();
-            DefaultEventProcessor.Log.DebugFormat("Submitting diagnostic event to {0} with json: {1}",
-                _config.DiagnosticUri.AbsoluteUri, jsonDiagnostic);
-            await SendWithRetry(_config.DiagnosticUri, jsonDiagnostic, false, (response, duration) =>
+            await SendWithRetry(_config.DiagnosticUri, jsonDiagnostic, "diagnostic event", true, (response, duration) =>
             {
                 _testActionOnDiagnosticSend?.Invoke();
 
@@ -623,12 +620,34 @@ namespace LaunchDarkly.Common
 
                 DefaultEventProcessor.Log.DebugFormat("Diagnostic delivery took {0} ms, response status {1}",
                     duration, response.StatusCode);
-                if (!response.IsSuccessStatusCode)
-                {
-                    DefaultEventProcessor.Log.Warn(Util.HttpErrorMessage((int)response.StatusCode,
-                        "diagnostic delivery", "diagnostic dropped"));
-                }
             });
+        }
+
+        private async Task<bool> SendEventsAsync(Uri uri, String jsonEvents, String payloadId, CancellationToken token, Action<HttpResponseMessage, long> onComplete)
+        {
+            Stopwatch timer = new Stopwatch();
+
+            using (var request = new HttpRequestMessage(HttpMethod.Post, uri))
+            using (var stringContent = new StringContent(jsonEvents, Encoding.UTF8, "application/json"))
+            {
+                request.Content = stringContent;
+                if (payloadId != null)
+                {
+                    request.Headers.Add("X-LaunchDarkly-Payload-ID", payloadId);
+                    request.Headers.Add("X-LaunchDarkly-Event-Schema", DefaultEventProcessor.CurrentSchemaVersion);
+                }
+
+                using (var response = await _httpClient.SendAsync(request, token))
+                {
+                    timer.Stop();
+                    onComplete(response, timer.ElapsedMilliseconds);
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        throw new UnsuccessfulResponseException((int)response.StatusCode);
+                    }
+                }
+            }
+            return true;
         }
     }
 
