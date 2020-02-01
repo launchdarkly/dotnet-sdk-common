@@ -9,5 +9,7 @@ namespace LaunchDarkly.Common
     {
         string HttpAuthorizationKey { get; }
         HttpClientHandler HttpClientHandler { get; }
+        string WrapperName { get; }
+        string WrapperVersion { get; }
     }
 }
