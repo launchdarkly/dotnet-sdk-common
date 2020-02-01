@@ -2,6 +2,11 @@
 
 All notable changes to the LaunchDarkly.CommonSdk package will be documented in this file. For full release notes for the projects that depend on this project, see their respective changelogs. This file describes changes only to the common code. This project adheres to [Semantic Versioning](http://semver.org).
 
+## [2.11.0] - 2020-01-31
+### Added:
+- `DefaultEventProcessor` now supports sending diagnostic data to LaunchDarkly regarding the OS version, performance statistics, etc. The exact implementation of this is determined by the platform-specific SDKs (.NET or Xamarin).
+- The SDK now specifies a uniquely identifiable request header when sending events to LaunchDarkly to ensure that events are only processed once, even if the SDK sends them two times due to a failed initial attempt.
+
 ## [2.10.1] - 2020-01-15
 ### Fixed:
 - A bug in the SDK prevented the sending of events from being retried after a failure. The SDK now retries once after an event flush fails as was intended.
