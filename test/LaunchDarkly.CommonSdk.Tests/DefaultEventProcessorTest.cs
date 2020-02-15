@@ -287,20 +287,22 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void DebugModeExpiresBasedOnClientTimeIfClientTimeIsLaterThanServerTime()
         {
+            long fakeCurrentTime = 100000;
+            var eventFactoryWithFakeTime = new EventFactory(() => fakeCurrentTime, false);
             WithServerAndProcessor(_config, (server, ep) =>
             {
                 // Pick a server time that is somewhat behind the client time
-                long serverTime = Util.GetUnixTimestampMillis(DateTime.Now) - 20000;
+                long serverTime = fakeCurrentTime - 20000;
 
                 // Send and flush an event we don't care about, just to set the last server time
-                ep.SendEvent(EventFactory.Default.NewIdentifyEvent(User.WithKey("otherUser")));
+                ep.SendEvent(eventFactoryWithFakeTime.NewIdentifyEvent(User.WithKey("otherUser")));
                 FlushAndGetEvents(ep, server, AddDateHeader(OkResponse(), serverTime));
 
                 // Now send an event with debug mode on, with a "debug until" time that is further in
                 // the future than the server time, but in the past compared to the client.
                 long debugUntil = serverTime + 1000;
                 IFlagEventProperties flag = new FlagEventPropertiesBuilder("flagkey").Version(11).DebugEventsUntilDate(debugUntil).Build();
-                FeatureRequestEvent fe = EventFactory.Default.NewFeatureRequestEvent(flag, _user,
+                FeatureRequestEvent fe = eventFactoryWithFakeTime.NewFeatureRequestEvent(flag, _user,
                     new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, null), LdValue.Null);
                 ep.SendEvent(fe);
 
@@ -315,20 +317,22 @@ namespace LaunchDarkly.Common.Tests
         [Fact]
         public void DebugModeExpiresBasedOnServerTimeIfServerTimeIsLaterThanClientTime()
         {
+            long fakeCurrentTime = 100000;
+            var eventFactoryWithFakeTime = new EventFactory(() => fakeCurrentTime, false);
             WithServerAndProcessor(_config, (server, ep) =>
             {
                 // Pick a server time that is somewhat ahead of the client time
-                long serverTime = Util.GetUnixTimestampMillis(DateTime.Now) + 20000;
+                long serverTime = fakeCurrentTime + 20000;
 
                 // Send and flush an event we don't care about, just to set the last server time
-                ep.SendEvent(EventFactory.Default.NewIdentifyEvent(User.WithKey("otherUser")));
+                ep.SendEvent(eventFactoryWithFakeTime.NewIdentifyEvent(User.WithKey("otherUser")));
                 FlushAndGetEvents(ep, server, AddDateHeader(OkResponse(), serverTime));
 
                 // Now send an event with debug mode on, with a "debug until" time that is further in
                 // the future than the client time, but in the past compared to the server.
                 long debugUntil = serverTime - 1000;
                 IFlagEventProperties flag = new FlagEventPropertiesBuilder("flagkey").Version(11).DebugEventsUntilDate(debugUntil).Build();
-                FeatureRequestEvent fe = EventFactory.Default.NewFeatureRequestEvent(flag, _user,
+                FeatureRequestEvent fe = eventFactoryWithFakeTime.NewFeatureRequestEvent(flag, _user,
                     new EvaluationDetail<LdValue>(LdValue.Of("value"), 1, null), LdValue.Null);
                 ep.SendEvent(fe);
 
