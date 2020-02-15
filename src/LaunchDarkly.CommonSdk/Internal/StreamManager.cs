@@ -27,8 +27,10 @@ namespace LaunchDarkly.Common
         private readonly TaskCompletionSource<bool> _initTask;
         private readonly EventSourceCreator _esCreator;
         private readonly EventSource.ExponentialBackoffWithDecorrelation _backOff;
+        private readonly IDiagnosticStore _diagnosticStore;
         private IEventSource _es;
         private int _initialized = UNINITIALIZED;
+        internal DateTime _esStarted;
 
         /// <summary>
         /// Constructs a StreamManager instance.
@@ -39,14 +41,17 @@ namespace LaunchDarkly.Common
         /// <param name="clientEnvironment">A subclass of ClientEnvironment.</param>
         /// <param name="eventSourceCreator">Null in normal usage; pass a non-null delegate if you
         /// are in a unit test and want to mock out the event source.</param>
+        /// <param name="diagnosticStore">An implementation of IDiagnosticStore. The StreamManager
+        /// will call AddStreamInit to record the stream init for diagnostics.</param>
         public StreamManager(IStreamProcessor streamProcessor, StreamProperties streamProperties,
             IStreamManagerConfiguration config, ClientEnvironment clientEnvironment,
-            EventSourceCreator eventSourceCreator)
+            EventSourceCreator eventSourceCreator, IDiagnosticStore diagnosticStore)
         {
             _streamProcessor = streamProcessor;
             _streamProperties = streamProperties;
             _config = config;
             _clientEnvironment = clientEnvironment;
+            _diagnosticStore = diagnosticStore;
             _esCreator = eventSourceCreator ?? DefaultEventSourceCreator;
             _initTask = new TaskCompletionSource<bool>();
             _backOff = new EventSource.ExponentialBackoffWithDecorrelation(_config.ReconnectTime, TimeSpan.FromMilliseconds(30000));
@@ -87,16 +92,11 @@ namespace LaunchDarkly.Common
             _es.Opened += OnOpen;
             _es.Closed += OnClose;
 
-            try
-            {
-                Task.Run(() => _es.StartAsync());
-            }
-            catch (Exception ex)
-            {
-                Log.ErrorFormat("General Exception: {0}", ex, Util.ExceptionMessage(ex));
+            Task.Run(() => {
+                _esStarted = DateTime.Now;
+                return _es.StartAsync();
+            });
 
-                _initTask.SetException(ex);
-            }
             return _initTask.Task;
         }
 
@@ -113,6 +113,7 @@ namespace LaunchDarkly.Common
             await Task.Delay(sleepTime);
             try
             {
+                _esStarted = DateTime.Now;
                 await _es.StartAsync();
                 _backOff.ResetReconnectAttemptCount();
                 Log.Info("Reconnected to LaunchDarkly StreamProcessor");
@@ -164,9 +165,18 @@ namespace LaunchDarkly.Common
             }
         }
 
+        private void RecordStreamInit(bool failed) {
+            if (_diagnosticStore != null) {
+                DateTime now = DateTime.Now;
+                _diagnosticStore.AddStreamInit(_esStarted, now - _esStarted, failed);
+                _esStarted = now;
+            }
+        }
+
         private void OnOpen(object sender, EventSource.StateChangedEventArgs e)
         {
             Log.Debug("Eventsource Opened");
+            RecordStreamInit(false);
         }
 
         private void OnClose(object sender, EventSource.StateChangedEventArgs e)
@@ -188,6 +198,7 @@ namespace LaunchDarkly.Common
             {
                 int status = respEx.StatusCode;
                 Log.Error(Util.HttpErrorMessage(status, "streaming connection", "will retry"));
+                RecordStreamInit(true);
                 if (!Util.IsHttpErrorRecoverable(status))
                 {
                     _initTask.TrySetException(ex); // sends this exception to the client if we haven't already started up

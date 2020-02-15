@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -9,6 +10,7 @@ using WireMock.Logging;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 using WireMock.Server;
+using Moq;
 using Xunit;
 
 namespace LaunchDarkly.Common.Tests
@@ -17,9 +19,10 @@ namespace LaunchDarkly.Common.Tests
     {
         private const String HttpDateFormat = "ddd, dd MMM yyyy HH:mm:ss 'GMT'";
         private const string EventsUriPath = "/post-events-here";
+        private const string DiagnosticUriPath = "/post-diagnostic-here";
 
         private SimpleConfiguration _config = new SimpleConfiguration();
-        private IEventProcessor _ep;
+        private DefaultEventProcessor _ep;
         private FluentMockServer _server;
         private readonly User _user = User.Builder("userKey").Name("Red").Build();
         private readonly LdValue _userJson = LdValue.Parse("{\"key\":\"userKey\",\"name\":\"Red\"}");
@@ -28,8 +31,10 @@ namespace LaunchDarkly.Common.Tests
         public DefaultEventProcessorTest()
         {
             _server = FluentMockServer.Start();
-            _config.EventsUri = new Uri(_server.Urls[0]);
+            _config.EventsUri = new Uri(new Uri(_server.Urls[0]), EventsUriPath);
             _config.EventFlushInterval = TimeSpan.FromMilliseconds(-1);
+            _config.DiagnosticUri = new Uri(new Uri(_server.Urls[0]), DiagnosticUriPath);
+            _config.DiagnosticRecordingInterval = TimeSpan.FromMinutes(5);
         }
 
         void IDisposable.Dispose()
@@ -41,12 +46,17 @@ namespace LaunchDarkly.Common.Tests
             }
         }
 
-        private IEventProcessor MakeProcessor(SimpleConfiguration config)
+        private DefaultEventProcessor MakeProcessor(SimpleConfiguration config)
         {
-            return new DefaultEventProcessor(config, new TestUserDeduplicator(),
-                Util.MakeHttpClient(config, SimpleClientEnvironment.Instance), EventsUriPath);
+            return MakeProcessor(config, null, null, null);
         }
     
+        private DefaultEventProcessor MakeProcessor(SimpleConfiguration config, IDiagnosticStore diagnosticStore, IDiagnosticDisabler diagnosticDisabler, CountdownEvent diagnosticCountdown)
+        {
+            return new DefaultEventProcessor(config, new TestUserDeduplicator(),
+                Util.MakeHttpClient(config, SimpleClientEnvironment.Instance), diagnosticStore, diagnosticDisabler, () => { diagnosticCountdown.Signal(); });
+        }
+
         [Fact]
         public void IdentifyEventIsQueued()
         {
@@ -429,7 +439,7 @@ namespace LaunchDarkly.Common.Tests
             IdentifyEvent e = EventFactory.Default.NewIdentifyEvent(_user);
             _ep.SendEvent(e);
 
-            PrepareResponse(OkResponse());
+            PrepareEventResponse(OkResponse());
             _ep.Dispose();
 
             var bodyStr = JsonConvert.SerializeObject(GetLastRequest().BodyAsJson);
@@ -607,6 +617,124 @@ namespace LaunchDarkly.Common.Tests
             VerifyRecoverableHttpError(500);
         }
 
+        [Fact]
+        public void EventsInBatchRecorded()
+        {
+            var mockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
+            mockDiagnosticStore.Setup(diagStore => diagStore.PersistedUnsentEvent).Returns((DiagnosticEvent?)null);
+            mockDiagnosticStore.Setup(diagStore => diagStore.InitEvent).Returns((DiagnosticEvent?)null);
+            mockDiagnosticStore.Setup(diagStore => diagStore.DataSince).Returns((DateTime)DateTime.Now);
+            mockDiagnosticStore.Setup(diagStore => diagStore.RecordEventsInBatch(It.IsAny<long>()));
+            mockDiagnosticStore.Setup(diagStore => diagStore.CreateEventAndReset()).Returns(new DiagnosticEvent(LdValue.Null));
+
+            CountdownEvent diagnosticCountdown = new CountdownEvent(1);
+            _ep = MakeProcessor(_config, mockDiagnosticStore.Object, null, diagnosticCountdown);
+
+            var flag1 = new FlagEventPropertiesBuilder("flagkey1").Version(11).TrackEvents(true).Build();
+            var value = LdValue.Of("value");
+            var fe1 = EventFactory.Default.NewFeatureRequestEvent(flag1, _user,
+                new EvaluationDetail<LdValue>(value, 1, null), LdValue.Null);
+            _ep.SendEvent(fe1);
+
+            FlushAndGetEvents(OkResponse());
+
+            mockDiagnosticStore.Verify(diagStore => diagStore.RecordEventsInBatch(2), Times.Once(), "Diagnostic store's RecordEventsInBatch should be called with the number of events in last flush");
+
+            _ep.DoDiagnosticSend(null);
+            diagnosticCountdown.Wait();
+            mockDiagnosticStore.Verify(diagStore => diagStore.CreateEventAndReset(), Times.Once());
+        }
+
+        [Fact]
+        public void DiagnosticStorePersistedUnsentEventSentToDiagnosticUri()
+        {
+            var expected = LdValue.BuildObject().Add("testKey", "testValue").Build();
+
+            var mockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
+            mockDiagnosticStore.Setup(diagStore => diagStore.PersistedUnsentEvent).Returns(new DiagnosticEvent(expected));
+            mockDiagnosticStore.Setup(diagStore => diagStore.InitEvent).Returns((DiagnosticEvent?)null);
+            mockDiagnosticStore.Setup(diagStore => diagStore.DataSince).Returns((DateTime)DateTime.Now);
+
+            PrepareDiagnosticResponse(OkResponse());
+            var diagnosticCountdown = new CountdownEvent(1);
+            _ep = MakeProcessor(_config, mockDiagnosticStore.Object, null, diagnosticCountdown);
+
+            diagnosticCountdown.Wait();
+            var retrieved = GetLastDiagnostic();
+            
+            Assert.Equal(expected, retrieved);
+        }
+
+        [Fact]
+        public void DiagnosticStoreInitEventSentToDiagnosticUri()
+        {
+            var expected = LdValue.BuildObject().Add("testKey", "testValue").Build();
+
+            var mockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
+            mockDiagnosticStore.Setup(diagStore => diagStore.PersistedUnsentEvent).Returns((DiagnosticEvent?)null);
+            mockDiagnosticStore.Setup(diagStore => diagStore.InitEvent).Returns(new DiagnosticEvent(expected));
+            mockDiagnosticStore.Setup(diagStore => diagStore.DataSince).Returns((DateTime)DateTime.Now);
+
+            PrepareDiagnosticResponse(OkResponse());
+            var diagnosticCountdown = new CountdownEvent(1);
+            _ep = MakeProcessor(_config, mockDiagnosticStore.Object, null, diagnosticCountdown);
+
+            diagnosticCountdown.Wait();
+            var retrieved = GetLastDiagnostic();
+
+            Assert.Equal(expected, retrieved);
+        }
+
+        [Fact]
+        public void DiagnosticDisablerDisablesInitialDiagnostics()
+        {
+            var testDiagnostic = LdValue.BuildObject().Add("testKey", "testValue").Build();
+
+            var mockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
+            mockDiagnosticStore.Setup(diagStore => diagStore.PersistedUnsentEvent).Returns(new DiagnosticEvent(testDiagnostic));
+            mockDiagnosticStore.Setup(diagStore => diagStore.InitEvent).Returns(new DiagnosticEvent(testDiagnostic));
+            mockDiagnosticStore.Setup(diagStore => diagStore.DataSince).Returns((DateTime)DateTime.Now);
+
+            var mockDiagnosticDisabler = new Mock<IDiagnosticDisabler>(MockBehavior.Strict);
+            mockDiagnosticDisabler.Setup(diagDisabler => diagDisabler.Disabled).Returns(true);
+
+            _ep = MakeProcessor(_config, mockDiagnosticStore.Object, mockDiagnosticDisabler.Object, null);
+            mockDiagnosticStore.Verify(diagStore => diagStore.InitEvent, Times.Never());
+            mockDiagnosticStore.Verify(diagStore => diagStore.PersistedUnsentEvent, Times.Never());
+        }
+
+        [Fact]
+        public void DiagnosticDisablerEnabledInitialDiagnostics()
+        {
+            var expectedStats = LdValue.BuildObject().Add("stats", "testValue").Build();
+            var expectedInit = LdValue.BuildObject().Add("init", "testValue").Build();
+
+            var mockDiagnosticStore = new Mock<IDiagnosticStore>(MockBehavior.Strict);
+            mockDiagnosticStore.Setup(diagStore => diagStore.PersistedUnsentEvent).Returns(new DiagnosticEvent(expectedStats));
+            mockDiagnosticStore.Setup(diagStore => diagStore.InitEvent).Returns(new DiagnosticEvent(expectedInit));
+            mockDiagnosticStore.Setup(diagStore => diagStore.DataSince).Returns((DateTime)DateTime.Now);
+
+            var mockDiagnosticDisabler = new Mock<IDiagnosticDisabler>(MockBehavior.Strict);
+            mockDiagnosticDisabler.Setup(diagDisabler => diagDisabler.Disabled).Returns(false);
+
+            PrepareDiagnosticResponse(OkResponse());
+            var diagnosticCountdown = new CountdownEvent(2);
+            _ep = MakeProcessor(_config, mockDiagnosticStore.Object, mockDiagnosticDisabler.Object, diagnosticCountdown);
+
+            diagnosticCountdown.Wait();
+
+            var retrieved = new List<LdValue>();
+            foreach (LogEntry le in _server.LogEntries)
+            {
+                Assert.Equal(DiagnosticUriPath, le.RequestMessage.Path);
+                retrieved.Add(RequestAsLdValue(le.RequestMessage));
+            }
+
+            Assert.Equal(2, retrieved.Count);
+            Assert.Contains(expectedInit, retrieved);
+            Assert.Contains(expectedStats, retrieved);
+        }
+
         private void VerifyUnrecoverableHttpError(int status)
         {
             _ep = MakeProcessor(_config);
@@ -618,7 +746,7 @@ namespace LaunchDarkly.Common.Tests
 
             _ep.SendEvent(e);
             _ep.Flush();
-            ((DefaultEventProcessor)_ep).WaitUntilInactive();
+            _ep.WaitUntilInactive();
             foreach (LogEntry le in _server.LogEntries)
             {
                 Assert.True(false, "Should not have sent an HTTP request");
@@ -766,21 +894,31 @@ namespace LaunchDarkly.Common.Tests
             return resp.WithHeader("Date", dt.ToString(HttpDateFormat));
         }
 
-        private void PrepareResponse(IResponseBuilder resp)
+        private void PrepareResponse(string path, IResponseBuilder resp)
         {
             _server.Given(EventingRequest()).RespondWith(resp);
             _server.ResetLogEntries();
         }
 
-        private RequestMessage FlushAndGetRequest(IResponseBuilder resp, IEventProcessor ep = null)
+        private void PrepareEventResponse(IResponseBuilder resp)
+        {
+            PrepareResponse(EventsUriPath, resp);
+        }
+
+        private void PrepareDiagnosticResponse(IResponseBuilder resp)
+        {
+            PrepareResponse(DiagnosticUriPath, resp);
+        }
+
+        private RequestMessage FlushAndGetRequest(IResponseBuilder resp, DefaultEventProcessor ep = null)
         {
             if (ep is null)
             {
                 ep = _ep;
             }
-            PrepareResponse(resp);
+            PrepareEventResponse(resp);
             ep.Flush();
-            ((DefaultEventProcessor)ep).WaitUntilInactive();
+            ep.WaitUntilInactive();
             return GetLastRequest();
         }
 
@@ -794,13 +932,20 @@ namespace LaunchDarkly.Common.Tests
             return null;
         }
 
-        private IReadOnlyList<LdValue> FlushAndGetEvents(IResponseBuilder resp, IEventProcessor ep = null)
+        private LdValue RequestAsLdValue(RequestMessage r)
+        {
+            return LdValue.Parse(JsonConvert.SerializeObject(r.BodyAsJson));
+        }
+
+        private IReadOnlyList<LdValue> FlushAndGetEvents(IResponseBuilder resp, DefaultEventProcessor ep = null)
         {
             var req = FlushAndGetRequest(resp, ep);
             // annoyingly, req.Body is not provided by WireMock, only req.BodyAsJson
             var bodyStr = JsonConvert.SerializeObject(req.BodyAsJson);
             return LdValue.Parse(bodyStr).AsList(LdValue.Convert.Json);
         }
+
+        private LdValue GetLastDiagnostic() => RequestAsLdValue(GetLastRequest());
     }
 
     class TestUserDeduplicator : IUserDeduplicator
