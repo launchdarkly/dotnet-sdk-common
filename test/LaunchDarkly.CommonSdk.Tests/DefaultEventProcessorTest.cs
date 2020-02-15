@@ -284,6 +284,13 @@ namespace LaunchDarkly.Common.Tests
             });
         }
 
+// The following two tests are conditionally compiled because they cannot work with some versions of
+// ASP.NET Core, which is used by WireMock.Net when running in .NET Core. Specifically, the HTTP server
+// implementation in some platform versions will ignore any custom value that we set for the Date
+// header, and always uses the current date/time instead. In other versions, it does respect our value
+// for the Date header, but it's impractical to try to detect that precondition in the tests. It
+// appears to always work correctly in .NET Framework.
+#if NET45
         [Fact]
         public void DebugModeExpiresBasedOnClientTimeIfClientTimeIsLaterThanServerTime()
         {
@@ -339,6 +346,7 @@ namespace LaunchDarkly.Common.Tests
                     item => CheckSummaryEvent(item));
             });
         }
+#endif
 
         [Fact]
         public void TwoFeatureEventsForSameUserGenerateOnlyOneIndexEvent()
