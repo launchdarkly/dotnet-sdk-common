@@ -2,6 +2,32 @@
 
 All notable changes to `LaunchDarkly.CommonSdk` will be documented in this file. For full release notes for the projects that depend on this project, see their respective changelogs. This file describes changes only to the common code. This project adheres to [Semantic Versioning](http://semver.org).
 
+## [4.3.1] - 2020-01-15
+### Fixed:
+- A bug in the SDK prevented the sending of events from being retried after a failure. The SDK now retries once after an event flush fails as was intended.
+- The SDK now specifies a uniquely identifiable request header when sending events to LaunchDarkly to ensure that events are only processed once, even if the SDK sends them two times due to a failed initial attempt.
+
+## [4.3.0] - 2020-01-13
+### Added:
+- `EvaluationReason` static methods and properties for creating reason instances.
+- `LdValue` helpers for dealing with array/object values, without having to use an intermediate `List` or `Dictionary`: `BuildArray`, `BuildObject`, `Count`, `Get`.
+- `LdValue.Parse()`.
+- `IUserBuilder.Secondary` is a new name for `SecondaryKey` (for consistency with other SDKs), and allows you to make the `secondary` attribute private.
+- `User.Secondary` (same as `SecondaryKey`).
+
+### Changed:
+- `EvaluationReason` properties all exist on the base class now, so for instance you do not need to cast to `RuleMatch` to get the `RuleId` property. This is in preparation for a future API change in which `EvaluationReason` will become a struct instead of a base class.
+
+### Fixed:
+- Improved memory usage and performance when processing analytics events: the SDK now encodes event data to JSON directly, instead of creating intermediate objects and serializing them via reflection.
+- When parsing arbitrary JSON values, the SDK now always stores them internally as `LdValue` rather than `JToken`. This means that no additional copying step is required when the application accesses that value, if it is of a complex type.
+- `LdValue.Equals()` incorrectly returned true for object (dictionary) values that were not equal.
+
+### Deprecated:
+- `EvaluationReason` subclasses. Use only the base class properties and methods to ensure compatibility with future versions.
+- `IUserBuilder.SecondaryKey`, `User.SecondaryKey`.
+
+
 ## [4.2.1] - 2019-10-23
 ### Fixed:
 - The JSON serialization of `User` was producing an extra `Anonymous` property in addition to `anonymous`. If Newtonsoft.Json was configured globally to force all properties to lowercase, this would cause an exception when serializing a user since the two properties would end up with the same name.
@@ -57,6 +83,16 @@ _The 4.0.0 release was broken._
 
 ### Fixed:
 - No longer assumes that we are overriding the `HttpMessageHandler` (if it is null in the configuration, just use the default `HttpClient` constructor). This is important for Xamarin.
+
+## [2.11.0] - 2020-01-31
+### Added:
+- `DefaultEventProcessor` now supports sending diagnostic data to LaunchDarkly regarding the OS version, performance statistics, etc. The exact implementation of this is determined by the platform-specific SDKs (.NET or Xamarin).
+- The SDK now specifies a uniquely identifiable request header when sending events to LaunchDarkly to ensure that events are only processed once, even if the SDK sends them two times due to a failed initial attempt.
+
+## [2.10.1] - 2020-01-15
+### Fixed:
+- A bug in the SDK prevented the sending of events from being retried after a failure. The SDK now retries once after an event flush fails as was intended.
+- The SDK now specifies a uniquely identifiable request header when sending events to LaunchDarkly to ensure that events are only processed once, even if the SDK sends them two times due to a failed initial attempt.
 
 ## [2.10.0] - 2020-01-03
 ### Added:
