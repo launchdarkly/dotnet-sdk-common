@@ -14,31 +14,31 @@ namespace LaunchDarkly.Sdk.Internal.Events
 {
     internal interface IEventSender : IDisposable
     {
-    	Task<EventSenderResult> SendEventDataAsync(EventDataKind kind, string data, int eventCount);
+        Task<EventSenderResult> SendEventDataAsync(EventDataKind kind, string data, int eventCount);
     }
 
     internal enum EventDataKind
-	{
-		AnalyticsEvents,
-		DiagnosticEvent
-	};
+    {
+        AnalyticsEvents,
+        DiagnosticEvent
+    };
 
-	internal enum DeliveryStatus
-	{
-		Succeeded,
-		Failed,
-		FailedAndMustShutDown
-	};
+    internal enum DeliveryStatus
+    {
+        Succeeded,
+        Failed,
+        FailedAndMustShutDown
+    };
 
-	internal struct EventSenderResult
-	{
-		internal DeliveryStatus Status { get; private set; }
-		internal DateTime? TimeFromServer { get; private set; }
+    internal struct EventSenderResult
+    {
+        internal DeliveryStatus Status { get; private set; }
+        internal DateTime? TimeFromServer { get; private set; }
 
-		internal EventSenderResult(DeliveryStatus status, DateTime? timeFromServer)
-		{
-			Status = status;
-			TimeFromServer = timeFromServer;
-		}
-	}
+        internal EventSenderResult(DeliveryStatus status, DateTime? timeFromServer)
+        {
+            Status = status;
+            TimeFromServer = timeFromServer;
+        }
+    }
 }
