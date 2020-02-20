@@ -31,8 +31,8 @@ namespace LaunchDarkly.Sdk.Internal.Events
         private AtomicBoolean _inputCapacityExceeded;
 
         internal DefaultEventProcessor(IEventProcessorConfiguration config,
+            IEventSender eventSender,
             IUserDeduplicator userDeduplicator,
-            HttpClient httpClient,
             IDiagnosticStore diagnosticStore,
             IDiagnosticDisabler diagnosticDisabler,
             Action testActionOnDiagnosticSend)
@@ -42,7 +42,7 @@ namespace LaunchDarkly.Sdk.Internal.Events
             _sentInitialDiagnostics = new AtomicBoolean(false);
             _inputCapacityExceeded = new AtomicBoolean(false);
             _messageQueue = new BlockingCollection<IEventMessage>(config.EventCapacity);
-            _dispatcher = new EventDispatcher(config, _messageQueue, userDeduplicator, httpClient, diagnosticStore, testActionOnDiagnosticSend);
+            _dispatcher = new EventDispatcher(config, _messageQueue, eventSender, userDeduplicator, diagnosticStore, testActionOnDiagnosticSend);
             _flushTimer = new Timer(DoBackgroundFlush, null, config.EventFlushInterval,
                 config.EventFlushInterval);
             _diagnosticStore = diagnosticStore;
@@ -271,15 +271,15 @@ namespace LaunchDarkly.Sdk.Internal.Events
         private readonly IUserDeduplicator _userDeduplicator;
         private readonly CountdownEvent _flushWorkersCounter;
         private readonly Action _testActionOnDiagnosticSend;
-        private readonly HttpClient _httpClient;
+        private readonly IEventSender _eventSender;
         private readonly Random _random;
         private long _lastKnownPastTime;
         private volatile bool _disabled;
 
         internal EventDispatcher(IEventProcessorConfiguration config,
             BlockingCollection<IEventMessage> messageQueue,
+            IEventSender eventSender,
             IUserDeduplicator userDeduplicator,
-            HttpClient httpClient,
             IDiagnosticStore diagnosticStore,
             Action testActionOnDiagnosticSend)
         {
@@ -288,7 +288,7 @@ namespace LaunchDarkly.Sdk.Internal.Events
             _userDeduplicator = userDeduplicator;
             _testActionOnDiagnosticSend = testActionOnDiagnosticSend;
             _flushWorkersCounter = new CountdownEvent(1);
-            _httpClient = httpClient;
+            _eventSender = eventSender;
             _random = new Random();
             
             EventBuffer buffer = new EventBuffer(config.EventCapacity, _diagnosticStore);
@@ -306,7 +306,7 @@ namespace LaunchDarkly.Sdk.Internal.Events
         {
             if (disposing)
             {
-                _httpClient.Dispose();
+                _eventSender.Dispose();
             }
         }
 
@@ -523,139 +523,23 @@ namespace LaunchDarkly.Sdk.Internal.Events
                 return;
             }
 
-            string description = string.Format("{0} event(s)", eventCount);
-            await SendWithRetry(_config.EventsUri, jsonEvents, description, false, (response, duration) =>
+            var result = await _eventSender.SendEventDataAsync(EventDataKind.AnalyticsEvents,
+                jsonEvents, eventCount);
+            if (result.Status == DeliveryStatus.FailedAndMustShutDown)
             {
-                if (response == null)
-                {
-                    return;
-                }
-
-                DefaultEventProcessor.Log.DebugFormat("Event delivery took {0} ms, response status {1}",
-                    duration, response.StatusCode);
-                if (response.IsSuccessStatusCode)
-                {
-                    DateTimeOffset? respDate = response.Headers.Date;
-                    if (respDate.HasValue)
-                    {
-                        Interlocked.Exchange(ref _lastKnownPastTime,
-                            Util.GetUnixTimestampMillis(respDate.Value.DateTime));
-                    }
-                }
-            });
-        }
-
-        private async Task SendWithRetry(Uri uri, string content, string description, bool isDiagnostic, Action<HttpResponseMessage, long> onComplete)
-        {
-            const int maxAttempts = 2;
-            string payloadId = isDiagnostic ? null : Guid.NewGuid().ToString();
-            for (var attempt = 0; attempt < maxAttempts; attempt++)
+                _disabled = true;
+            }
+            if (result.TimeFromServer.HasValue)
             {
-                if (attempt > 0)
-                {
-                    await Task.Delay(TimeSpan.FromSeconds(1));
-                }
-
-                DefaultEventProcessor.Log.DebugFormat("Submitting {0} to {1} with json: {2}",
-                    description, uri.AbsoluteUri, content);
-
-                using (var cts = new CancellationTokenSource(_config.HttpClientTimeout))
-                {
-                    string errorMessage = null;
-                    bool canRetry = false;
-                    try
-                    {
-                        await SendEventsAsync(uri, content, payloadId, cts.Token, onComplete);
-                        return; // success
-                    }
-                    catch (TaskCanceledException e)
-                    {
-                        if (e.CancellationToken == cts.Token)
-                        {
-                            // Indicates the task was cancelled deliberately somehow; in this case don't retry
-                            DefaultEventProcessor.Log.Warn("Event sending task was cancelled");
-                            return;
-                        }
-                        else
-                        {
-                            // Otherwise this was a request timeout.
-                            errorMessage = "Timed out";
-                            canRetry = true;
-                        }
-                    }
-                    catch (UnsuccessfulResponseException e)
-                    {
-                        errorMessage = Util.HttpErrorMessageBase(e.StatusCode);
-                        if (Util.IsHttpErrorRecoverable(e.StatusCode))
-                        {
-                            canRetry = true;
-                        }
-                        else
-                        {
-                            _disabled = true; // for error 401, etc.
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        errorMessage = string.Format("Error ({0})", Util.DescribeException(e));
-                        canRetry = true;
-                    }
-                    string nextStepDesc = canRetry ?
-                        (maxAttempts == maxAttempts - 1 ? "will not retry" : "will retry after one second") :
-                        "giving up permanently";
-                    DefaultEventProcessor.Log.WarnFormat(errorMessage + " sending {0}; {1}",
-                        description,
-                        nextStepDesc);
-                    if (!canRetry)
-                    {
-                        return;
-                    }
-                }
+                Interlocked.Exchange(ref _lastKnownPastTime, Util.GetUnixTimestampMillis(result.TimeFromServer.Value));
             }
         }
 
         internal async Task SendDiagnosticEventAsync(DiagnosticEvent diagnostic)
         {
             var jsonDiagnostic = diagnostic.JsonValue.ToJsonString();
-            await SendWithRetry(_config.DiagnosticUri, jsonDiagnostic, "diagnostic event", true, (response, duration) =>
-            {
-                _testActionOnDiagnosticSend?.Invoke();
-
-                if (response == null)
-                {
-                    return;
-                }
-
-                DefaultEventProcessor.Log.DebugFormat("Diagnostic delivery took {0} ms, response status {1}",
-                    duration, response.StatusCode);
-            });
-        }
-
-        private async Task<bool> SendEventsAsync(Uri uri, String jsonEvents, String payloadId, CancellationToken token, Action<HttpResponseMessage, long> onComplete)
-        {
-            Stopwatch timer = new Stopwatch();
-
-            using (var request = new HttpRequestMessage(HttpMethod.Post, uri))
-            using (var stringContent = new StringContent(jsonEvents, Encoding.UTF8, "application/json"))
-            {
-                request.Content = stringContent;
-                if (payloadId != null)
-                {
-                    request.Headers.Add("X-LaunchDarkly-Payload-ID", payloadId);
-                    request.Headers.Add("X-LaunchDarkly-Event-Schema", DefaultEventProcessor.CurrentSchemaVersion);
-                }
-
-                using (var response = await _httpClient.SendAsync(request, token))
-                {
-                    timer.Stop();
-                    onComplete(response, timer.ElapsedMilliseconds);
-                    if (!response.IsSuccessStatusCode)
-                    {
-                        throw new UnsuccessfulResponseException((int)response.StatusCode);
-                    }
-                }
-            }
-            return true;
+            await _eventSender.SendEventDataAsync(EventDataKind.DiagnosticEvent, jsonDiagnostic, 1);
+            _testActionOnDiagnosticSend?.Invoke();
         }
     }
 
