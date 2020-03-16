@@ -147,7 +147,7 @@ namespace LaunchDarkly.Sdk.Internal.Events
         private HttpRequestMessage PrepareRequest(Uri uri, string payloadId)
         {
             var request = new HttpRequestMessage(HttpMethod.Post, uri);
-            if (payloadId != null)
+            if (payloadId != null) // payloadId is provided for regular analytics events payloads, not for diagnostic events
             {
                 request.Headers.Add("X-LaunchDarkly-Payload-ID", payloadId);
                 request.Headers.Add("X-LaunchDarkly-Event-Schema", CurrentSchemaVersion);
