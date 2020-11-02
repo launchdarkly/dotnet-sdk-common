@@ -4,42 +4,16 @@ workflows:
   version: 2
   test:
     jobs:
-      - test-netcore-1-1
-      - test-netcore-2-0
-      - test-windows-netframework-4-5
+      - test-netcore-2-1
+      - test-windows-netframework-4-5-2
 
 orbs:
   win: circleci/windows@1.0.0
 
 jobs:
-  test-netcore-1-1:
+  test-netcore-2-1:
     docker:
-      - image: microsoft/dotnet:1.1-sdk
-    steps:
-      - checkout
-      - restore_cache:
-          keys: 
-            - netcore11-deps-{{ checksum "src/LaunchDarkly.CommonSdk/LaunchDarkly.CommonSdk.csproj" }}-{{ checksum "test/LaunchDarkly.CommonSdk.Tests/LaunchDarkly.CommonSdk.Tests.csproj" }}
-      - run:
-          name: install project dependencies
-          command: dotnet restore
-      - save_cache:
-          key: netcore11-deps-{{ checksum "src/LaunchDarkly.CommonSdk/LaunchDarkly.CommonSdk.csproj" }}-{{ checksum "test/LaunchDarkly.CommonSdk.Tests/LaunchDarkly.CommonSdk.Tests.csproj" }}
-          paths:
-            - /root/.nuget/packages
-      - run:
-          name: build SDK for .NET Standard 1.4
-          command: dotnet build src/LaunchDarkly.CommonSdk -f netstandard1.4
-      - run:
-          name: build SRC for .NET Standard 1.6
-          command: dotnet build src/LaunchDarkly.CommonSdk -f netstandard1.6
-      - run:
-          name: run tests in .NET Core 1.1
-          command: dotnet test test/LaunchDarkly.CommonSdk.Tests/LaunchDarkly.CommonSdk.Tests.csproj -f netcoreapp1.1
-
-  test-netcore-2-0:
-    docker:
-      - image: microsoft/dotnet:2.0-sdk-jessie
+      - image: mcr.microsoft.com/dotnet/core/sdk:2.1-focal
     environment:
       ASPNETCORE_SUPPRESSSTATUSMESSAGES: true
     steps:
@@ -59,12 +33,12 @@ jobs:
           command: dotnet build src/LaunchDarkly.CommonSdk -f netstandard2.0
       - run:
           name: run tests in .NET Core 2.0
-          command: dotnet test test/LaunchDarkly.CommonSdk.Tests/LaunchDarkly.CommonSdk.Tests.csproj -f netcoreapp2.0
+          command: dotnet test test/LaunchDarkly.CommonSdk.Tests/LaunchDarkly.CommonSdk.Tests.csproj -f netcoreapp2.1
       - run:
           name: verify that both CommonSdk assemblies contain the same types
           command: ./packaging-test/compare-assembly-contents.sh netstandard2.0
 
-  test-windows-netframework-4-5:
+  test-windows-netframework-4-5-2:
     executor:
       name: win/vs2019
       shell: powershell.exe
@@ -72,17 +46,17 @@ jobs:
       - checkout
       - restore_cache:
           keys: 
-            - net45-deps-{{ checksum "src/LaunchDarkly.CommonSdk/LaunchDarkly.CommonSdk.csproj" }}-{{ checksum "test/LaunchDarkly.CommonSdk.Tests/LaunchDarkly.CommonSdk.Tests.csproj" }}
+            - net452-deps-{{ checksum "src/LaunchDarkly.CommonSdk/LaunchDarkly.CommonSdk.csproj" }}-{{ checksum "test/LaunchDarkly.CommonSdk.Tests/LaunchDarkly.CommonSdk.Tests.csproj" }}
       - run:
           name: install project dependencies
           command: dotnet restore
       - save_cache:
-          key: net45-deps-{{ checksum "src/LaunchDarkly.CommonSdk/LaunchDarkly.CommonSdk.csproj" }}-{{ checksum "test/LaunchDarkly.CommonSdk.Tests/LaunchDarkly.CommonSdk.Tests.csproj" }}
+          key: net452-deps-{{ checksum "src/LaunchDarkly.CommonSdk/LaunchDarkly.CommonSdk.csproj" }}-{{ checksum "test/LaunchDarkly.CommonSdk.Tests/LaunchDarkly.CommonSdk.Tests.csproj" }}
           paths:
             - C:\Users\circleci\.nuget\packages
       - run:
-          name: build SDK for .NET Framework 4.5
-          command: dotnet build src/LaunchDarkly.CommonSdk -f net45
+          name: build SDK for .NET Framework 4.5.2
+          command: dotnet build src/LaunchDarkly.CommonSdk -f net452
       - run:
           name: run tests in .NET Framework 4.6
           command: dotnet test test/LaunchDarkly.CommonSdk.Tests/LaunchDarkly.CommonSdk.Tests.csproj -f net46
