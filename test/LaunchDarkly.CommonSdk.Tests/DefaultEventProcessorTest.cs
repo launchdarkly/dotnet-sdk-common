@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -23,7 +22,7 @@ namespace LaunchDarkly.Common.Tests
 
         private SimpleConfiguration _config = new SimpleConfiguration();
         private DefaultEventProcessor _ep;
-        private FluentMockServer _server;
+        private WireMockServer _server;
         private readonly User _user = User.Builder("userKey").Name("Red").Build();
         private readonly LdValue _userJson = LdValue.Parse("{\"key\":\"userKey\",\"name\":\"Red\"}");
         private readonly LdValue _scrubbedUserJson = LdValue.Parse("{\"key\":\"userKey\",\"privateAttrs\":[\"name\"]}");
