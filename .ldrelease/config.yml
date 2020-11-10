@@ -4,9 +4,11 @@ repo:
 
 releasableBranches:
   - name: master
-    description: 4.x (for Xamarin and future .NET)
+    description: 5.x - for Xamarin 2.0+ and .NET 6.0+
+  - name: 4.x
+    description: for Xamarin 1.x
   - name: 2.x
-    description: (for current .NET SDK)
+    description: for current .NET SDK
 
 publications:
   - url: https://nuget.org/packages/LaunchDarkly.CommonSdk
