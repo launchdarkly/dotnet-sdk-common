@@ -1,9 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Net.Http;
+using LaunchDarkly.Sdk.Internal;
+using LaunchDarkly.Sdk.Internal.Events;
+using LaunchDarkly.Sdk.Internal.Stream;
 
-namespace LaunchDarkly.Common.Tests
+namespace LaunchDarkly.Sdk
 {
     // Used in unit tests of common code - a minimal implementation of our configuration interfaces.
     public class SimpleConfiguration :

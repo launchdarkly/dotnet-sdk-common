@@ -1,9 +1,13 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using LaunchDarkly.Client;
+using Newtonsoft.Json.Linq;
+using WireMock.Logging;
+using WireMock.Server;
+using WireMock.Settings;
 using Xunit;
 
-namespace LaunchDarkly.Common.Tests
+namespace LaunchDarkly.Sdk
 {
     public class TestUtil
     {
@@ -18,6 +22,28 @@ namespace LaunchDarkly.Common.Tests
             foreach (var e in expectedItems)
             {
                 Assert.Contains(e, items);
+            }
+        }
+
+        public static WireMockServer NewServer()
+        {
+            return WireMockServer.Start(new WireMockServerSettings
+            {
+                Logger = new WireMockNullLogger(),
+                AllowAnyHttpStatusCodeInResponse = true // without this setting, WireMock will silently change errors like 429 to 200
+            });
+        }
+
+        public static void WithServer(Action<WireMockServer> a)
+        {
+            var server = NewServer();
+            try
+            {
+                a(server);
+            }
+            finally
+            {
+                server.Stop();
             }
         }
     }
