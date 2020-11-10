@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp1.1;netcoreapp2.0;net46</TargetFrameworks>
+    <TestFramework Condition="'$(TESTFRAMEWORK)' == ''">netcoreapp2.0</TestFramework>
+    <TargetFramework>$(TESTFRAMEWORK)</TargetFramework>
     <AssemblyName>LaunchDarkly.CommonSdk.Tests</AssemblyName>
   </PropertyGroup>
 
