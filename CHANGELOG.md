@@ -84,6 +84,10 @@ _The 4.0.0 release was broken._
 ### Fixed:
 - No longer assumes that we are overriding the `HttpMessageHandler` (if it is null in the configuration, just use the default `HttpClient` constructor). This is important for Xamarin.
 
+## [2.11.1] - 2020-11-05
+### Changed:
+- Updated the `LaunchDarkly.EventSource` dependency to a version that has a specific target for .NET Standard 2.0. Previously, that package targeted only .NET Standard 1.4 and .NET Framework 4.5. There is no functional difference between these targets, but .NET Core application developers may wish to avoid linking to any .NET Standard 1.x assemblies on general principle.
+
 ## [2.11.0] - 2020-01-31
 ### Added:
 - `DefaultEventProcessor` now supports sending diagnostic data to LaunchDarkly regarding the OS version, performance statistics, etc. The exact implementation of this is determined by the platform-specific SDKs (.NET or Xamarin).
