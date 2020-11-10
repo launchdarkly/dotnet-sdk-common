@@ -26,7 +26,8 @@ workflows:
           test-target-framework: net5.0
           requires:
             - build-netstandard-2
-      - test-windows-netframework-4-5-2
+      - test-windows-netframework-4-5-2:
+          name: .NET Framework 4.5.2
 
 orbs:
   win: circleci/windows@1.0.0
