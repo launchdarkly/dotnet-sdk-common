@@ -14,8 +14,6 @@ namespace LaunchDarkly.Sdk.Internal.Helpers
     /// </remarks>
     internal class UserJsonSerializer : JsonConverter
     {
-        internal static readonly UserJsonSerializer Instance = new UserJsonSerializer();
-
         public override bool CanRead => false;
         public override bool CanWrite => true;
         
@@ -57,7 +55,7 @@ namespace LaunchDarkly.Sdk.Internal.Helpers
                 foreach (var kv in u.Custom)
                 {
                     writer.WritePropertyName(kv.Key);
-                    LdValueSerializer.Instance.WriteJson(writer, kv.Value, serializer);
+                    LdValue.JsonConverter.WriteJson(writer, kv.Value, serializer);
                 }
                 writer.WriteEndObject();
             }

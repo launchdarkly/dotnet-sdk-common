@@ -58,9 +58,6 @@ jobs:
       - run:
           name: restore LaunchDarkly.CommonSdk
           command: dotnet restore src/LaunchDarkly.CommonSdk
-      - run:
-          name: restore LaunchDarkly.CommonSdk.StrongName
-          command: dotnet restore src/LaunchDarkly.CommonSdk.StrongName
       - save_cache:
           key: deps-<<parameters.build-target-framework>>-{{ checksum "src/LaunchDarkly.CommonSdk/LaunchDarkly.CommonSdk.csproj" }}
           paths:
@@ -68,12 +65,6 @@ jobs:
       - run:
           name: build LaunchDarkly.CommonSdk
           command: dotnet build src/LaunchDarkly.CommonSdk -f <<parameters.build-target-framework>>
-      - run:
-          name: build LaunchDarkly.CommonSdk.StrongName
-          command: dotnet build src/LaunchDarkly.CommonSdk.StrongName -f <<parameters.build-target-framework>>
-      - run:
-          name: verify that both CommonSdk assemblies contain the same types
-          command: ./packaging-test/compare-assembly-contents.sh netstandard2.0
       - persist_to_workspace:
           root: src/LaunchDarkly.CommonSdk
           paths:
@@ -116,7 +107,7 @@ jobs:
       name: win/vs2019
       shell: powershell.exe
     environment:
-      TESTFRAMEWORK: net46 # the library is built for 4.5, but we run in 4.6 so we can use some test libraries that don't work in 4.5
+      TESTFRAMEWORK: net452
     steps:
       - checkout
       - restore_cache:
@@ -133,5 +124,5 @@ jobs:
           name: build SDK for .NET Framework 4.5.2
           command: dotnet build src/LaunchDarkly.CommonSdk -f net452
       - run:
-          name: run tests in .NET Framework 4.6
-          command: dotnet test test/LaunchDarkly.CommonSdk.Tests/LaunchDarkly.CommonSdk.Tests.csproj -f net46
+          name: run tests in .NET Framework 4.5.2
+          command: dotnet test test/LaunchDarkly.CommonSdk.Tests/LaunchDarkly.CommonSdk.Tests.csproj -f net452

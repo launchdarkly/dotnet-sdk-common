@@ -486,8 +486,8 @@ namespace LaunchDarkly.Sdk
             VerifySerializeAndParse(aFloatValue, someFloat.ToString());
             VerifySerializeAndParse(anArrayValue, "[3]");
             VerifySerializeAndParse(anObjectValue, "{\"1\":\"x\"}");
-            Assert.Throws(typeof(JsonReaderException), () => JsonConvert.DeserializeObject<LdValue>("nono"));
-            Assert.Throws(typeof(ArgumentException), () => LdValue.Parse("nono"));
+            Assert.Throws<JsonReaderException>(() => JsonConvert.DeserializeObject<LdValue>("nono"));
+            Assert.Throws<ArgumentException>(() => LdValue.Parse("nono"));
         }
         
         private void VerifySerializeAndParse(LdValue value, string expectedJson)

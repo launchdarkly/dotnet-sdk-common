@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using Xunit;
 using Newtonsoft.Json;
@@ -32,7 +31,7 @@ namespace LaunchDarkly.Sdk
             Assert.Equal(expectedShortString, reason.ToString());
         }
 
-        public static IEnumerable ReasonTestData => new List<object[]>
+        public static IEnumerable<object[]> ReasonTestData => new List<object[]>
         {
             new object[] { EvaluationReason.OffReason, @"{""kind"":""OFF""}", "OFF" },
             new object[] { EvaluationReason.FallthroughReason, @"{""kind"":""FALLTHROUGH""}", "FALLTHROUGH" },

@@ -8,8 +8,6 @@ namespace LaunchDarkly.Sdk.Internal.Helpers
 {
     internal class LdValueSerializer : JsonConverter
     {
-        internal static readonly LdValueSerializer Instance = new LdValueSerializer();
-        
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
             if (value is null)

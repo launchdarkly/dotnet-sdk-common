@@ -7,8 +7,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LaunchDarkly.CommonSdk", "s
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LaunchDarkly.CommonSdk.Tests", "test\LaunchDarkly.CommonSdk.Tests\LaunchDarkly.CommonSdk.Tests.csproj", "{9F8D6033-F6C3-462B-B728-550C5172206D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LaunchDarkly.Common.StrongName", "src\LaunchDarkly.CommonSdk.StrongName\LaunchDarkly.CommonSdk.StrongName.csproj", "{1A48902B-A26C-4F5E-BACF-67FF990F32B9}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -23,10 +21,6 @@ Global
 		{9F8D6033-F6C3-462B-B728-550C5172206D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9F8D6033-F6C3-462B-B728-550C5172206D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9F8D6033-F6C3-462B-B728-550C5172206D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1A48902B-A26C-4F5E-BACF-67FF990F32B9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1A48902B-A26C-4F5E-BACF-67FF990F32B9}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1A48902B-A26C-4F5E-BACF-67FF990F32B9}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1A48902B-A26C-4F5E-BACF-67FF990F32B9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

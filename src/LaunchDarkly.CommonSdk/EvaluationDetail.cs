@@ -1,7 +1,7 @@
 ﻿using System;
+using LaunchDarkly.Sdk.Internal.Helpers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
-using LaunchDarkly.Sdk.Internal.Helpers;
 
 namespace LaunchDarkly.Sdk
 {
@@ -65,7 +65,7 @@ namespace LaunchDarkly.Sdk
         /// <inheritdoc/>
         public override int GetHashCode()
         {
-            return Util.Hash().With(Value).With(VariationIndex).With(Reason).Value;
+            return new HashCodeBuilder().With(Value).With(VariationIndex).With(Reason).Value;
         }
     }
 
@@ -170,6 +170,11 @@ namespace LaunchDarkly.Sdk
         public static EvaluationReason ErrorReason(EvaluationErrorKind errorKind) =>
             new EvaluationReason(EvaluationReasonKind.ERROR, -1, null, null, errorKind);
 
+        /// <summary>
+        /// Returns the implementation of custom JSON serialization for this type.
+        /// </summary>
+        public static JsonConverter JsonConverter { get; } = new EvaluationReasonConverter();
+
         /// <inheritdoc/>
         public override bool Equals(object obj)
         {
@@ -184,7 +189,7 @@ namespace LaunchDarkly.Sdk
         /// <inheritdoc/>
         public override int GetHashCode()
         {
-            return Util.Hash().With(_kind).With(_ruleIndex).With(_ruleId).With(_prerequisiteKey).With(_errorKind).Value;
+            return new HashCodeBuilder().With(_kind).With(_ruleIndex).With(_ruleId).With(_prerequisiteKey).With(_errorKind).Value;
         }
 
         /// <inheritdoc/>
@@ -285,8 +290,6 @@ namespace LaunchDarkly.Sdk
 
     internal sealed class EvaluationReasonConverter : JsonConverter
     {
-        internal static readonly EvaluationReasonConverter Instance = new EvaluationReasonConverter();
-
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
             if (!(value is EvaluationReason r))
@@ -318,7 +321,7 @@ namespace LaunchDarkly.Sdk
 
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
-            LdValue o = (LdValue)LdValueSerializer.Instance.ReadJson(reader, typeof(LdValue), LdValue.Null, serializer);
+            LdValue o = (LdValue)LdValue.JsonConverter.ReadJson(reader, typeof(LdValue), LdValue.Null, serializer);
             if (o.IsNull)
             {
                 return null;

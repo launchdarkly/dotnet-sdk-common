@@ -12,9 +12,7 @@ releasableBranches:
 
 publications:
   - url: https://nuget.org/packages/LaunchDarkly.CommonSdk
-    description: NuGet (non-strong-named package)
-  - url: https://nuget.org/packages/LaunchDarkly.CommonSdk.StrongName
-    description: NuGet (strong-named package)
+    description: NuGet
 
 circleci:
   windows:
@@ -23,5 +21,5 @@ circleci:
 template:
   name: dotnet-windows
 
-# Note that we don't generate HTML docs for this project, because it's mostly internal stuff and the
-# public stuff will be included in the API docs for the actual SDKs.
+# Note that we don't generate HTML docs for this project, because it will be included
+# in the API docs for the actual SDKs.

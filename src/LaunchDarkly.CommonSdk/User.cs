@@ -54,6 +54,11 @@ namespace LaunchDarkly.Sdk
         internal readonly ImmutableDictionary<string, LdValue> _custom;
         internal readonly ImmutableHashSet<string> _privateAttributeNames;
 
+        /// <summary>
+        /// Returns the implementation of custom JSON serialization for this type.
+        /// </summary>
+        public static JsonConverter JsonConverter { get; } = new UserJsonSerializer();
+
         // Note that the JsonProperty/JsonIgnore attributes here are retained only for historical reasons
         // because developers may expect to still see them; they are not actually used in serialization,
         // since we're now using UserJsonSerializer rather than reflection for that.
@@ -279,7 +284,7 @@ namespace LaunchDarkly.Sdk
         /// <inheritdoc/>
         public override int GetHashCode()
         {
-            var hashBuilder = Util.Hash()
+            var hashBuilder = new HashCodeBuilder()
                 .With(Key)
                 .With(Secondary)
                 .With(IPAddress)

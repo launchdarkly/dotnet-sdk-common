@@ -98,6 +98,11 @@ namespace LaunchDarkly.Sdk
         /// </summary>
         public static LdValue Null => _nullInstance;
 
+        /// <summary>
+        /// Returns the implementation of custom JSON serialization for this type.
+        /// </summary>
+        public static JsonConverter JsonConverter { get; } = new LdValueSerializer();
+
         #endregion
 
         #region Internal/private constructors, factory, and properties
