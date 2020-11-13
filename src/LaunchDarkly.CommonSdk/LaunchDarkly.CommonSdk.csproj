@@ -1,30 +1,43 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Version>5.0.0-beta4</Version>
+    <Version>5.0.0-beta.5</Version>
     <TargetFrameworks>netstandard2.0;net452</TargetFrameworks>
-    <PackageLicenseUrl>https://raw.githubusercontent.com/launchdarkly/dotnet-sdk-common/master/LICENSE</PackageLicenseUrl>
     <DebugType>portable</DebugType>
     <AssemblyName>LaunchDarkly.CommonSdk</AssemblyName>
     <OutputType>Library</OutputType>
     <PackageId>LaunchDarkly.CommonSdk</PackageId>
     <Description>LaunchDarkly common code for .NET and Xamarin clients</Description>
+    <Company>LaunchDarkly</Company>
     <Copyright>Copyright 2018 LaunchDarkly</Copyright>
+    <LicenseExpression>Apache-2.0</LicenseExpression>
+    <PackageProjectUrl>https://github.com/launchdarkly/dotnet-sdk-common</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/launchdarkly/dotnet-sdk-common</RepositoryUrl>
+    <RepositoryBranch>master</RepositoryBranch>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
 
     <!-- ensure that dependency DLLs are copied to output folder too - this makes life easier for the packaging-test script -->
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
 
     <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\LaunchDarkly.CommonSdk.xml</DocumentationFile>
   </PropertyGroup>
+  
   <ItemGroup>
     <PackageReference Include="LaunchDarkly.EventSource" Version="3.3.3" />
     <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
     <PackageReference Include="System.Collections.Immutable" Version="1.5.0" />
   </ItemGroup>
+  
   <ItemGroup>
     <Folder Include="Helpers\" />
   </ItemGroup>
+
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <AssemblyOriginatorKeyFile>../../LaunchDarkly.CommonSdk.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>
   </PropertyGroup>
+  
+  <ItemGroup> <!-- see https://github.com/dotnet/sourcelink -->
+    <PackageReference Include="Microsoft.SourceLink.GitLab" Version="1.0.0" PrivateAssets="All" />
+  </ItemGroup>
 </Project>
