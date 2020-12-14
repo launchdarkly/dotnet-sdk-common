@@ -71,6 +71,7 @@ namespace LaunchDarkly.Sdk
         public UnixMillisecondTime PlusMillis(long millis) =>
             new UnixMillisecondTime(Value + millis);
 
+#pragma warning disable CS1591  // don't need XML comments for these standard methods
         public bool Equals(UnixMillisecondTime other) => Value == other.Value;
 
         public int CompareTo(UnixMillisecondTime other) => Value.CompareTo(other.Value);
@@ -97,6 +98,7 @@ namespace LaunchDarkly.Sdk
 
         public static bool operator >=(UnixMillisecondTime a, UnixMillisecondTime b) =>
             a.Value >= b.Value;
+#pragma warning restore CS1591
     }
 
     internal class UnixMillisecondTimeSerializer : JsonConverter

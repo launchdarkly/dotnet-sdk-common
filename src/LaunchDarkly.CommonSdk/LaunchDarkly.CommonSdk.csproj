@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Version>5.0.0-beta.6</Version>
+    <Version>5.0.0-beta.7</Version>
     <TargetFrameworks>netstandard2.0;net452</TargetFrameworks>
     <DebugType>portable</DebugType>
     <AssemblyName>LaunchDarkly.CommonSdk</AssemblyName>
@@ -20,6 +20,7 @@
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
 
     <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\LaunchDarkly.CommonSdk.xml</DocumentationFile>
+    <RootNamespace>LaunchDarkly.Sdk</RootNamespace>
   </PropertyGroup>
   
   <ItemGroup>

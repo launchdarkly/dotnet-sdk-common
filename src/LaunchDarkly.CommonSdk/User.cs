@@ -244,7 +244,30 @@ namespace LaunchDarkly.Sdk
         {
             return new User(key);
         }
-        
+
+        /// <summary>
+        /// Gets the value of a user attribute, if present.
+        /// </summary>
+        /// <remarks>
+        /// This can be either a built-in attribute or a custom one. It returns the value using the
+        /// <see cref="LdValue"/> type, which can have any type that is supported in JSON. If the
+        /// attribute does not exist, it returns <see cref="LdValue.Null"/>.
+        /// </remarks>
+        /// <param name="attribute">the attribute to get</param>
+        /// <returns>the attribute value or <see cref="LdValue.Null"/></returns>
+        public LdValue GetAttribute(UserAttribute attribute)
+        {
+            if (attribute.BuiltIn)
+            {
+                return attribute.BuiltInGetter(this);
+            }
+            if (_custom != null && _custom.TryGetValue(attribute.AttributeName, out var value))
+            {
+                return value;
+            }
+            return LdValue.Null;
+        }
+
         /// <inheritdoc/>
         public override bool Equals(object obj)
         {

@@ -391,16 +391,20 @@ namespace LaunchDarkly.Sdk
             Assert.NotEqual(LdValue.Of(false), LdValue.Of(0));
         }
 
-        private void AssertValueAndHashEqual<T>(T a, T b)
+        private void AssertValueAndHashEqual(LdValue a, LdValue b)
         {
             Assert.Equal(a, b);
             Assert.Equal(a.GetHashCode(), b.GetHashCode());
+            Assert.True(a == b);
+            Assert.False(a != b);
         }
 
-        private void AssertValueAndHashNotEqual<T>(T a, T b)
+        private void AssertValueAndHashNotEqual(LdValue a, LdValue b)
         {
             Assert.NotEqual(a, b);
             Assert.NotEqual(a.GetHashCode(), b.GetHashCode());
+            Assert.False(a == b);
+            Assert.True(a != b);
         }
         
         [Fact]

@@ -640,6 +640,12 @@ namespace LaunchDarkly.Sdk
             return ToJsonString();
         }
 
+#pragma warning disable CS1591  // don't need XML comments for these standard methods
+        public static bool operator ==(LdValue a, LdValue b) => a.Equals(b);
+
+        public static bool operator !=(LdValue a, LdValue b) => !a.Equals(b);
+#pragma warning restore CS1591
+
         #endregion
 
         #region Inner types
