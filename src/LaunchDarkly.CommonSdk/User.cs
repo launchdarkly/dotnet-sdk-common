@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Immutable;
 using System.Linq;
-using LaunchDarkly.Sdk.Internal.Helpers;
-using Newtonsoft.Json;
+using LaunchDarkly.JsonStream;
+using LaunchDarkly.Sdk.Json;
 
 namespace LaunchDarkly.Sdk
 {
@@ -37,9 +37,12 @@ namespace LaunchDarkly.Sdk
     /// <see cref="User.WithKey(string)"/>, or using a builder pattern with <see cref="User.Builder(string)"/>
     /// or <see cref="User.Builder(User)"/>.
     /// </para>
+    /// <para>
+    /// For converting this type to or from JSON, see <see cref="LaunchDarkly.Sdk.Json"/>.
+    /// </para>
     /// </remarks>
-    [JsonConverter(typeof(UserJsonSerializer))]
-    public class User : IEquatable<User>
+    [JsonStreamConverter(typeof(LdJsonConverters.UserConverter))]
+    public class User : IEquatable<User>, IJsonSerializable
     {
         private readonly string _key;
         private readonly string _secondary;
@@ -55,18 +58,8 @@ namespace LaunchDarkly.Sdk
         internal readonly ImmutableHashSet<string> _privateAttributeNames;
 
         /// <summary>
-        /// Returns the implementation of custom JSON serialization for this type.
-        /// </summary>
-        public static JsonConverter JsonConverter { get; } = new UserJsonSerializer();
-
-        // Note that the JsonProperty/JsonIgnore attributes here are retained only for historical reasons
-        // because developers may expect to still see them; they are not actually used in serialization,
-        // since we're now using UserJsonSerializer rather than reflection for that.
-
-        /// <summary>
         /// The unique key for the user.
         /// </summary>
-        [JsonProperty(PropertyName = "key", NullValueHandling = NullValueHandling.Ignore)]
         public string Key => _key;
 
         /// <summary>
@@ -78,62 +71,46 @@ namespace LaunchDarkly.Sdk
         /// specific attribute, the secondary key (if set) is used to further distinguish between users who are
         /// otherwise identical according to that attribute.
         /// </remarks>
-        [JsonProperty(PropertyName = "secondary", NullValueHandling = NullValueHandling.Ignore)]
         public string Secondary => _secondary;
 
         /// <summary>
-        /// Obsolete name for <see cref="Secondary"/>.
-        /// </summary>
-        [Obsolete("use Secondary")]
-        [JsonIgnore]
-        public string SecondaryKey => _secondary;
-        
-        /// <summary>
         /// The IP address of the user.
         /// </summary>
-        [JsonProperty(PropertyName = "ip", NullValueHandling = NullValueHandling.Ignore)]
         public string IPAddress => _ip;
 
         /// <summary>
         /// The country code for the user.
         /// </summary>
-        [JsonProperty(PropertyName = "country", NullValueHandling = NullValueHandling.Ignore)]
         public string Country => _country;
 
         /// <summary>
         /// The user's first name.
         /// </summary>
-        [JsonProperty(PropertyName = "firstName", NullValueHandling = NullValueHandling.Ignore)]
         public string FirstName => _firstName;
 
         /// <summary>
         /// The user's last name.
         /// </summary>
-        [JsonProperty(PropertyName = "lastName", NullValueHandling = NullValueHandling.Ignore)]
         public string LastName => _lastName;
 
         /// <summary>
         /// The user's full name.
         /// </summary>
-        [JsonProperty(PropertyName = "name", NullValueHandling = NullValueHandling.Ignore)]
         public string Name => _name;
 
         /// <summary>
         /// The user's avatar.
         /// </summary>
-        [JsonProperty(PropertyName = "avatar", NullValueHandling = NullValueHandling.Ignore)]
         public string Avatar => _avatar;
 
         /// <summary>
         /// The user's email address.
         /// </summary>
-        [JsonProperty(PropertyName = "email", NullValueHandling = NullValueHandling.Ignore)]
         public string Email => _email;
 
         /// <summary>
         /// Whether or not the user is anonymous.
         /// </summary>
-        [JsonIgnore]
         public bool Anonymous => _anonymous.HasValue && _anonymous.Value;
 
         /// <summary>
@@ -147,19 +124,16 @@ namespace LaunchDarkly.Sdk
         /// property getter, and the corresponding setter in <see cref="IUserBuilder"/>, allow you to
         /// treat the property as nullable.
         /// </remarks>
-        [JsonProperty(PropertyName = "anonymous", NullValueHandling = NullValueHandling.Ignore)]
         public bool? AnonymousOptional => _anonymous;
 
         /// <summary>
         /// Custom attributes for the user.
         /// </summary>
-        [JsonProperty(PropertyName = "custom", NullValueHandling = NullValueHandling.Ignore)]
         public IImmutableDictionary<string, LdValue> Custom => _custom;
 
         /// <summary>
         /// Used internally to track which attributes are private.
         /// </summary>
-        [JsonIgnore]
         public IImmutableSet<string> PrivateAttributeNames => _privateAttributeNames;
 
         /// <summary>
@@ -216,7 +190,6 @@ namespace LaunchDarkly.Sdk
         /// <summary>
         /// Creates a user by specifying all properties.
         /// </summary>
-        [JsonConstructor]
         public User(string key, string secondary, string ip, string country, string firstName,
                     string lastName, string name, string avatar, string email, bool? anonymous,
                     ImmutableDictionary<string, LdValue> custom, ImmutableHashSet<string> privateAttributeNames)

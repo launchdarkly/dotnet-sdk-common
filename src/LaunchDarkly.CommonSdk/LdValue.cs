@@ -2,8 +2,9 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using LaunchDarkly.JsonStream;
 using LaunchDarkly.Sdk.Internal.Helpers;
-using Newtonsoft.Json;
+using LaunchDarkly.Sdk.Json;
 
 namespace LaunchDarkly.Sdk
 {
@@ -70,17 +71,12 @@ namespace LaunchDarkly.Sdk
     /// use <see cref="AsList{T}(LdValue.Converter{T})"/> or <see cref="AsDictionary{T}(LdValue.Converter{T})"/>.
     /// </para>
     /// </remarks>
-    [JsonConverter(typeof(LdValueSerializer))]
-    public struct LdValue : IEquatable<LdValue>
+    [JsonStreamConverter(typeof(LdJsonConverters.LdValueConverter))]
+    public struct LdValue : IEquatable<LdValue>, IJsonSerializable
     {
         #region Private fields
 
         private static readonly LdValue _nullInstance = new LdValue(LdValueType.Null, false, 0, null);
-        private static readonly JsonSerializerSettings _serializerSettings = new JsonSerializerSettings
-        {
-            DateParseHandling = DateParseHandling.None,
-            Formatting = Formatting.None
-        };
 
         private readonly LdValueType _type;
         private readonly bool _boolValue;
@@ -97,11 +93,6 @@ namespace LaunchDarkly.Sdk
         /// Convenience property for an <see cref="LdValue"/> that wraps a <see langword="null"/> value.
         /// </summary>
         public static LdValue Null => _nullInstance;
-
-        /// <summary>
-        /// Returns the implementation of custom JSON serialization for this type.
-        /// </summary>
-        public static JsonConverter JsonConverter { get; } = new LdValueSerializer();
 
         #endregion
 
@@ -285,9 +276,9 @@ namespace LaunchDarkly.Sdk
         {
             try
             {
-                return JsonConvert.DeserializeObject<LdValue>(jsonString, _serializerSettings);
+                return LdJsonSerialization.DeserializeObject<LdValue>(jsonString);
             }
-            catch (JsonException e)
+            catch (Exception e)
             {
                 throw new ArgumentException(e.Message);
             }
@@ -368,12 +359,7 @@ namespace LaunchDarkly.Sdk
         /// never throw an exception.
         /// </para>
         /// <para>
-        /// If the value is a number but not an integer, it will be rounded to the nearest integer.
-        /// This is consistent with the behavior of <c>IntVariation</c> in .NET SDK 5.x, and rounding in
-        /// <see cref="Newtonsoft.Json"/>, but it is different from C# casting behavior and the behavior
-        /// of other LaunchDarkly SDKs, which round toward zero. This will be changed in a future version
-        /// to always round toward zero. If in doubt, call <see cref="AsFloat"/> or <see cref="AsDouble"/>
-        /// and do the rounding yourself.
+        /// If the value is a number but not an integer, it will be rounded toward zero.
         /// </para>
         /// <para>
         /// This is equivalent to calling <see cref="Converter{T}.ToType(LdValue)"/> on
@@ -391,12 +377,7 @@ namespace LaunchDarkly.Sdk
         /// never throw an exception.
         /// </para>
         /// <para>
-        /// If the value is a number but not an integer, it will be rounded to the nearest integer.
-        /// This is consistent with the behavior of <c>IntVariation</c> in .NET SDK 5.x, and rounding in
-        /// <see cref="Newtonsoft.Json"/>, but it is different from C# casting behavior and the behavior
-        /// of other LaunchDarkly SDKs, which round toward zero. This will be changed in a future version
-        /// to always round toward zero. If in doubt, call <see cref="AsFloat"/> or <see cref="AsDouble"/>
-        /// and do the rounding yourself.
+        /// If the value is a number but not an integer, it will be rounded toward zero.
         /// </para>
         /// <para>
         /// This is equivalent to calling <see cref="Converter{T}.ToType(LdValue)"/> on
@@ -551,7 +532,17 @@ namespace LaunchDarkly.Sdk
         /// <see cref="Parse(string)"/>
         public string ToJsonString()
         {
-            return IsNull ? "null" : JsonConvert.SerializeObject(this, _serializerSettings);
+            switch (_type)
+            {
+                case LdValueType.Null:
+                    return "null";
+                case LdValueType.Bool:
+                    return _boolValue ? "true" : "false";
+                default:
+                    var writer = JWriter.New();
+                    LdJsonConverters.LdValueConverter.WriteJsonInternal(this, writer);
+                    return writer.GetString();
+            }
         }
 
         /// <summary>
@@ -635,10 +626,7 @@ namespace LaunchDarkly.Sdk
         /// Converts the value to its JSON encoding (same as <see cref="ToJsonString"/>).
         /// </summary>
         /// <returns>the JSON encoding of the value</returns>
-        public override string ToString()
-        {
-            return ToJsonString();
-        }
+        public override string ToString() => ToJsonString();
 
 #pragma warning disable CS1591  // don't need XML comments for these standard methods
         public static bool operator ==(LdValue a, LdValue b) => a.Equals(b);

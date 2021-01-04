@@ -1,5 +1,4 @@
 ﻿using System;
-using Newtonsoft.Json;
 using Xunit;
 
 using static LaunchDarkly.Sdk.UnixMillisecondTime;
@@ -51,33 +50,6 @@ namespace LaunchDarkly.Sdk
                 }
                 Assert.Equal(a.GetHashCode(), OfMillis(a).GetHashCode());
             }
-        }
-
-        [Fact]
-        public void JsonSerialize()
-        {
-            var t = OfMillis(someTime);
-            Assert.Equal(someTime.ToString(), JsonConvert.SerializeObject(t));
-        }
-
-        [Fact]
-        public void JsonDeserialize()
-        {
-            Assert.Equal(OfMillis(someTime),
-                JsonConvert.DeserializeObject<UnixMillisecondTime>(someTime.ToString()));
-        }
-
-        [Fact]
-        public void JsonDeserializeNullableWithValue()
-        {
-            Assert.Equal((UnixMillisecondTime?)OfMillis(someTime),
-                JsonConvert.DeserializeObject<UnixMillisecondTime?>(someTime.ToString()));
-        }
-
-        [Fact]
-        public void JsonDeserializeNullableAsNull()
-        {
-            Assert.Null(JsonConvert.DeserializeObject<UnixMillisecondTime?>("null"));
         }
     }
 }
