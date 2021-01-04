@@ -396,15 +396,15 @@ namespace LaunchDarkly.Sdk.Json
             public void WriteJson(User user, IValueWriter writer)
             {
                 var obj = writer.Object();
-                StringPropertyIfNonNull("key", user.Key, obj);
-                StringPropertyIfNonNull("secondary", user.Secondary, obj);
-                StringPropertyIfNonNull("ip", user.IPAddress, obj);
-                StringPropertyIfNonNull("country", user.Country, obj);
-                StringPropertyIfNonNull("firstName", user.FirstName, obj);
-                StringPropertyIfNonNull("lastName", user.LastName, obj);
-                StringPropertyIfNonNull("name", user.Name, obj);
-                StringPropertyIfNonNull("avatar", user.Avatar, obj);
-                StringPropertyIfNonNull("email", user.Email, obj);
+                obj.Property("key").String(user.Key);
+                obj.MaybeProperty("secondary", user.Secondary != null).String(user.Secondary);
+                obj.MaybeProperty("ip", user.IPAddress != null).String(user.IPAddress);
+                obj.MaybeProperty("country", user.Country != null).String(user.Country);
+                obj.MaybeProperty("firstName", user.FirstName != null).String(user.FirstName);
+                obj.MaybeProperty("lastName", user.LastName != null).String(user.LastName);
+                obj.MaybeProperty("name", user.Name != null).String(user.Name);
+                obj.MaybeProperty("avatar", user.Avatar != null).String(user.Avatar);
+                obj.MaybeProperty("email", user.Email != null).String(user.Email);
                 if (user.AnonymousOptional.HasValue)
                 {
                     obj.Property("anonymous").Bool(user.Anonymous);
@@ -428,14 +428,6 @@ namespace LaunchDarkly.Sdk.Json
                     attrsArr.End();
                 }
                 obj.End();
-            }
-        }
-
-        private static void StringPropertyIfNonNull(string name, string value, ObjectWriter writer)
-        {
-            if (value != null)
-            {
-                writer.Property(name).String(value);
             }
         }
     }
