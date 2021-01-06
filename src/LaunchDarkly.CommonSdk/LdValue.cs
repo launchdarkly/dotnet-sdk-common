@@ -270,19 +270,10 @@ namespace LaunchDarkly.Sdk
         /// </example>
         /// <param name="jsonString">a JSON string</param>
         /// <returns>the equivalent <see cref="LdValue"/></returns>
-        /// <exception cref="ArgumentException">if the string could not be parsed as JSON</exception>
+        /// <exception cref="JsonException">if the string could not be parsed as JSON</exception>
         /// <see cref="ToJsonString"/>
-        public static LdValue Parse(string jsonString)
-        {
-            try
-            {
-                return LdJsonSerialization.DeserializeObject<LdValue>(jsonString);
-            }
-            catch (Exception e)
-            {
-                throw new ArgumentException(e.Message);
-            }
-        }
+        public static LdValue Parse(string jsonString) =>
+            LdJsonSerialization.DeserializeObject<LdValue>(jsonString);
 
         #endregion
 

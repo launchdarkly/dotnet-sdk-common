@@ -1,4 +1,5 @@
-﻿using LaunchDarkly.JsonStream;
+﻿using System;
+using LaunchDarkly.JsonStream;
 
 namespace LaunchDarkly.Sdk.Json
 {
@@ -16,9 +17,18 @@ namespace LaunchDarkly.Sdk.Json
         /// </summary>
         /// <typeparam name="T">type of the object being serialized</typeparam>
         /// <param name="instance">the instance to serialize</param>
-        /// <returns>the object's JSON encoding as a stirng</returns>
+        /// <returns>the object's JSON encoding as a string</returns>
         public static string SerializeObject<T>(T instance) where T : IJsonSerializable =>
             JsonStreamConvert.SerializeObject(instance);
+
+        /// <summary>
+        /// Converts an object to its JSON representation as a UTF-8 byte array.
+        /// </summary>
+        /// <typeparam name="T">type of the object being serialized</typeparam>
+        /// <param name="instance">the instance to serialize</param>
+        /// <returns>the object's JSON encoding as a byte array</returns>
+        public static byte[] SerializeObjectToUtf8Bytes<T>(T instance) where T : IJsonSerializable =>
+            JsonStreamConvert.SerializeObjectToUtf8Bytes(instance);
 
         /// <summary>
         /// Parses an object from its JSON representation.
@@ -26,8 +36,17 @@ namespace LaunchDarkly.Sdk.Json
         /// <typeparam name="T">type of the object being deserialized</typeparam>
         /// <param name="json">the object's JSON encoding as a string</param>
         /// <returns>the deserialized instance</returns>
-        /// <exception cref="JsonReadException">if the JSON encoding was invalid</exception>
-        public static T DeserializeObject<T>(string json) where T : IJsonSerializable =>
-            JsonStreamConvert.DeserializeObject<T>(json);
+        /// <exception cref="JsonException">if the JSON encoding was invalid</exception>
+        public static T DeserializeObject<T>(string json) where T : IJsonSerializable
+        {
+            try
+            {
+                return JsonStreamConvert.DeserializeObject<T>(json);
+            }
+            catch (Exception e)
+            {
+                throw new JsonException(e);
+            }
+        }
     }
 }

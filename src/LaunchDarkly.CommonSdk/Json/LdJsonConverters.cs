@@ -17,7 +17,9 @@ namespace LaunchDarkly.Sdk.Json
     /// These conversions use the <c>LaunchDarkly.JsonStream</c> library
     /// (https://github.com/launchdarkly/dotnet-jsonstream), which internally uses
     /// <c>System.Text.Json</c> on platforms where that API is available or a custom implementation
-    /// otherwise.
+    /// otherwise. If an error occurs, they may throw a lower-level exception type such as
+    /// <c>LaunchDarkly.JsonStream.JsonReadException</c> or <c>System.Text.Json.JsonException</c>
+    /// rather than <c>LaunchDarkly.Sdk.Json.JsonException</c>.
     /// </para>
     /// </remarks>
     /// <seealso cref="LdJsonSerialization"/>
