@@ -146,7 +146,7 @@ namespace LaunchDarkly.Sdk
         /// <param name="key">the key of the prerequisite flag</param>
         /// <returns>a reason descriptor</returns>
         public static EvaluationReason PrerequisiteFailedReason(string key) =>
-            new EvaluationReason(EvaluationReasonKind.PrerequisiteFailed, -1, null, key, null);
+            new EvaluationReason(EvaluationReasonKind.PrerequisiteFailed, null, null, key, null);
 
         /// <summary>
         /// Returns an EvaluationReason of the kind <see cref="EvaluationReasonKind.Error"/>.
@@ -154,7 +154,7 @@ namespace LaunchDarkly.Sdk
         /// <param name="errorKind"></param>
         /// <returns></returns>
         public static EvaluationReason ErrorReason(EvaluationErrorKind errorKind) =>
-            new EvaluationReason(EvaluationReasonKind.Error, -1, null, null, errorKind);
+            new EvaluationReason(EvaluationReasonKind.Error, null, null, null, errorKind);
 
         /// <summary>
         /// Returns the implementation of custom JSON serialization for this type.
