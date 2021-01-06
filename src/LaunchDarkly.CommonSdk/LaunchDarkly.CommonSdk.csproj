@@ -26,7 +26,7 @@
   
   <ItemGroup>
     <PackageReference Include="System.Collections.Immutable" Version="1.5.0" />
-    <PackageReference Include="LaunchDarkly.JsonStream" Version="1.0.0-alpha.3" />
+    <PackageReference Include="LaunchDarkly.JsonStream" Version="1.0.0-alpha.4" />
   </ItemGroup>
   
   <ItemGroup>

@@ -49,7 +49,7 @@ namespace LaunchDarkly.Sdk.Json
     ///
     ///     var values = new MySerializableValues();
     ///     values.User = User.WithKey("some-user-key");
-    ///     var jsonData = JsonConvert.SerializeObject(values);
+    ///     var jsonData = Newtonsoft.Json.JsonConvert.SerializeObject(values);
     /// </code>
     /// <para>
     /// --do this:
@@ -58,12 +58,13 @@ namespace LaunchDarkly.Sdk.Json
     ///     // will work:
     ///     public class MySerializableValues
     ///     {
-    ///         public JRaw UserData { get; set; } // JRaw is in Newtonsoft.Json.Linq
+    ///         public Newtonsoft.Json.Linq.JRaw UserData { get; set; }
     ///     }
     ///
     ///     var values = new MySerializableValues();
-    ///     values.User = new JRaw(LdJsonSerialization.SerializeObject(User.WithKey("some-user-key")));
-    ///     var jsonData = JsonConvert.SerializeObject(values);
+    ///     values.User = new Newtonsoft.Json.Linq.JRaw(
+    ///         LdJsonSerialization.SerializeObject(User.WithKey("some-user-key")));
+    ///     var jsonData = Newtonsoft.Json.JsonConvert.SerializeObject(values);
     /// </code>
     /// </remarks>
     [System.Runtime.CompilerServices.CompilerGeneratedAttribute()]

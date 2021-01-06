@@ -9,8 +9,9 @@ namespace LaunchDarkly.Sdk.Json
     /// <remarks>
     /// <para>
     /// Applications normally will not need to reference these types; they are used automatically
-    /// when you call <see cref="LdJsonSerialization"/> methods. They are included here for use by
-    /// other LaunchDarkly library code.
+    /// when you call <see cref="LdJsonSerialization"/> methods (or <c>System.Text.Json</c>
+    /// methods, if that API is available). They are included here for use by other LaunchDarkly
+    /// library code.
     /// </para>
     /// <para>
     /// These conversions use the <c>LaunchDarkly.JsonStream</c> library
@@ -115,18 +116,18 @@ namespace LaunchDarkly.Sdk.Json
             public void WriteJson(EvaluationReason value, IValueWriter writer)
             {
                 var obj = writer.Object();
-                obj.Property("kind").String(EvaluationReasonKindConverter.ToIdentifier(value.Kind));
+                obj.Name("kind").String(EvaluationReasonKindConverter.ToIdentifier(value.Kind));
                 switch (value.Kind)
                 {
                     case EvaluationReasonKind.RuleMatch:
-                        obj.Property("ruleIndex").Int(value.RuleIndex ?? 0);
-                        obj.Property("ruleId").String(value.RuleId);
+                        obj.Name("ruleIndex").Int(value.RuleIndex ?? 0);
+                        obj.Name("ruleId").String(value.RuleId);
                         break;
                     case EvaluationReasonKind.PrerequisiteFailed:
-                        obj.Property("prerequisiteKey").String(value.PrerequisiteKey);
+                        obj.Name("prerequisiteKey").String(value.PrerequisiteKey);
                         break;
                     case EvaluationReasonKind.Error:
-                        obj.Property("errorKind").String(EvaluationErrorKindConverter.ToIdentifier(value.ErrorKind.Value));
+                        obj.Name("errorKind").String(EvaluationErrorKindConverter.ToIdentifier(value.ErrorKind.Value));
                         break;
                 }
                 obj.End();
@@ -280,7 +281,7 @@ namespace LaunchDarkly.Sdk.Json
                         var obj = writer.Object();
                         foreach (var kv in value.Dictionary)
                         {
-                            LdJsonConverters.LdValueConverter.WriteJsonInternal(kv.Value, obj.Property(kv.Key));
+                            LdJsonConverters.LdValueConverter.WriteJsonInternal(kv.Value, obj.Name(kv.Key));
                         }
                         obj.End();
                         break;
@@ -396,31 +397,31 @@ namespace LaunchDarkly.Sdk.Json
             public void WriteJson(User user, IValueWriter writer)
             {
                 var obj = writer.Object();
-                obj.Property("key").String(user.Key);
-                obj.MaybeProperty("secondary", user.Secondary != null).String(user.Secondary);
-                obj.MaybeProperty("ip", user.IPAddress != null).String(user.IPAddress);
-                obj.MaybeProperty("country", user.Country != null).String(user.Country);
-                obj.MaybeProperty("firstName", user.FirstName != null).String(user.FirstName);
-                obj.MaybeProperty("lastName", user.LastName != null).String(user.LastName);
-                obj.MaybeProperty("name", user.Name != null).String(user.Name);
-                obj.MaybeProperty("avatar", user.Avatar != null).String(user.Avatar);
-                obj.MaybeProperty("email", user.Email != null).String(user.Email);
+                obj.Name("key").String(user.Key);
+                obj.MaybeName("secondary", user.Secondary != null).String(user.Secondary);
+                obj.MaybeName("ip", user.IPAddress != null).String(user.IPAddress);
+                obj.MaybeName("country", user.Country != null).String(user.Country);
+                obj.MaybeName("firstName", user.FirstName != null).String(user.FirstName);
+                obj.MaybeName("lastName", user.LastName != null).String(user.LastName);
+                obj.MaybeName("name", user.Name != null).String(user.Name);
+                obj.MaybeName("avatar", user.Avatar != null).String(user.Avatar);
+                obj.MaybeName("email", user.Email != null).String(user.Email);
                 if (user.AnonymousOptional.HasValue)
                 {
-                    obj.Property("anonymous").Bool(user.Anonymous);
+                    obj.Name("anonymous").Bool(user.Anonymous);
                 }
                 if (user.Custom.Count > 0)
                 {
-                    var customObj = obj.Property("custom").Object();
+                    var customObj = obj.Name("custom").Object();
                     foreach (var kv in user.Custom)
                     {
-                        LdValueConverter.WriteJsonInternal(kv.Value, customObj.Property(kv.Key));
+                        LdValueConverter.WriteJsonInternal(kv.Value, customObj.Name(kv.Key));
                     }
                     customObj.End();
                 }
                 if (user.PrivateAttributeNames.Count > 0)
                 {
-                    var attrsArr = obj.Property("privateAttributeNames").Array();
+                    var attrsArr = obj.Name("privateAttributeNames").Array();
                     foreach (var n in user.PrivateAttributeNames)
                     {
                         attrsArr.String(n);
