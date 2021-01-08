@@ -1,7 +1,5 @@
-﻿using System;
-using LaunchDarkly.Sdk.Internal.Helpers;
+﻿using LaunchDarkly.Sdk.Internal.Helpers;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 
 namespace LaunchDarkly.Sdk
 {
@@ -52,21 +50,14 @@ namespace LaunchDarkly.Sdk
         }
 
         /// <inheritdoc/>
-        public override bool Equals(object obj)
-        {
-            if (obj is EvaluationDetail<T> o)
-            {
-                return (Value == null ? o.Value == null : Value.Equals(o.Value))
+        public override bool Equals(object obj) =>
+            obj is EvaluationDetail<T> o &&
+                (Value == null ? o.Value == null : Value.Equals(o.Value))
                     && VariationIndex == o.VariationIndex && Reason.Equals(o.Reason);
-            }
-            return false;
-        }
 
         /// <inheritdoc/>
-        public override int GetHashCode()
-        {
-            return new HashCodeBuilder().With(Value).With(VariationIndex).With(Reason).Value;
-        }
+        public override int GetHashCode() =>
+            new HashCodeBuilder().With(Value).With(VariationIndex).With(Reason).Value;
     }
 
     /// <summary>
@@ -77,21 +68,17 @@ namespace LaunchDarkly.Sdk
     public struct EvaluationReason
     {
         private static readonly EvaluationReason _offInstance =
-            new EvaluationReason(EvaluationReasonKind.OFF, -1, null, null, EvaluationErrorKind.NONE);
+            new EvaluationReason(EvaluationReasonKind.Off, null, null, null, null);
         private static readonly EvaluationReason _fallthroughInstance =
-            new EvaluationReason(EvaluationReasonKind.FALLTHROUGH, -1, null, null, EvaluationErrorKind.NONE);
+            new EvaluationReason(EvaluationReasonKind.Fallthrough, null, null, null, null);
         private static readonly EvaluationReason _targetMatchInstance =
-            new EvaluationReason(EvaluationReasonKind.TARGET_MATCH, -1, null, null, EvaluationErrorKind.NONE);
+            new EvaluationReason(EvaluationReasonKind.TargetMatch, null, null, null, null);
 
         private readonly EvaluationReasonKind _kind;
-        private readonly int _ruleIndex;
+        private readonly int? _ruleIndex;
         private readonly string _ruleId;
         private readonly string _prerequisiteKey;
-        private readonly EvaluationErrorKind _errorKind;
-
-        // Note that the JsonProperty annotations in this class are used only if application code decides to
-        // serialize an EvaluationReason instance. When generating event output, the SDK instead uses the
-        // direct stream-writing logic in EventOutputFormatter.
+        private readonly EvaluationErrorKind? _errorKind;
 
         /// <summary>
         /// An enum indicating the general category of the reason.
@@ -99,9 +86,9 @@ namespace LaunchDarkly.Sdk
         public EvaluationReasonKind Kind => _kind;
 
         /// <summary>
-        /// The index of the rule that was matched (0 for the first), or -1 if this is not a rule match.
+        /// The index of the rule that was matched (0 for the first), or <see langword="null"/> if this is not a rule match.
         /// </summary>
-        public int RuleIndex => _ruleIndex;
+        public int? RuleIndex => _ruleIndex;
 
         /// <summary>
         /// The unique identifier of the rule that was matched, or <see langword="null"/> if this is not a rule match.
@@ -109,18 +96,18 @@ namespace LaunchDarkly.Sdk
         public string RuleId => _ruleId;
 
         /// <summary>
-        /// The key of the prerequisite flag that failed, if <see cref="Kind"/> is <see cref="EvaluationReasonKind.PREREQUISITE_FAILED"/>,
+        /// The key of the prerequisite flag that failed, if <see cref="Kind"/> is <see cref="EvaluationReasonKind.PrerequisiteFailed"/>,
         /// otherwise <see langword="null"/>.
         /// </summary>
         public string PrerequisiteKey => _prerequisiteKey;
 
         /// <summary>
-        /// Describes the type of error, if <see cref="Kind"/> is <see cref="EvaluationReasonKind.ERROR"/>,
-        /// otherwise <see cref="EvaluationErrorKind.NONE"/>.
+        /// Describes the type of error, if <see cref="Kind"/> is <see cref="EvaluationReasonKind.Error"/>, otherwise
+        /// <see langword="null"/>.
         /// </summary>
-        public EvaluationErrorKind ErrorKind => _errorKind;
+        public EvaluationErrorKind? ErrorKind => _errorKind;
 
-        internal EvaluationReason(EvaluationReasonKind kind, int ruleIndex, string ruleId, string prereqKey, EvaluationErrorKind errorKind)
+        internal EvaluationReason(EvaluationReasonKind kind, int? ruleIndex, string ruleId, string prereqKey, EvaluationErrorKind? errorKind)
         {
             _kind = kind;
             _ruleIndex = ruleIndex;
@@ -129,46 +116,45 @@ namespace LaunchDarkly.Sdk
             _errorKind = errorKind;
         }
         
-#pragma warning disable 0618
         /// <summary>
-        /// Returns an EvaluationReason of the kind <see cref="EvaluationReasonKind.OFF"/>.
+        /// Returns an EvaluationReason of the kind <see cref="EvaluationReasonKind.Off"/>.
         /// </summary>
         public static EvaluationReason OffReason => _offInstance;
 
         /// <summary>
-        /// Returns an EvaluationReason of the kind <see cref="EvaluationReasonKind.FALLTHROUGH"/>.
+        /// Returns an EvaluationReason of the kind <see cref="EvaluationReasonKind.Fallthrough"/>.
         /// </summary>
         public static EvaluationReason FallthroughReason => _fallthroughInstance;
 
         /// <summary>
-        /// Returns an EvaluationReason of the kind <see cref="EvaluationReasonKind.TARGET_MATCH"/>.
+        /// Returns an EvaluationReason of the kind <see cref="EvaluationReasonKind.TargetMatch"/>.
         /// </summary>
         public static EvaluationReason TargetMatchReason => _targetMatchInstance;
 
         /// <summary>
-        /// Returns an EvaluationReason of the kind <see cref="EvaluationReasonKind.RULE_MATCH"/>.
+        /// Returns an EvaluationReason of the kind <see cref="EvaluationReasonKind.RuleMatch"/>.
         /// </summary>
         /// <param name="ruleIndex">the rule index</param>
         /// <param name="ruleId">the unique rule ID</param>
         /// <returns>a reason descriptor</returns>
         public static EvaluationReason RuleMatchReason(int ruleIndex, string ruleId) =>
-            new EvaluationReason(EvaluationReasonKind.RULE_MATCH, ruleIndex, ruleId, null, EvaluationErrorKind.NONE);
+            new EvaluationReason(EvaluationReasonKind.RuleMatch, ruleIndex, ruleId, null, null);
 
         /// <summary>
-        /// Returns an EvaluationReason of the kind <see cref="EvaluationReasonKind.PREREQUISITE_FAILED"/>.
+        /// Returns an EvaluationReason of the kind <see cref="EvaluationReasonKind.PrerequisiteFailed"/>.
         /// </summary>
         /// <param name="key">the key of the prerequisite flag</param>
         /// <returns>a reason descriptor</returns>
         public static EvaluationReason PrerequisiteFailedReason(string key) =>
-            new EvaluationReason(EvaluationReasonKind.PREREQUISITE_FAILED, -1, null, key, EvaluationErrorKind.NONE);
+            new EvaluationReason(EvaluationReasonKind.PrerequisiteFailed, null, null, key, null);
 
         /// <summary>
-        /// Returns an EvaluationReason of the kind <see cref="EvaluationReasonKind.ERROR"/>.
+        /// Returns an EvaluationReason of the kind <see cref="EvaluationReasonKind.Error"/>.
         /// </summary>
         /// <param name="errorKind"></param>
         /// <returns></returns>
         public static EvaluationReason ErrorReason(EvaluationErrorKind errorKind) =>
-            new EvaluationReason(EvaluationReasonKind.ERROR, -1, null, null, errorKind);
+            new EvaluationReason(EvaluationReasonKind.Error, null, null, null, errorKind);
 
         /// <summary>
         /// Returns the implementation of custom JSON serialization for this type.
@@ -176,184 +162,115 @@ namespace LaunchDarkly.Sdk
         public static JsonConverter JsonConverter { get; } = new EvaluationReasonConverter();
 
         /// <inheritdoc/>
-        public override bool Equals(object obj)
-        {
-            if (obj is EvaluationReason o)
-            {
-                return _kind == o._kind && _ruleId == o._ruleId && _ruleIndex == o._ruleIndex &&
+        public override bool Equals(object obj) =>
+            obj is EvaluationReason o &&
+                _kind == o._kind && _ruleId == o._ruleId && _ruleIndex == o._ruleIndex &&
                     _prerequisiteKey == o._prerequisiteKey && _errorKind == o._errorKind;
-            }
-            return false;
-        }
 
         /// <inheritdoc/>
-        public override int GetHashCode()
-        {
-            return new HashCodeBuilder().With(_kind).With(_ruleIndex).With(_ruleId).With(_prerequisiteKey).With(_errorKind).Value;
-        }
+        public override int GetHashCode() =>
+            new HashCodeBuilder().With(_kind).With(_ruleIndex).With(_ruleId).With(_prerequisiteKey).With(_errorKind).Value;
 
         /// <inheritdoc/>
         public override string ToString()
         {
+            var kindStr = EvaluationReasonKindJsonConverter.ToIdentifier(_kind);
             switch (_kind)
             {
-                case EvaluationReasonKind.RULE_MATCH:
-                    return _kind.ToString() + "(" + _ruleIndex + "," + _ruleId + ")";
-                case EvaluationReasonKind.PREREQUISITE_FAILED:
-                    return _kind.ToString() + "(" + _prerequisiteKey + ")";
-                case EvaluationReasonKind.ERROR:
-                    return _kind.ToString() + "(" + _errorKind.ToString() + ")";
+                case EvaluationReasonKind.RuleMatch:
+                    return kindStr + "(" + _ruleIndex + "," + _ruleId + ")";
+                case EvaluationReasonKind.PrerequisiteFailed:
+                    return kindStr + "(" + _prerequisiteKey + ")";
+                case EvaluationReasonKind.Error:
+                    return kindStr + "(" + EvaluationErrorKindJsonConverter.ToIdentifier(_errorKind.Value) + ")";
             }
-            return Kind.ToString();
+            return kindStr;
         }
     }
 
     /// <summary>
     /// Enumerated type defining the possible values of <see cref="EvaluationReason.Kind"/>.
     /// </summary>
-    [JsonConverter(typeof(StringEnumConverter))]
+    /// <remarks>
+    /// The JSON representation of this type, as used in LaunchDarkly analytics event data, uses
+    /// uppercase strings with underscores (<c>"RULE_MATCH"</c> rather than <c>"RuleMatch"</c>).
+    /// </remarks>
+    [JsonConverter(typeof(EvaluationReasonKindJsonConverter))]
     public enum EvaluationReasonKind
     {
-        // Note that these do not follow standard C# capitalization style, because their names
-        // need to correspond to the values used within the LaunchDarkly application, which are
-        // in all caps.
-
         /// <summary>
         /// Indicates that the flag was off and therefore returned its configured off value.
         /// </summary>
-        OFF,
+        Off,
+
         /// <summary>
         /// Indicates that the flag was on but the user did not match any targets or rules.
         /// </summary>
-        FALLTHROUGH,
+        Fallthrough,
+
         /// <summary>
         /// Indicates that the user key was specifically targeted for this flag.
         /// </summary>
-        TARGET_MATCH,
+        TargetMatch,
+
         /// <summary>
         /// Indicates that the user matched one of the flag's rules.
         /// </summary>
-        RULE_MATCH,
+        RuleMatch,
+
         /// <summary>
         /// Indicates that the flag was considered off because it had at least one prerequisite flag
         /// that either was off or did not return the desired variation.
         /// </summary>
-        PREREQUISITE_FAILED,
+        PrerequisiteFailed,
+
         /// <summary>
         /// Indicates that the flag could not be evaluated, e.g. because it does not exist or due to an unexpected
         /// error. In this case the result value will be the default value that the caller passed to the client.
         /// </summary>
-        ERROR
+        Error
     }
 
     /// <summary>
     /// Enumerated type defining the possible values of <see cref="EvaluationReason.ErrorKind"/>.
     /// </summary>
-    [JsonConverter(typeof(StringEnumConverter))]
+    /// <remarks>
+    /// The JSON representation of this type, as used in LaunchDarkly analytics event data, uses
+    /// uppercase strings with underscores (<c>"FLAG_NOT_FOUND"</c> rather than <c>"FlagNotFound"</c>).
+    /// </remarks>
+    [JsonConverter(typeof(EvaluationErrorKindJsonConverter))]
     public enum EvaluationErrorKind
     {
-        // Note that these do not follow standard C# capitalization style, because their names
-        // need to correspond to the values used within the LaunchDarkly application, which are
-        // in all caps.
-
-        /// <summary>
-        /// Used when the evaluation reason is not an error.
-        /// </summary>
-        NONE,
         /// <summary>
         /// Indicates that the caller tried to evaluate a flag before the client had successfully initialized.
         /// </summary>
-        CLIENT_NOT_READY,
+        ClientNotReady,
+
         /// <summary>
         /// Indicates that the caller provided a flag key that did not match any known flag.
         /// </summary>
-        FLAG_NOT_FOUND,
+        FlagNotFound,
+
         /// <summary>
         /// Indicates that the caller passed <see langword="null"/> for the user parameter, or the user lacked a key.
         /// </summary>
-        USER_NOT_SPECIFIED,
+        UserNotSpecified,
+
         /// <summary>
         /// Indicates that there was an internal inconsistency in the flag data, e.g. a rule specified a nonexistent
         /// variation. An error message will always be logged in this case.
         /// </summary>
-        MALFORMED_FLAG,
+        MalformedFlag,
+
         /// <summary>
         /// Indicates that the result value was not of the requested type, e.g. you requested a <see langword="bool"/>
         /// but the value was an <see langword="int"/>.
         /// </summary>
-        WRONG_TYPE,
+        WrongType,
+
         /// <summary>
         /// Indicates that an unexpected exception stopped flag evaluation; check the log for details.
         /// </summary>
-        EXCEPTION
-    }
-
-    internal sealed class EvaluationReasonConverter : JsonConverter
-    {
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
-        {
-            if (!(value is EvaluationReason r))
-            {
-                throw new ArgumentException();
-            }
-            writer.WriteStartObject();
-            writer.WritePropertyName("kind");
-            writer.WriteValue(r.Kind.ToString());
-            switch (r.Kind)
-            {
-                case EvaluationReasonKind.RULE_MATCH:
-                    writer.WritePropertyName("ruleIndex");
-                    writer.WriteValue(r.RuleIndex);
-                    writer.WritePropertyName("ruleId");
-                    writer.WriteValue(r.RuleId);
-                    break;
-                case EvaluationReasonKind.PREREQUISITE_FAILED:
-                    writer.WritePropertyName("prerequisiteKey");
-                    writer.WriteValue(r.PrerequisiteKey);
-                    break;
-                case EvaluationReasonKind.ERROR:
-                    writer.WritePropertyName("errorKind");
-                    writer.WriteValue(r.ErrorKind.ToString());
-                    break;
-            }
-            writer.WriteEndObject();
-        }
-
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
-        {
-            LdValue o = (LdValue)LdValue.JsonConverter.ReadJson(reader, typeof(LdValue), LdValue.Null, serializer);
-            if (o.IsNull)
-            {
-                return null;
-            }
-            EvaluationReasonKind kind = (EvaluationReasonKind)Enum.Parse(typeof(EvaluationReasonKind), o.Get("kind").AsString);
-            switch (kind)
-            {
-                case EvaluationReasonKind.OFF:
-                    return EvaluationReason.OffReason;
-                case EvaluationReasonKind.FALLTHROUGH:
-                    return EvaluationReason.FallthroughReason;
-                case EvaluationReasonKind.TARGET_MATCH:
-                    return EvaluationReason.TargetMatchReason;
-                case EvaluationReasonKind.RULE_MATCH:
-                    var index = o.Get("ruleIndex").AsInt;
-                    var id = o.Get("ruleId").AsString;
-                    return EvaluationReason.RuleMatchReason(index, id);
-                case EvaluationReasonKind.PREREQUISITE_FAILED:
-                    var key = o.Get("prerequisiteKey").AsString;
-                    return EvaluationReason.PrerequisiteFailedReason(key);
-                case EvaluationReasonKind.ERROR:
-                    var errorKind = (EvaluationErrorKind)Enum.Parse(typeof(EvaluationErrorKind), o.Get("errorKind").AsString);
-                    return EvaluationReason.ErrorReason(errorKind);
-            }
-            throw new ArgumentException();
-        }
-
-        public override bool CanConvert(Type objectType)
-        {
-            return true;
-            // It would be more correct to check typeof(EvaluationReason).IsAssignableFrom(objectType),
-            // but you can't do that in .NET Standard 1.6. We won't be called for other types anyway.
-        }
+        Exception
     }
 }

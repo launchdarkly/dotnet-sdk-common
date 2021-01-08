@@ -44,7 +44,7 @@ namespace LaunchDarkly.Sdk
                 @"{""kind"":""PREREQUISITE_FAILED"",""prerequisiteKey"":""key""}",
                 "PREREQUISITE_FAILED(key)"
             },
-            new object[] { EvaluationReason.ErrorReason(EvaluationErrorKind.EXCEPTION),
+            new object[] { EvaluationReason.ErrorReason(EvaluationErrorKind.Exception),
                 @"{""kind"":""ERROR"",""errorKind"":""EXCEPTION""}",
                 "ERROR(EXCEPTION)"
             }
@@ -66,8 +66,8 @@ namespace LaunchDarkly.Sdk
                 () => EvaluationReason.RuleMatchReason(1, "rule2"));
             VerifyEqualityAndHashCode(() => EvaluationReason.PrerequisiteFailedReason("a"),
                 () => EvaluationReason.PrerequisiteFailedReason("b"));
-            VerifyEqualityAndHashCode(() => EvaluationReason.ErrorReason(EvaluationErrorKind.FLAG_NOT_FOUND),
-                () => EvaluationReason.ErrorReason(EvaluationErrorKind.EXCEPTION));
+            VerifyEqualityAndHashCode(() => EvaluationReason.ErrorReason(EvaluationErrorKind.FlagNotFound),
+                () => EvaluationReason.ErrorReason(EvaluationErrorKind.Exception));
         }
 
         private void VerifyEqualityAndHashCode(Func<EvaluationReason> createA, Func<EvaluationReason> createB)
