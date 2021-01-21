@@ -26,11 +26,11 @@ namespace LaunchDarkly.Sdk.Json
     public static class LdJsonConverters
     {
 #pragma warning disable CS1591 // don't bother with XML comments for these low-level helpers
-        public sealed class EvaluationReasonConverter : IJsonStreamConverter<EvaluationReason>
+        public sealed class EvaluationReasonConverter : IJsonStreamConverter
         {
             private static readonly string[] _requiredProperties = new string[] { "kind" };
 
-            public EvaluationReason ReadJson(ref JReader reader) =>
+            public object ReadJson(ref JReader reader) =>
                 ReadJsonInternal(ref reader, false).Value;
 
             public EvaluationReason? ReadJsonNullable(ref JReader reader) =>
@@ -115,8 +115,9 @@ namespace LaunchDarkly.Sdk.Json
                 }
             }
 
-            public void WriteJson(EvaluationReason value, IValueWriter writer)
+            public void WriteJson(object o, IValueWriter writer)
             {
+                var value = (EvaluationReason)o;
                 var obj = writer.Object();
                 obj.Name("kind").String(EvaluationReasonKindConverter.ToIdentifier(value.Kind));
                 switch (value.Kind)
@@ -139,13 +140,13 @@ namespace LaunchDarkly.Sdk.Json
         /// <summary>
         /// The JSON converter for <see cref="EvaluationErrorKind"/>.
         /// </summary>
-        public sealed class EvaluationErrorKindConverter : IJsonStreamConverter<EvaluationErrorKind>
+        public sealed class EvaluationErrorKindConverter : IJsonStreamConverter
         {
-            public EvaluationErrorKind ReadJson(ref JReader reader) =>
+            public object ReadJson(ref JReader reader) =>
                 FromIdentifier(reader.String());
 
-            public void WriteJson(EvaluationErrorKind instance, IValueWriter writer) =>
-                writer.String(ToIdentifier(instance));
+            public void WriteJson(object instance, IValueWriter writer) =>
+                writer.String(ToIdentifier((EvaluationErrorKind)instance));
 
             internal static EvaluationErrorKind FromIdentifier(string value)
             {
@@ -184,13 +185,13 @@ namespace LaunchDarkly.Sdk.Json
         /// <summary>
         /// The JSON converter for <see cref="EvaluationReasonKind"/>.
         /// </summary>
-        public sealed class EvaluationReasonKindConverter : IJsonStreamConverter<EvaluationReasonKind>
+        public sealed class EvaluationReasonKindConverter : IJsonStreamConverter
         {
-            public EvaluationReasonKind ReadJson(ref JReader reader) =>
+            public object ReadJson(ref JReader reader) =>
                 FromIdentifier(reader.String());
 
-            public void WriteJson(EvaluationReasonKind instance, IValueWriter writer) =>
-                writer.String(ToIdentifier(instance));
+            public void WriteJson(object instance, IValueWriter writer) =>
+                writer.String(ToIdentifier((EvaluationReasonKind)instance));
 
             internal static EvaluationReasonKind FromIdentifier(string value)
             {
@@ -229,9 +230,9 @@ namespace LaunchDarkly.Sdk.Json
         /// <summary>
         /// The JSON converter for <see cref="LdValue"/>.
         /// </summary>
-        public sealed class LdValueConverter : IJsonStreamConverter<LdValue>
+        public sealed class LdValueConverter : IJsonStreamConverter
         {
-            public LdValue ReadJson(ref JReader reader)
+            public object ReadJson(ref JReader reader)
             {
                 try
                 {
@@ -243,8 +244,8 @@ namespace LaunchDarkly.Sdk.Json
                 }
             }
 
-            public void WriteJson(LdValue value, IValueWriter writer) =>
-                WriteJsonInternal(value, writer);
+            public void WriteJson(object value, IValueWriter writer) =>
+                WriteJsonInternal((LdValue)value, writer);
 
             internal static void WriteJsonInternal(LdValue value, IValueWriter writer)
             {
@@ -324,11 +325,11 @@ namespace LaunchDarkly.Sdk.Json
         /// <summary>
         /// The JSON converter for <see cref="User"/>.
         /// </summary>
-        public sealed class UserConverter : IJsonStreamConverter<User>
+        public sealed class UserConverter : IJsonStreamConverter
         {
             private static readonly string[] _requiredProperties = new string[] { "key" };
 
-            public User ReadJson(ref JReader reader)
+            public object ReadJson(ref JReader reader)
             {
                 var obj = reader.ObjectOrNull().WithRequiredProperties(_requiredProperties);
                 if (!obj.IsDefined)
@@ -396,8 +397,14 @@ namespace LaunchDarkly.Sdk.Json
                 return builder.Build();
             }
 
-            public void WriteJson(User user, IValueWriter writer)
+            public void WriteJson(object value, IValueWriter writer)
             {
+                var user = (User)value;
+                if (user is null)
+                {
+                    writer.Null();
+                    return;
+                }
                 var obj = writer.Object();
                 obj.Name("key").String(user.Key);
                 obj.MaybeName("secondary", user.Secondary != null).String(user.Secondary);
