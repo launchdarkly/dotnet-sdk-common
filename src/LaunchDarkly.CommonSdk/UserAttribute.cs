@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json;
 
 namespace LaunchDarkly.Sdk
 {
@@ -22,7 +21,6 @@ namespace LaunchDarkly.Sdk
     /// </para>
     /// </remarks>
     /// <seealso cref="User"/>
-    [JsonConverter(typeof(UserAttributeSerializer))]
     public struct UserAttribute : IEquatable<UserAttribute>
     {
         /// <summary>
@@ -140,42 +138,5 @@ namespace LaunchDarkly.Sdk
 
         public override string ToString() => AttributeName;
 #pragma warning restore CS1591
-    }
-
-    internal class UserAttributeSerializer : JsonConverter
-    {
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
-        {
-            if (!(value is UserAttribute))
-            {
-                throw new ArgumentException();
-            }
-            writer.WriteValue(((UserAttribute)value).AttributeName);
-        }
-
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
-        {
-            if (objectType == typeof(UserAttribute?))
-            {
-                if (reader.TokenType == JsonToken.Null)
-                {
-                    return null;
-                }
-                return (UserAttribute?)ReadAttribute(reader);
-            }
-            return ReadAttribute(reader);
-        }
-
-        private UserAttribute ReadAttribute(JsonReader reader)
-        {
-            if (reader.TokenType == JsonToken.String)
-            {
-                return UserAttribute.ForName((string)reader.Value);
-            }
-            throw new JsonSerializationException();
-        }
-
-        public override bool CanConvert(Type objectType) => objectType == typeof(UserAttribute)
-            || objectType == typeof(UserAttribute?);
     }
 }

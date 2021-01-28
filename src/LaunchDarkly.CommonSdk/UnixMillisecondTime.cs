@@ -1,5 +1,4 @@
 ﻿using System;
-using Newtonsoft.Json;
 
 namespace LaunchDarkly.Sdk
 {
@@ -17,7 +16,6 @@ namespace LaunchDarkly.Sdk
     /// When handling JSON with the <c>Newtonsoft.Json</c> types, it is encoded as an integer.
     /// </para>
     /// </remarks>
-    [JsonConverter(typeof(UnixMillisecondTimeSerializer))]
     public struct UnixMillisecondTime : IEquatable<UnixMillisecondTime>, IComparable<UnixMillisecondTime>
     {
         /// <summary>
@@ -99,54 +97,5 @@ namespace LaunchDarkly.Sdk
         public static bool operator >=(UnixMillisecondTime a, UnixMillisecondTime b) =>
             a.Value >= b.Value;
 #pragma warning restore CS1591
-    }
-
-    internal class UnixMillisecondTimeSerializer : JsonConverter
-    {
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
-        {
-            if (!(value is UnixMillisecondTime))
-            {
-                throw new ArgumentException();
-            }
-            writer.WriteValue(((UnixMillisecondTime)value).Value);
-        }
-
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
-        {
-            if (objectType == typeof(UnixMillisecondTime?))
-            {
-                if (reader.TokenType == JsonToken.Null)
-                {
-                    return null;
-                }
-                return (UnixMillisecondTime?)ReadTimeValue(reader);
-            }
-            return ReadTimeValue(reader);
-        }
-
-        private UnixMillisecondTime ReadTimeValue(JsonReader reader)
-        {
-            if (reader.TokenType == JsonToken.Integer || reader.TokenType == JsonToken.Float)
-            {
-                switch (reader.Value) // Newtonsoft.Json's choice of numeric type is unpredictable
-                {
-                    case int n:
-                        return UnixMillisecondTime.OfMillis(n);
-                    case long n:
-                        return UnixMillisecondTime.OfMillis(n);
-                    case float n:
-                        return UnixMillisecondTime.OfMillis((long)n);
-                    case double n:
-                        return UnixMillisecondTime.OfMillis((long)n);
-                    default:
-                        throw new JsonSerializationException();
-                }
-            }
-            throw new JsonSerializationException();
-        }
-
-        public override bool CanConvert(Type objectType) => objectType == typeof(UnixMillisecondTime)
-            || objectType == typeof(UnixMillisecondTime?);
     }
 }

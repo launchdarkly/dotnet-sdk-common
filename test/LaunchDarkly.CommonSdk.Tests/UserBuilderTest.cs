@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json;
+using LaunchDarkly.Sdk.Json;
 using Xunit;
 
 namespace LaunchDarkly.Sdk
@@ -283,11 +283,11 @@ namespace LaunchDarkly.Sdk
             {
                 User modUser = mod(User.Builder(UserTest.UserToCopy)).Build();
                 Assert.False(UserTest.UserToCopy.Equals(modUser),
-                    JsonConvert.SerializeObject(modUser) + " should not equal " +
-                    JsonConvert.SerializeObject(UserTest.UserToCopy));
+                    LdJsonSerialization.SerializeObject(modUser) + " should not equal " +
+                    LdJsonSerialization.SerializeObject(UserTest.UserToCopy));
                 Assert.False(UserTest.UserToCopy.GetHashCode() == modUser.GetHashCode(),
-                    JsonConvert.SerializeObject(modUser) + " should not have same hashCode as " +
-                    JsonConvert.SerializeObject(UserTest.UserToCopy));
+                    LdJsonSerialization.SerializeObject(modUser) + " should not have same hashCode as " +
+                    LdJsonSerialization.SerializeObject(UserTest.UserToCopy));
             }
         }
 

@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json;
+using LaunchDarkly.JsonStream;
+using LaunchDarkly.Sdk.Json;
 using Xunit;
 
 namespace LaunchDarkly.Sdk
@@ -490,17 +491,17 @@ namespace LaunchDarkly.Sdk
             VerifySerializeAndParse(aFloatValue, someFloat.ToString());
             VerifySerializeAndParse(anArrayValue, "[3]");
             VerifySerializeAndParse(anObjectValue, "{\"1\":\"x\"}");
-            Assert.Throws<JsonReaderException>(() => JsonConvert.DeserializeObject<LdValue>("nono"));
-            Assert.Throws<ArgumentException>(() => LdValue.Parse("nono"));
+            Assert.Throws<JsonException>(() => LdJsonSerialization.DeserializeObject<LdValue>("nono"));
+            Assert.Throws<JsonException>(() => LdValue.Parse("nono"));
         }
         
         private void VerifySerializeAndParse(LdValue value, string expectedJson)
         {
-            var json1 = JsonConvert.SerializeObject(value);
+            var json1 = LdJsonSerialization.SerializeObject(value);
             var json2 = value.ToJsonString();
             Assert.Equal(expectedJson, json1);
             Assert.Equal(json1, json2);
-            var parsed1 = JsonConvert.DeserializeObject<LdValue>(expectedJson);
+            var parsed1 = LdJsonSerialization.DeserializeObject<LdValue>(expectedJson);
             var parsed2 = LdValue.Parse(expectedJson);
             Assert.Equal(value, parsed1);
             Assert.Equal(value, parsed2);

@@ -1,5 +1,5 @@
-﻿using LaunchDarkly.Sdk.Internal.Helpers;
-using Newtonsoft.Json;
+using LaunchDarkly.JsonStream;
+using LaunchDarkly.Sdk.Json;
 
 namespace LaunchDarkly.Sdk
 {
@@ -61,11 +61,13 @@ namespace LaunchDarkly.Sdk
     }
 
     /// <summary>
-    /// Describes the reason that a flag evaluation produced a particular value. Subclasses of
-    /// <see cref="EvaluationReason"/> describe specific reasons.
+    /// Describes the reason that a flag evaluation produced a particular value.
     /// </summary>
-    [JsonConverter(typeof(EvaluationReasonConverter))]
-    public struct EvaluationReason
+    /// <remarks>
+    /// For converting this type to or from JSON, see <see cref="LaunchDarkly.Sdk.Json"/>.
+    /// </remarks>
+    [JsonStreamConverter(typeof(LdJsonConverters.EvaluationReasonConverter))]
+    public struct EvaluationReason : IJsonSerializable
     {
         private static readonly EvaluationReason _offInstance =
             new EvaluationReason(EvaluationReasonKind.Off, null, null, null, null);
@@ -156,11 +158,6 @@ namespace LaunchDarkly.Sdk
         public static EvaluationReason ErrorReason(EvaluationErrorKind errorKind) =>
             new EvaluationReason(EvaluationReasonKind.Error, null, null, null, errorKind);
 
-        /// <summary>
-        /// Returns the implementation of custom JSON serialization for this type.
-        /// </summary>
-        public static JsonConverter JsonConverter { get; } = new EvaluationReasonConverter();
-
         /// <inheritdoc/>
         public override bool Equals(object obj) =>
             obj is EvaluationReason o &&
@@ -174,7 +171,7 @@ namespace LaunchDarkly.Sdk
         /// <inheritdoc/>
         public override string ToString()
         {
-            var kindStr = EvaluationReasonKindJsonConverter.ToIdentifier(_kind);
+            var kindStr = LdJsonConverters.EvaluationReasonKindConverter.ToIdentifier(_kind);
             switch (_kind)
             {
                 case EvaluationReasonKind.RuleMatch:
@@ -182,7 +179,7 @@ namespace LaunchDarkly.Sdk
                 case EvaluationReasonKind.PrerequisiteFailed:
                     return kindStr + "(" + _prerequisiteKey + ")";
                 case EvaluationReasonKind.Error:
-                    return kindStr + "(" + EvaluationErrorKindJsonConverter.ToIdentifier(_errorKind.Value) + ")";
+                    return kindStr + "(" + LdJsonConverters.EvaluationErrorKindConverter.ToIdentifier(_errorKind.Value) + ")";
             }
             return kindStr;
         }
@@ -195,7 +192,7 @@ namespace LaunchDarkly.Sdk
     /// The JSON representation of this type, as used in LaunchDarkly analytics event data, uses
     /// uppercase strings with underscores (<c>"RULE_MATCH"</c> rather than <c>"RuleMatch"</c>).
     /// </remarks>
-    [JsonConverter(typeof(EvaluationReasonKindJsonConverter))]
+    [JsonStreamConverter(typeof(LdJsonConverters.EvaluationReasonKindConverter))]
     public enum EvaluationReasonKind
     {
         /// <summary>
@@ -238,7 +235,7 @@ namespace LaunchDarkly.Sdk
     /// The JSON representation of this type, as used in LaunchDarkly analytics event data, uses
     /// uppercase strings with underscores (<c>"FLAG_NOT_FOUND"</c> rather than <c>"FlagNotFound"</c>).
     /// </remarks>
-    [JsonConverter(typeof(EvaluationErrorKindJsonConverter))]
+    [JsonStreamConverter(typeof(LdJsonConverters.EvaluationErrorKindConverter))]
     public enum EvaluationErrorKind
     {
         /// <summary>

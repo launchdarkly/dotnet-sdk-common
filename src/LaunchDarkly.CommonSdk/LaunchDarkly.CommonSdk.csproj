@@ -1,10 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Version>5.0.0-beta.7</Version>
+    <Version>5.0.0-beta.9</Version>
     <TargetFrameworks>netstandard2.0;net452</TargetFrameworks>
     <DebugType>portable</DebugType>
     <AssemblyName>LaunchDarkly.CommonSdk</AssemblyName>
     <OutputType>Library</OutputType>
+    <LangVersion>7.3</LangVersion>
     <PackageId>LaunchDarkly.CommonSdk</PackageId>
     <Description>LaunchDarkly common code for .NET and Xamarin clients</Description>
     <Company>LaunchDarkly</Company>
@@ -24,12 +25,13 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
     <PackageReference Include="System.Collections.Immutable" Version="1.5.0" />
+    <PackageReference Include="LaunchDarkly.JsonStream" Version="1.0.0-alpha.8" />
   </ItemGroup>
   
   <ItemGroup>
     <Folder Include="Helpers\" />
+    <Folder Include="Json\" />
   </ItemGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
@@ -37,12 +39,6 @@
     <SignAssembly>true</SignAssembly>
   </PropertyGroup>
   
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <LangVersion>7.3</LangVersion>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <LangVersion>7.3</LangVersion>
-  </PropertyGroup>
   <ItemGroup> <!-- see https://github.com/dotnet/sourcelink -->
     <PackageReference Include="Microsoft.SourceLink.GitLab" Version="1.0.0" PrivateAssets="All" />
   </ItemGroup>

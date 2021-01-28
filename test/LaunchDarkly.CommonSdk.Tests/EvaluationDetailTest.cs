@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using LaunchDarkly.Sdk.Json;
 using Xunit;
-using Newtonsoft.Json;
 
 namespace LaunchDarkly.Sdk
 {
@@ -26,8 +26,8 @@ namespace LaunchDarkly.Sdk
         public void TestReasonSerializationDeserialization(EvaluationReason reason,
             string jsonString, string expectedShortString)
         {
-            AssertJsonEqual(jsonString, JsonConvert.SerializeObject(reason));
-            Assert.Equal(reason, JsonConvert.DeserializeObject<EvaluationReason>(jsonString));
+            AssertJsonEqual(jsonString, LdJsonSerialization.SerializeObject(reason));
+            Assert.Equal(reason, LdJsonSerialization.DeserializeObject<EvaluationReason>(jsonString));
             Assert.Equal(expectedShortString, reason.ToString());
         }
 
@@ -49,14 +49,7 @@ namespace LaunchDarkly.Sdk
                 "ERROR(EXCEPTION)"
             }
         };
-        
-        [Fact]
-        public void TestDeserializeNullReason()
-        {
-            var reason = JsonConvert.DeserializeObject<EvaluationReason?>("null");
-            Assert.Null(reason);
-        }
-        
+                
         [Fact]
         public void TestEqualityAndHashCode()
         {

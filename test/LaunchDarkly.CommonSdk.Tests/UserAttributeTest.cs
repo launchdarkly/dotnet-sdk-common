@@ -1,5 +1,4 @@
 ﻿using System;
-using Newtonsoft.Json;
 using Xunit;
 
 namespace LaunchDarkly.Sdk
@@ -34,7 +33,6 @@ namespace LaunchDarkly.Sdk
             Assert.Equal(LdValue.Null, User.WithKey(".").GetAttribute(a));
             Assert.Equal(LdValue.Of(99), User.Builder(".").Custom("age", LdValue.Of(99)).Build()
                 .GetAttribute(a));
-            TestJsonSerialization(a, "age");
         }
 
         [Fact]
@@ -68,15 +66,6 @@ namespace LaunchDarkly.Sdk
             var b = User.Builder(".");
             setter(b, "x");
             Assert.Equal(LdValue.Of("x"), b.Build().GetAttribute(a));
-
-            TestJsonSerialization(a, name);
-        }
-
-        private void TestJsonSerialization(UserAttribute a, string name)
-        {
-            var expectedJson = "\"" + name + "\"";
-            Assert.Equal(expectedJson, JsonConvert.SerializeObject(a));
-            Assert.Equal(a, JsonConvert.DeserializeObject<UserAttribute>(expectedJson));
         }
     }
 }
