@@ -3,9 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26730.16
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LaunchDarkly.CommonSdk", "src\LaunchDarkly.CommonSdk\LaunchDarkly.CommonSdk.csproj", "{97897D61-FEDF-4ABD-AD53-F4A43D788225}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LaunchDarkly.CommonSdk", "src\LaunchDarkly.CommonSdk\LaunchDarkly.CommonSdk.csproj", "{97897D61-FEDF-4ABD-AD53-F4A43D788225}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LaunchDarkly.CommonSdk.Tests", "test\LaunchDarkly.CommonSdk.Tests\LaunchDarkly.CommonSdk.Tests.csproj", "{9F8D6033-F6C3-462B-B728-550C5172206D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LaunchDarkly.CommonSdk.JsonNet", "src\LaunchDarkly.CommonSdk.JsonNet\LaunchDarkly.CommonSdk.JsonNet.csproj", "{14D82AA6-1987-478F-8FDD-5036389CEFCF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LaunchDarkly.CommonSdk.JsonNet.Tests", "test\LaunchDarkly.CommonSdk.JsonNet.Tests\LaunchDarkly.CommonSdk.JsonNet.Tests.csproj", "{474A99BF-A85A-4D8A-A283-5DFC9C181840}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +25,14 @@ Global
 		{9F8D6033-F6C3-462B-B728-550C5172206D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9F8D6033-F6C3-462B-B728-550C5172206D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9F8D6033-F6C3-462B-B728-550C5172206D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{14D82AA6-1987-478F-8FDD-5036389CEFCF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{14D82AA6-1987-478F-8FDD-5036389CEFCF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{14D82AA6-1987-478F-8FDD-5036389CEFCF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{14D82AA6-1987-478F-8FDD-5036389CEFCF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{474A99BF-A85A-4D8A-A283-5DFC9C181840}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{474A99BF-A85A-4D8A-A283-5DFC9C181840}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{474A99BF-A85A-4D8A-A283-5DFC9C181840}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{474A99BF-A85A-4D8A-A283-5DFC9C181840}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

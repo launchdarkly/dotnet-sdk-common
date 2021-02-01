@@ -531,7 +531,7 @@ namespace LaunchDarkly.Sdk
                     return _boolValue ? "true" : "false";
                 default:
                     var writer = JWriter.New();
-                    LdJsonConverters.LdValueConverter.WriteJsonInternal(this, writer);
+                    LdJsonConverters.LdValueConverter.WriteJsonValue(this, writer);
                     return writer.GetString();
             }
         }

@@ -21,6 +21,12 @@ namespace LaunchDarkly.Sdk.Json
     /// <c>LaunchDarkly.JsonStream.JsonReadException</c> or <c>System.Text.Json.JsonException</c>
     /// rather than <c>LaunchDarkly.Sdk.Json.JsonException</c>.
     /// </para>
+    /// <para>
+    /// Some of these converters also have <c>ReadJsonValue</c> and <c>WriteJsonValue</c> methods.
+    /// The reason for this is that the <c>object</c> type used by the regular converter methods
+    /// causes boxing/unboxing conversions if the target type is a <c>struct</c>, and if the
+    /// overhead of these is a concern it is more efficient to call a strongly typed method.
+    /// </para>
     /// </remarks>
     /// <seealso cref="LdJsonSerialization"/>
     public static class LdJsonConverters
@@ -30,13 +36,15 @@ namespace LaunchDarkly.Sdk.Json
         {
             private static readonly string[] _requiredProperties = new string[] { "kind" };
 
-            public object ReadJson(ref JReader reader) =>
+            public object ReadJson(ref JReader reader) => ReadJsonValue(ref reader);
+
+            public static EvaluationReason ReadJsonValue(ref JReader reader) =>
                 ReadJsonInternal(ref reader, false).Value;
 
-            public EvaluationReason? ReadJsonNullable(ref JReader reader) =>
+            public static EvaluationReason? ReadJsonNullableValue(ref JReader reader) =>
                 ReadJsonInternal(ref reader, true);
 
-            private EvaluationReason? ReadJsonInternal(ref JReader reader, bool nullable)
+            private static EvaluationReason? ReadJsonInternal(ref JReader reader, bool nullable)
             {
                 var obj = (nullable ? reader.ObjectOrNull() : reader.Object())
                     .WithRequiredProperties(_requiredProperties);
@@ -115,9 +123,11 @@ namespace LaunchDarkly.Sdk.Json
                 }
             }
 
-            public void WriteJson(object o, IValueWriter writer)
+            public void WriteJson(object value, IValueWriter writer) =>
+                WriteJsonValue((EvaluationReason)value, writer);
+
+            public static void WriteJsonValue(EvaluationReason value, IValueWriter writer)
             {
-                var value = (EvaluationReason)o;
                 var obj = writer.Object();
                 obj.Name("kind").String(EvaluationReasonKindConverter.ToIdentifier(value.Kind));
                 switch (value.Kind)
@@ -142,10 +152,15 @@ namespace LaunchDarkly.Sdk.Json
         /// </summary>
         public sealed class EvaluationErrorKindConverter : IJsonStreamConverter
         {
-            public object ReadJson(ref JReader reader) =>
-                FromIdentifier(reader.String());
+            public object ReadJson(ref JReader reader) => ReadJsonValue(ref reader);
 
             public void WriteJson(object instance, IValueWriter writer) =>
+                WriteJsonValue((EvaluationErrorKind)instance, writer);
+
+            public static EvaluationErrorKind ReadJsonValue(ref JReader reader) =>
+                FromIdentifier(reader.String());
+
+            public static void WriteJsonValue(EvaluationErrorKind instance, IValueWriter writer) =>
                 writer.String(ToIdentifier((EvaluationErrorKind)instance));
 
             internal static EvaluationErrorKind FromIdentifier(string value)
@@ -187,10 +202,15 @@ namespace LaunchDarkly.Sdk.Json
         /// </summary>
         public sealed class EvaluationReasonKindConverter : IJsonStreamConverter
         {
-            public object ReadJson(ref JReader reader) =>
-                FromIdentifier(reader.String());
+            public object ReadJson(ref JReader reader) => ReadJsonValue(ref reader);
 
             public void WriteJson(object instance, IValueWriter writer) =>
+                WriteJsonValue((EvaluationReasonKind)instance, writer);
+
+            public EvaluationReasonKind ReadJsonValue(ref JReader reader) =>
+                FromIdentifier(reader.String());
+
+            public void WriteJsonValue(EvaluationReasonKind instance, IValueWriter writer) =>
                 writer.String(ToIdentifier((EvaluationReasonKind)instance));
 
             internal static EvaluationReasonKind FromIdentifier(string value)
@@ -236,7 +256,7 @@ namespace LaunchDarkly.Sdk.Json
             {
                 try
                 {
-                    return ReadJsonInternal(ref reader);
+                    return ReadJsonValue(ref reader);
                 }
                 catch (Exception e)
                 {
@@ -245,9 +265,9 @@ namespace LaunchDarkly.Sdk.Json
             }
 
             public void WriteJson(object value, IValueWriter writer) =>
-                WriteJsonInternal((LdValue)value, writer);
+                WriteJsonValue((LdValue)value, writer);
 
-            internal static void WriteJsonInternal(LdValue value, IValueWriter writer)
+            public static void WriteJsonValue(LdValue value, IValueWriter writer)
             {
                 switch (value.Type)
                 {
@@ -276,7 +296,7 @@ namespace LaunchDarkly.Sdk.Json
                         var arr = writer.Array();
                         foreach (var v in value.List)
                         {
-                            LdJsonConverters.LdValueConverter.WriteJsonInternal(v, arr);
+                            WriteJsonValue(v, arr);
                         }
                         arr.End();
                         break;
@@ -284,14 +304,14 @@ namespace LaunchDarkly.Sdk.Json
                         var obj = writer.Object();
                         foreach (var kv in value.Dictionary)
                         {
-                            LdJsonConverters.LdValueConverter.WriteJsonInternal(kv.Value, obj.Name(kv.Key));
+                            WriteJsonValue(kv.Value, obj.Name(kv.Key));
                         }
                         obj.End();
                         break;
                 }
             }
 
-            internal static LdValue ReadJsonInternal(ref JReader reader)
+            public static LdValue ReadJsonValue(ref JReader reader)
             {
                 var value = reader.Any();
                 switch (value.Type)
@@ -306,14 +326,14 @@ namespace LaunchDarkly.Sdk.Json
                         var arrayBuilder = LdValue.BuildArray();
                         for (var arr = value.ArrayValue; arr.Next(ref reader);)
                         {
-                            arrayBuilder.Add(ReadJsonInternal(ref reader));
+                            arrayBuilder.Add(ReadJsonValue(ref reader));
                         }
                         return arrayBuilder.Build();
                     case JsonStream.ValueType.Object:
                         var objBuilder = LdValue.BuildObject();
                         for (var obj = value.ObjectValue; obj.Next(ref reader);)
                         {
-                            objBuilder.Add(obj.Name.ToString(), ReadJsonInternal(ref reader));
+                            objBuilder.Add(obj.Name.ToString(), ReadJsonValue(ref reader));
                         }
                         return objBuilder.Build();
                     default:
@@ -377,7 +397,7 @@ namespace LaunchDarkly.Sdk.Json
                                 for (var customObj = reader.ObjectOrNull(); customObj.Next(ref reader);)
                                 {
                                     builder.Custom(customObj.Name.ToString(),
-                                        LdValueConverter.ReadJsonInternal(ref reader));
+                                        LdValueConverter.ReadJsonValue(ref reader));
                                 }
                                 break;
                             case "privateAttributeNames":
@@ -424,7 +444,7 @@ namespace LaunchDarkly.Sdk.Json
                     var customObj = obj.Name("custom").Object();
                     foreach (var kv in user.Custom)
                     {
-                        LdValueConverter.WriteJsonInternal(kv.Value, customObj.Name(kv.Key));
+                        LdValueConverter.WriteJsonValue(kv.Value, customObj.Name(kv.Key));
                     }
                     customObj.End();
                 }

@@ -5,6 +5,8 @@
 
 This project contains .NET classes and interfaces that are shared between the LaunchDarkly .NET and Xamarin SDKs. Code that is specific to one or the other is in [dotnet-server-sdk](https://github.com/launchdarkly/dotnet-server-sdk) or [xamarin-client-sdk](https://github.com/launchdarkly/xamarin-client-sdk).
 
+It also contains the optional add-on package [`LaunchDarkly.CommonSdk.JsonNet`](./src/LaunchDarkly.CommonSdk.JsonNet/README.md), which makes it easier to use LaunchDarkly types with the popular Json.NET library.
+
 ## Contributing
 
 See [Contributing](https://github.com/launchdarkly/dotnet-sdk-common/blob/master/CONTRIBUTING.md).
