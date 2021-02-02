@@ -1,7 +1,7 @@
 # LaunchDarkly SDK .NET Common Code
 
-[![CircleCI](https://circleci.com/gh/launchdarkly/dotnet-sdk-common/tree/master.svg?style=svg)](https://circleci.com/gh/launchdarkly/dotnet-sdk-common/tree/master)
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Flaunchdarkly%2Fdotnet-sdk-common.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Flaunchdarkly%2Fdotnet-sdk-common?ref=badge_shield)
+[![NuGet](https://img.shields.io/nuget/v/LaunchDarkly.CommonSdk.svg?style=flat-square)](https://www.nuget.org/packages/LaunchDarkly.CommonSdk/)
+[![CircleCI](https://circleci.com/gh/launchdarkly/dotnet-sdk-common.svg?style=shield)](https://circleci.com/gh/launchdarkly/dotnet-sdk-common)
 
 This project contains .NET classes and interfaces that are shared between the LaunchDarkly .NET and Xamarin SDKs. Code that is specific to one or the other is in [dotnet-server-sdk](https://github.com/launchdarkly/dotnet-server-sdk) or [xamarin-client-sdk](https://github.com/launchdarkly/xamarin-client-sdk).
 
@@ -9,11 +9,11 @@ It also contains the optional add-on package [`LaunchDarkly.CommonSdk.JsonNet`](
 
 ## Contributing
 
-See [Contributing](https://github.com/launchdarkly/dotnet-sdk-common/blob/master/CONTRIBUTING.md).
+See [Contributing](./CONTRIBUTING.md).
 
 ## Signing
 
-The published version of this assembly is digitally signed with Authenticode, and also strong-named. The public key file is in this repo at `LaunchDarkly.CommonSdk.pk` as well as here:
+The published version of this assembly is digitally signed with Authenticode and [strong-named](https://docs.microsoft.com/en-us/dotnet/framework/app-domains/strong-named-assemblies). Building the code locally in the default Debug configuration does not use strong-naming and does not require a key file. The public key file is in this repository at `LaunchDarkly.CommonSdk.pk` as well as here:
 
 ```
 Public Key:
@@ -25,8 +25,6 @@ d4b4320e820f32e024ad50a786f86d37ea45e0c25ec431a7a0f3e93575a0d2ad
 
 Public Key Token: 45ef1738a929a7df
 ```
-
-Building the code locally in the default Debug configuration does not sign the assembly and does not require a key file. Note that the unit tests can only be run in the Debug configuration.
 
 ## About LaunchDarkly
  
