@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using LaunchDarkly.Client;
-using Newtonsoft.Json;
+using LaunchDarkly.JsonStream;
+using LaunchDarkly.Sdk.Json;
 using Xunit;
 
-namespace LaunchDarkly.Common.Tests
+namespace LaunchDarkly.Sdk
 {
     public class LdValueTest
     {
@@ -392,16 +392,20 @@ namespace LaunchDarkly.Common.Tests
             Assert.NotEqual(LdValue.Of(false), LdValue.Of(0));
         }
 
-        private void AssertValueAndHashEqual<T>(T a, T b)
+        private void AssertValueAndHashEqual(LdValue a, LdValue b)
         {
             Assert.Equal(a, b);
             Assert.Equal(a.GetHashCode(), b.GetHashCode());
+            Assert.True(a == b);
+            Assert.False(a != b);
         }
 
-        private void AssertValueAndHashNotEqual<T>(T a, T b)
+        private void AssertValueAndHashNotEqual(LdValue a, LdValue b)
         {
             Assert.NotEqual(a, b);
             Assert.NotEqual(a.GetHashCode(), b.GetHashCode());
+            Assert.False(a == b);
+            Assert.True(a != b);
         }
         
         [Fact]
@@ -487,17 +491,17 @@ namespace LaunchDarkly.Common.Tests
             VerifySerializeAndParse(aFloatValue, someFloat.ToString());
             VerifySerializeAndParse(anArrayValue, "[3]");
             VerifySerializeAndParse(anObjectValue, "{\"1\":\"x\"}");
-            Assert.Throws(typeof(JsonReaderException), () => JsonConvert.DeserializeObject<LdValue>("nono"));
-            Assert.Throws(typeof(ArgumentException), () => LdValue.Parse("nono"));
+            Assert.Throws<JsonException>(() => LdJsonSerialization.DeserializeObject<LdValue>("nono"));
+            Assert.Throws<JsonException>(() => LdValue.Parse("nono"));
         }
         
         private void VerifySerializeAndParse(LdValue value, string expectedJson)
         {
-            var json1 = JsonConvert.SerializeObject(value);
+            var json1 = LdJsonSerialization.SerializeObject(value);
             var json2 = value.ToJsonString();
             Assert.Equal(expectedJson, json1);
             Assert.Equal(json1, json2);
-            var parsed1 = JsonConvert.DeserializeObject<LdValue>(expectedJson);
+            var parsed1 = LdJsonSerialization.DeserializeObject<LdValue>(expectedJson);
             var parsed2 = LdValue.Parse(expectedJson);
             Assert.Equal(value, parsed1);
             Assert.Equal(value, parsed2);

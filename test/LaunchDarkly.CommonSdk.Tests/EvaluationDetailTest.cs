@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
+using LaunchDarkly.Sdk.Json;
 using Xunit;
-using LaunchDarkly.Client;
-using Newtonsoft.Json;
 
-namespace LaunchDarkly.Common.Tests
+namespace LaunchDarkly.Sdk
 {
     public class EvaluationDetailTest
     {
@@ -28,12 +26,12 @@ namespace LaunchDarkly.Common.Tests
         public void TestReasonSerializationDeserialization(EvaluationReason reason,
             string jsonString, string expectedShortString)
         {
-            AssertJsonEqual(jsonString, JsonConvert.SerializeObject(reason));
-            Assert.Equal(reason, JsonConvert.DeserializeObject<EvaluationReason>(jsonString));
+            AssertJsonEqual(jsonString, LdJsonSerialization.SerializeObject(reason));
+            Assert.Equal(reason, LdJsonSerialization.DeserializeObject<EvaluationReason>(jsonString));
             Assert.Equal(expectedShortString, reason.ToString());
         }
 
-        public static IEnumerable ReasonTestData => new List<object[]>
+        public static IEnumerable<object[]> ReasonTestData => new List<object[]>
         {
             new object[] { EvaluationReason.OffReason, @"{""kind"":""OFF""}", "OFF" },
             new object[] { EvaluationReason.FallthroughReason, @"{""kind"":""FALLTHROUGH""}", "FALLTHROUGH" },
@@ -46,19 +44,12 @@ namespace LaunchDarkly.Common.Tests
                 @"{""kind"":""PREREQUISITE_FAILED"",""prerequisiteKey"":""key""}",
                 "PREREQUISITE_FAILED(key)"
             },
-            new object[] { EvaluationReason.ErrorReason(EvaluationErrorKind.EXCEPTION),
+            new object[] { EvaluationReason.ErrorReason(EvaluationErrorKind.Exception),
                 @"{""kind"":""ERROR"",""errorKind"":""EXCEPTION""}",
                 "ERROR(EXCEPTION)"
             }
         };
-        
-        [Fact]
-        public void TestDeserializeNullReason()
-        {
-            var reason = JsonConvert.DeserializeObject<EvaluationReason>("null");
-            Assert.Null(reason);
-        }
-        
+                
         [Fact]
         public void TestEqualityAndHashCode()
         {
@@ -68,8 +59,8 @@ namespace LaunchDarkly.Common.Tests
                 () => EvaluationReason.RuleMatchReason(1, "rule2"));
             VerifyEqualityAndHashCode(() => EvaluationReason.PrerequisiteFailedReason("a"),
                 () => EvaluationReason.PrerequisiteFailedReason("b"));
-            VerifyEqualityAndHashCode(() => EvaluationReason.ErrorReason(EvaluationErrorKind.FLAG_NOT_FOUND),
-                () => EvaluationReason.ErrorReason(EvaluationErrorKind.EXCEPTION));
+            VerifyEqualityAndHashCode(() => EvaluationReason.ErrorReason(EvaluationErrorKind.FlagNotFound),
+                () => EvaluationReason.ErrorReason(EvaluationErrorKind.Exception));
         }
 
         private void VerifyEqualityAndHashCode(Func<EvaluationReason> createA, Func<EvaluationReason> createB)

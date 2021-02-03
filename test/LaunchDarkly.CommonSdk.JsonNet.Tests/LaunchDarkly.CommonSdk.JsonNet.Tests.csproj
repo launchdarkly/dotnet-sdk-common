@@ -2,11 +2,12 @@
   <PropertyGroup>
     <TestFramework Condition="'$(TESTFRAMEWORK)' == ''">netcoreapp2.1</TestFramework>
     <TargetFramework>$(TESTFRAMEWORK)</TargetFramework>
-    <AssemblyName>LaunchDarkly.CommonSdk.Tests</AssemblyName>
-    <RootNamespace>LaunchDarkly.Sdk</RootNamespace>
+    <AssemblyName>LaunchDarkly.CommonSdk.JsonNet.Tests</AssemblyName>
+    <RootNamespace>LaunchDarkly.Sdk.Json</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\LaunchDarkly.CommonSdk.JsonNet\LaunchDarkly.CommonSdk.JsonNet.csproj" />
     <ProjectReference Include="..\..\src\LaunchDarkly.CommonSdk\LaunchDarkly.CommonSdk.csproj" />
   </ItemGroup>
 

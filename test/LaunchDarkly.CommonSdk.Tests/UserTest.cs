@@ -1,7 +1,6 @@
-﻿using LaunchDarkly.Client;
-using Xunit;
+﻿using Xunit;
 
-namespace LaunchDarkly.Common.Tests
+namespace LaunchDarkly.Sdk
 {
     public class UserTest
     {
