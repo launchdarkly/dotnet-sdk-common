@@ -2,6 +2,24 @@
 
 All notable changes to `LaunchDarkly.CommonSdk` will be documented in this file. For full release notes for the projects that depend on this project, see their respective changelogs. This file describes changes only to the common code. This project adheres to [Semantic Versioning](http://semver.org).
 
+## [5.0.0] - 2021-02-02
+### Added:
+- `LaunchDarkly.Sdk.Json` namespace with JSON serialization helpers. Also, there is now a separate package defined in this repo, `LaunchDarkly.CommonSdk.JsonNet`, for interoperability with `Newtonsoft.Json`.
+- `UnixMillisecondTime` type, a convenient wrapper for the date/time format that is used by LaunchDarkly services. Applications normally won&#39;t need to use this unless they are interacting directly with the analytics event system.
+- `LdValue` now has `==` and `!=` operators.
+- Releases now publish [Source Link](https://github.com/dotnet/sourcelink/blob/master/README.md) data.
+
+### Changed:
+- The base namespace is now `LaunchDarkly.Sdk` rather than `LaunchDarkly.Client`.
+- `EvaluationReason` is now a struct.
+- `EvaluationReasonKind` and `EvaluationErrorKind` enum names now use regular .NET-style capitalization (`RuleMatch`) instead of Java-style capitalization (`RULE_MATCH`).
+- JSON-serializable types (`User`, etc.) now automatically encode and decode correctly with `System.Text.Json`.
+
+### Removed:
+- `EvaluationReason` subclasses.
+- There is no longer a package dependency on `Newtonsoft.Json`.
+- Non-public helpers used by SDKs have been removed, and are now in `LaunchDarkly.InternalSdk` instead.
+
 ## [4.3.1] - 2020-01-15
 ### Fixed:
 - A bug in the SDK prevented the sending of events from being retried after a failure. The SDK now retries once after an event flush fails as was intended.
