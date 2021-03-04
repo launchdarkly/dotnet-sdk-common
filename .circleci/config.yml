@@ -5,64 +5,156 @@ workflows:
   test:
     jobs:
       - test-netcore-1-1
-      - test-netcore-2-0
+      - build-netstandard-2
+      - test-netcore:
+          name: .NET Standard 2.0 + .NET Core 2.0
+          docker-image: microsoft/dotnet:2.0-sdk-jessie
+          build-target-framework: netstandard2.0
+          test-target-framework: netcoreapp2.0
+          requires:
+            - build-netstandard-2
+      - test-netcore:
+          name: .NET Standard 2.0 + .NET Core 2.1
+          docker-image: mcr.microsoft.com/dotnet/core/sdk:2.1-focal
+          build-target-framework: netstandard2.0
+          test-target-framework: netcoreapp2.1
+          requires:
+            - build-netstandard-2
+      - test-netcore:
+          name: .NET Standard 2.0 + .NET Core 3.1
+          docker-image: mcr.microsoft.com/dotnet/core/sdk:3.1-focal
+          build-target-framework: netstandard2.0
+          test-target-framework: netcoreapp3.1
+          requires:
+            - build-netstandard-2
+      - test-netcore:
+          name: .NET Standard 2.0 + .NET 5.0
+          docker-image: mcr.microsoft.com/dotnet/sdk:5.0-focal
+          build-target-framework: netstandard2.0
+          test-target-framework: net5.0
+          requires:
+            - build-netstandard-2
       - test-windows-netframework-4-5
 
 orbs:
   win: circleci/windows@1.0.0
 
 jobs:
-  test-netcore-1-1:
+  build-netstandard-2:
+    parameters:
+      build-target-framework:
+        type: string
+        default: netstandard2.0
     docker:
-      - image: microsoft/dotnet:1.1-sdk
-    steps:
-      - checkout
-      - run: dotnet restore
-      - run: dotnet build src/LaunchDarkly.CommonSdk -f netstandard1.4
-      - run: dotnet build src/LaunchDarkly.CommonSdk -f netstandard1.6
-      - run: dotnet test test/LaunchDarkly.CommonSdk.Tests/LaunchDarkly.CommonSdk.Tests.csproj -f netcoreapp1.1
-
-  test-netcore-2-0:
-    docker:
-      - image: microsoft/dotnet:2.0-sdk-jessie
+      - image: mcr.microsoft.com/dotnet/core/sdk:2.1-focal
     environment:
       ASPNETCORE_SUPPRESSSTATUSMESSAGES: true
     steps:
       - checkout
       - restore_cache:
           keys: 
-            - netcore20-deps-2x-{{ checksum "src/LaunchDarkly.CommonSdk/LaunchDarkly.CommonSdk.csproj" }}-{{ checksum "test/LaunchDarkly.CommonSdk.Tests/LaunchDarkly.CommonSdk.Tests.csproj" }}
+            - deps-<<parameters.build-target-framework>>-{{ checksum "src/LaunchDarkly.CommonSdk/LaunchDarkly.CommonSdk.csproj" }}
+            # For these two-step builds, we're caching the NuGet dependencies twice:
+            # 1. Here, where we're only building CommonSdk itself and not the test project, we cache
+            # the packages with a key like "deps-netstandard2.0-xxxx" where "xxxx" only changes if the
+            # CommonSdk project file changes.
+            # 2. In the test-netcore job, we are loading dependencies for the test project which might
+            # vary depending on which framework we're building the test project with. So we cache the
+            # dependencies there with a key like "deps-netstandard2.0-netcoreapp2.1-xxxx-yyyy" where
+            # the "yyyy" part will change if the project file for the test project changes.
+      - run:
+          name: restore LaunchDarkly.CommonSdk
+          command: dotnet restore src/LaunchDarkly.CommonSdk
+      - run:
+          name: restore LaunchDarkly.CommonSdk.StrongName
+          command: dotnet restore src/LaunchDarkly.CommonSdk.StrongName
+      - save_cache:
+          key: deps-<<parameters.build-target-framework>>-{{ checksum "src/LaunchDarkly.CommonSdk/LaunchDarkly.CommonSdk.csproj" }}
+          paths:
+            - /root/.nuget/packages
+      - run:
+          name: build LaunchDarkly.CommonSdk
+          command: dotnet build src/LaunchDarkly.CommonSdk -f <<parameters.build-target-framework>>
+      - run:
+          name: build LaunchDarkly.CommonSdk.StrongName
+          command: dotnet build src/LaunchDarkly.CommonSdk.StrongName -f <<parameters.build-target-framework>>
+      - run:
+          name: verify that both CommonSdk assemblies contain the same types
+          command: ./packaging-test/compare-assembly-contents.sh netstandard2.0
+      - persist_to_workspace:
+          root: src/LaunchDarkly.CommonSdk
+          paths:
+            - bin
+            - obj
+
+  test-netcore:
+    parameters:
+      docker-image:
+        type: string
+      build-target-framework:
+        type: string
+      test-target-framework:
+        type: string
+    docker:
+      - image: <<parameters.docker-image>>
+    environment:
+      ASPNETCORE_SUPPRESSSTATUSMESSAGES: true
+      TESTFRAMEWORK: <<parameters.test-target-framework>>
+    steps:
+      - checkout
+      - attach_workspace:
+          at: src/LaunchDarkly.CommonSdk
+      - restore_cache:
+          keys: # see comments under build-netstandard-2
+            - deps-<<parameters.build-target-framework>>-<<parameters.test-target-framework>>-{{ checksum "src/LaunchDarkly.CommonSdk/LaunchDarkly.CommonSdk.csproj" }}-{{ checksum "test/LaunchDarkly.CommonSdk.Tests/LaunchDarkly.CommonSdk.Tests.csproj" }}
+      - run:
+          name: restore LaunchDarkly.CommonSdk.Tests
+          command: dotnet restore test/LaunchDarkly.CommonSdk.Tests
+      - save_cache:
+          key: deps-<<parameters.build-target-framework>>-<<parameters.test-target-framework>>-{{ checksum "src/LaunchDarkly.CommonSdk/LaunchDarkly.CommonSdk.csproj" }}-{{ checksum "test/LaunchDarkly.CommonSdk.Tests/LaunchDarkly.CommonSdk.Tests.csproj" }}
+          paths:
+            - /root/.nuget/packages
+      - run:
+          name: run tests
+          command: dotnet test test/LaunchDarkly.CommonSdk.Tests/LaunchDarkly.CommonSdk.Tests.csproj -f <<parameters.test-target-framework>>
+
+  test-netcore-1-1:
+    docker:
+      - image: microsoft/dotnet:1.1-sdk
+    environment:
+      TESTFRAMEWORK: netcoreapp1.1
+    steps:
+      - checkout
+      - restore_cache:
+          keys: # see comments under build-netstandard-2
+            - deps-netstandard1.6-netcoreapp1.1-{{ checksum "src/LaunchDarkly.CommonSdk/LaunchDarkly.CommonSdk.csproj" }}-{{ checksum "test/LaunchDarkly.CommonSdk.Tests/LaunchDarkly.CommonSdk.Tests.csproj" }}
       - run:
           name: install project dependencies
           command: dotnet restore
       - save_cache:
-          key: netcore20-deps-2x-{{ checksum "src/LaunchDarkly.CommonSdk/LaunchDarkly.CommonSdk.csproj" }}-{{ checksum "test/LaunchDarkly.CommonSdk.Tests/LaunchDarkly.CommonSdk.Tests.csproj" }}
+          key: deps-netstandard1.6-netcoreapp1.1-{{ checksum "src/LaunchDarkly.CommonSdk/LaunchDarkly.CommonSdk.csproj" }}-{{ checksum "test/LaunchDarkly.CommonSdk.Tests/LaunchDarkly.CommonSdk.Tests.csproj" }}
           paths:
             - /root/.nuget/packages
-      - run:
-          name: build SDK for .NET Standard 2.0
-          command: dotnet build src/LaunchDarkly.CommonSdk -f netstandard2.0
-      - run:
-          name: run tests in .NET Core 2.0
-          command: dotnet test test/LaunchDarkly.CommonSdk.Tests/LaunchDarkly.CommonSdk.Tests.csproj -f netcoreapp2.0
-      - run:
-          name: verify that both CommonSdk assemblies contain the same types
-          command: ./packaging-test/compare-assembly-contents.sh netstandard2.0
+      - run: dotnet build src/LaunchDarkly.CommonSdk -f netstandard1.4
+      - run: dotnet build src/LaunchDarkly.CommonSdk -f netstandard1.6
+      - run: dotnet test test/LaunchDarkly.CommonSdk.Tests/LaunchDarkly.CommonSdk.Tests.csproj -f netcoreapp1.1
 
   test-windows-netframework-4-5:
     executor:
       name: win/vs2019
       shell: powershell.exe
+    environment:
+      TESTFRAMEWORK: net46 # the library is built for 4.5, but we run in 4.6 so we can use some test libraries that don't work in 4.5
     steps:
       - checkout
       - restore_cache:
-          keys: 
-            - net45-deps-2x-{{ checksum "src/LaunchDarkly.CommonSdk/LaunchDarkly.CommonSdk.csproj" }}-{{ checksum "test/LaunchDarkly.CommonSdk.Tests/LaunchDarkly.CommonSdk.Tests.csproj" }}
+          keys: # see comments under build-netstandard-2
+            - deps-net45-net46-{{ checksum "src/LaunchDarkly.CommonSdk/LaunchDarkly.CommonSdk.csproj" }}-{{ checksum "test/LaunchDarkly.CommonSdk.Tests/LaunchDarkly.CommonSdk.Tests.csproj" }}
       - run:
           name: install project dependencies
           command: dotnet restore
       - save_cache:
-          key: net45-deps-2x-{{ checksum "src/LaunchDarkly.CommonSdk/LaunchDarkly.CommonSdk.csproj" }}-{{ checksum "test/LaunchDarkly.CommonSdk.Tests/LaunchDarkly.CommonSdk.Tests.csproj" }}
+          key: deps-net45-net46-{{ checksum "src/LaunchDarkly.CommonSdk/LaunchDarkly.CommonSdk.csproj" }}-{{ checksum "test/LaunchDarkly.CommonSdk.Tests/LaunchDarkly.CommonSdk.Tests.csproj" }}
           paths:
             - C:\Users\circleci\.nuget\packages
       - run:
