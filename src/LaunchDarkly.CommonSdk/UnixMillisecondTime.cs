@@ -13,7 +13,7 @@ namespace LaunchDarkly.Sdk
     /// is public and supported for convenience.
     /// </para>
     /// <para>
-    /// When handling JSON with the <c>Newtonsoft.Json</c> types, it is encoded as an integer.
+    /// When converting to or from JSON, it is encoded as an integer.
     /// </para>
     /// </remarks>
     public struct UnixMillisecondTime : IEquatable<UnixMillisecondTime>, IComparable<UnixMillisecondTime>
