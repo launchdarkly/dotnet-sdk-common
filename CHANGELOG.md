@@ -2,6 +2,10 @@
 
 All notable changes to `LaunchDarkly.CommonSdk` will be documented in this file. For full release notes for the projects that depend on this project, see their respective changelogs. This file describes changes only to the common code. This project adheres to [Semantic Versioning](http://semver.org).
 
+## [5.0.2] - 2021-06-07
+### Fixed:
+- Updated the minimum dependency version for `LaunchDarkly.JsonStream` to exclude versions that have a known JSON parsing bug.
+
 ## [5.0.1] - 2021-02-02
 ### Fixed:
 - Updated dependencies in `LaunchDarkly.CommonSdk.JsonNet` to the correct versions.
