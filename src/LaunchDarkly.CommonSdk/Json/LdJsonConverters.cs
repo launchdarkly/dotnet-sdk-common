@@ -59,6 +59,7 @@ namespace LaunchDarkly.Sdk.Json
                     string ruleId = null;
                     string prerequisiteKey = null;
                     EvaluationErrorKind? errorKind = null;
+                    bool inExperiment = false;
 
                     while (obj.Next(ref reader))
                     {
@@ -97,6 +98,10 @@ namespace LaunchDarkly.Sdk.Json
                                 throw new SyntaxException("unsupported value for \"errorKind\"", 0);
                             }
                         }
+                        else if (name == "inExperiment")
+                        {
+                            inExperiment = reader.Bool();
+                        }
                     }
 
                     switch (kind) // it's guaranteed to have a value, otherwise there'd be a required property error above
@@ -104,11 +109,14 @@ namespace LaunchDarkly.Sdk.Json
                         case EvaluationReasonKind.Off:
                             return EvaluationReason.OffReason;
                         case EvaluationReasonKind.Fallthrough:
-                            return EvaluationReason.FallthroughReason;
+                            return inExperiment ?
+                                EvaluationReason.FallthroughReason.WithInExperiment(true) :
+                                EvaluationReason.FallthroughReason;
                         case EvaluationReasonKind.TargetMatch:
                             return EvaluationReason.TargetMatchReason;
                         case EvaluationReasonKind.RuleMatch:
-                            return EvaluationReason.RuleMatchReason(ruleIndex ?? 0, ruleId);
+                            var ruleMatch = EvaluationReason.RuleMatchReason(ruleIndex ?? 0, ruleId);
+                            return inExperiment ? ruleMatch.WithInExperiment(true) : ruleMatch;
                         case EvaluationReasonKind.PrerequisiteFailed:
                             return EvaluationReason.PrerequisiteFailedReason(prerequisiteKey);
                         case EvaluationReasonKind.Error:
@@ -142,6 +150,10 @@ namespace LaunchDarkly.Sdk.Json
                     case EvaluationReasonKind.Error:
                         obj.Name("errorKind").String(EvaluationErrorKindConverter.ToIdentifier(value.ErrorKind.Value));
                         break;
+                }
+                if (value.InExperiment)
+                {
+                    obj.Name("inExperiment").Bool(true); // omit property if false
                 }
                 obj.End();
             }
