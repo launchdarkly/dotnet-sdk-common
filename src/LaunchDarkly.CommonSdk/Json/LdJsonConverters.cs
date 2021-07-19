@@ -59,6 +59,7 @@ namespace LaunchDarkly.Sdk.Json
                     string ruleId = null;
                     string prerequisiteKey = null;
                     EvaluationErrorKind? errorKind = null;
+                    bool inExperiment = false;
                     BigSegmentsStatus? bigSegmentsStatus = null;
 
                     while (obj.Next(ref reader))
@@ -98,6 +99,10 @@ namespace LaunchDarkly.Sdk.Json
                                 throw new SyntaxException("unsupported value for \"errorKind\"", 0);
                             }
                         }
+                        else if (name == "inExperiment")
+                        {
+                            inExperiment = reader.Bool();
+                        }
                         else if (name == "bigSegmentsStatus")
                         {
                             try
@@ -135,9 +140,13 @@ namespace LaunchDarkly.Sdk.Json
                         default:
                             return null;
                     }
+                    if (inExperiment)
+                    {
+                        reason = reason.WithInExperiment(true);
+                    }
                     if (bigSegmentsStatus.HasValue)
                     {
-                        return reason.WithBigSegmentsStatus(bigSegmentsStatus);
+                        reason = reason.WithBigSegmentsStatus(bigSegmentsStatus);
                     }
                     return reason;
                 }
@@ -166,6 +175,10 @@ namespace LaunchDarkly.Sdk.Json
                     case EvaluationReasonKind.Error:
                         obj.Name("errorKind").String(EvaluationErrorKindConverter.ToIdentifier(value.ErrorKind.Value));
                         break;
+                }
+                if (value.InExperiment)
+                {
+                    obj.Name("inExperiment").Bool(true); // omit property if false
                 }
                 if (value.BigSegmentsStatus.HasValue)
                 {

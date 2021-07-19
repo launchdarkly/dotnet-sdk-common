@@ -37,16 +37,32 @@ namespace LaunchDarkly.Sdk
                     JsonString = @"{""kind"":""OFF""}", ExpectedShortString = "OFF" },
                 new ReasonTestCase { Reason = EvaluationReason.FallthroughReason,
                     JsonString = @"{""kind"":""FALLTHROUGH""}", ExpectedShortString = "FALLTHROUGH" },
+                new ReasonTestCase {
+                    Reason = EvaluationReason.FallthroughReason.WithInExperiment(true),
+                    JsonString = @"{""kind"":""FALLTHROUGH"",""inExperiment"":true}",
+                    ExpectedShortString = "FALLTHROUGH" },
                 new ReasonTestCase { Reason = EvaluationReason.FallthroughReason.WithBigSegmentsStatus(BigSegmentsStatus.Healthy),
                     JsonString = @"{""kind"":""FALLTHROUGH"",""bigSegmentsStatus"":""HEALTHY""}", ExpectedShortString = "FALLTHROUGH" },
+                new ReasonTestCase {
+                    Reason = EvaluationReason.FallthroughReason.WithInExperiment(true).WithBigSegmentsStatus(BigSegmentsStatus.Healthy),
+                    JsonString = @"{""kind"":""FALLTHROUGH"",""inExperiment"":true,""bigSegmentsStatus"":""HEALTHY""}",
+                    ExpectedShortString = "FALLTHROUGH" },
                 new ReasonTestCase { Reason = EvaluationReason.TargetMatchReason,
                     JsonString = @"{""kind"":""TARGET_MATCH""}", ExpectedShortString = "TARGET_MATCH" },
                 new ReasonTestCase { Reason = EvaluationReason.RuleMatchReason(1, "id"),
                     JsonString = @"{""kind"":""RULE_MATCH"",""ruleIndex"":1,""ruleId"":""id""}",
                     ExpectedShortString = "RULE_MATCH(1,id)"
                 },
+                new ReasonTestCase { Reason = EvaluationReason.RuleMatchReason(1, "id").WithInExperiment(true),
+                    JsonString = @"{""kind"":""RULE_MATCH"",""ruleIndex"":1,""ruleId"":""id"",""inExperiment"":true}",
+                    ExpectedShortString = "RULE_MATCH(1,id)"
+                },
                 new ReasonTestCase { Reason = EvaluationReason.RuleMatchReason(1, "id").WithBigSegmentsStatus(BigSegmentsStatus.Healthy),
                     JsonString = @"{""kind"":""RULE_MATCH"",""ruleIndex"":1,""ruleId"":""id"",""bigSegmentsStatus"":""HEALTHY""}",
+                    ExpectedShortString = "RULE_MATCH(1,id)"
+                },
+                new ReasonTestCase { Reason = EvaluationReason.RuleMatchReason(1, "id").WithInExperiment(true).WithBigSegmentsStatus(BigSegmentsStatus.Healthy),
+                    JsonString = @"{""kind"":""RULE_MATCH"",""ruleIndex"":1,""ruleId"":""id"",""inExperiment"":true,""bigSegmentsStatus"":""HEALTHY""}",
                     ExpectedShortString = "RULE_MATCH(1,id)"
                 },
                 new ReasonTestCase { Reason = EvaluationReason.PrerequisiteFailedReason("key"),
@@ -115,6 +131,12 @@ namespace LaunchDarkly.Sdk
                 () => EvaluationReason.RuleMatchReason(1, "rule2"));
             VerifyEqualityAndHashCode(() => EvaluationReason.RuleMatchReason(0, "rule1"),
                 () => EvaluationReason.RuleMatchReason(0, "rule1").WithBigSegmentsStatus(BigSegmentsStatus.Stale));
+            VerifyEqualityAndHashCode(() => EvaluationReason.FallthroughReason,
+                () => EvaluationReason.FallthroughReason.WithInExperiment(true));
+            VerifyEqualityAndHashCode(() => EvaluationReason.RuleMatchReason(0, "rule1"),
+                () => EvaluationReason.RuleMatchReason(1, "rule2"));
+            VerifyEqualityAndHashCode(() => EvaluationReason.RuleMatchReason(0, "rule1"),
+                () => EvaluationReason.RuleMatchReason(0, "rule1").WithInExperiment(true));
             VerifyEqualityAndHashCode(() => EvaluationReason.PrerequisiteFailedReason("a"),
                 () => EvaluationReason.PrerequisiteFailedReason("b"));
             VerifyEqualityAndHashCode(() => EvaluationReason.ErrorReason(EvaluationErrorKind.FlagNotFound),
