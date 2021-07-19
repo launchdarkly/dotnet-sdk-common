@@ -2,6 +2,10 @@
 
 All notable changes to `LaunchDarkly.CommonSdk` will be documented in this file. For full release notes for the projects that depend on this project, see their respective changelogs. This file describes changes only to the common code. This project adheres to [Semantic Versioning](http://semver.org).
 
+## [5.2.0] - 2021-07-19
+### Added:
+- In `EvaluationReason`, added optional status information related to the new big segments feature.
+
 ## [5.1.0] - 2021-06-17
 ### Added:
 - The SDK now supports the ability to control the proportion of traffic allocation to an experiment. This works in conjunction with a new platform feature now available to early access customers.
