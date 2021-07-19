@@ -70,11 +70,11 @@ namespace LaunchDarkly.Sdk
     public struct EvaluationReason : IJsonSerializable
     {
         private static readonly EvaluationReason _offInstance =
-            new EvaluationReason(EvaluationReasonKind.Off, null, null, null, null, false);
+            new EvaluationReason(EvaluationReasonKind.Off, null, null, null, null, false, null);
         private static readonly EvaluationReason _fallthroughInstance =
-            new EvaluationReason(EvaluationReasonKind.Fallthrough, null, null, null, null, false);
+            new EvaluationReason(EvaluationReasonKind.Fallthrough, null, null, null, null, false, null);
         private static readonly EvaluationReason _targetMatchInstance =
-            new EvaluationReason(EvaluationReasonKind.TargetMatch, null, null, null, null, false);
+            new EvaluationReason(EvaluationReasonKind.TargetMatch, null, null, null, null, false, null);
 
         private readonly EvaluationReasonKind _kind;
         private readonly int? _ruleIndex;
@@ -82,6 +82,7 @@ namespace LaunchDarkly.Sdk
         private readonly string _prerequisiteKey;
         private readonly EvaluationErrorKind? _errorKind;
         private readonly bool _inExperiment;
+        private readonly BigSegmentsStatus? _bigSegmentsStatus;
 
         /// <summary>
         /// An enum indicating the general category of the reason.
@@ -119,13 +120,24 @@ namespace LaunchDarkly.Sdk
         /// </remarks>
         public bool InExperiment => _inExperiment;
 
+        /// <summary>
+        /// Describes the validity of big segment information, if and only if the flag evaluation required querying
+        /// at least one big segment. Otherwise it returns <see langword="null"/>.
+        /// </summary>
+        /// <remarks>
+        /// "Big segments" are a specific kind of user segments. For more information, read the LaunchDarkly
+        /// documentation about user segments: https://docs.launchdarkly.com/home/users
+        /// </remarks>
+        public BigSegmentsStatus? BigSegmentsStatus => _bigSegmentsStatus;
+
         internal EvaluationReason(
             EvaluationReasonKind kind,
             int? ruleIndex,
             string ruleId,
             string prereqKey,
             EvaluationErrorKind? errorKind,
-            bool inExperiment
+            bool inExperiment,
+            BigSegmentsStatus? bigSegmentsStatus
             )
         {
             _kind = kind;
@@ -134,8 +146,9 @@ namespace LaunchDarkly.Sdk
             _prerequisiteKey = prereqKey;
             _errorKind = errorKind;
             _inExperiment = inExperiment;
+            _bigSegmentsStatus = bigSegmentsStatus;
         }
-        
+
         /// <summary>
         /// Returns an EvaluationReason of the kind <see cref="EvaluationReasonKind.Off"/>.
         /// </summary>
@@ -158,7 +171,7 @@ namespace LaunchDarkly.Sdk
         /// <param name="ruleId">the unique rule ID</param>
         /// <returns>a reason descriptor</returns>
         public static EvaluationReason RuleMatchReason(int ruleIndex, string ruleId) =>
-            new EvaluationReason(EvaluationReasonKind.RuleMatch, ruleIndex, ruleId, null, null, false);
+            new EvaluationReason(EvaluationReasonKind.RuleMatch, ruleIndex, ruleId, null, null, false, null);
 
         /// <summary>
         /// Returns an EvaluationReason of the kind <see cref="EvaluationReasonKind.PrerequisiteFailed"/>.
@@ -166,15 +179,24 @@ namespace LaunchDarkly.Sdk
         /// <param name="key">the key of the prerequisite flag</param>
         /// <returns>a reason descriptor</returns>
         public static EvaluationReason PrerequisiteFailedReason(string key) =>
-            new EvaluationReason(EvaluationReasonKind.PrerequisiteFailed, null, null, key, null, false);
+            new EvaluationReason(EvaluationReasonKind.PrerequisiteFailed, null, null, key, null, false, null);
 
         /// <summary>
         /// Returns an EvaluationReason of the kind <see cref="EvaluationReasonKind.Error"/>.
         /// </summary>
         /// <param name="errorKind"></param>
-        /// <returns></returns>
+        /// <returns>a reason descriptor</returns>
         public static EvaluationReason ErrorReason(EvaluationErrorKind errorKind) =>
-            new EvaluationReason(EvaluationReasonKind.Error, null, null, null, errorKind, false);
+            new EvaluationReason(EvaluationReasonKind.Error, null, null, null, errorKind, false, null);
+
+        /// <summary>
+        /// Returns a copy of this EvaluationReason with a specific <see cref="BigSegmentsStatus"/> value added.
+        /// </summary>
+        /// <param name="bigSegmentsStatus">the new property value</param>
+        /// <returns>a reason descriptor</returns>
+        public EvaluationReason WithBigSegmentsStatus(BigSegmentsStatus? bigSegmentsStatus) =>
+            new EvaluationReason(_kind, _ruleIndex, _ruleId, _prerequisiteKey, _errorKind,
+                _inExperiment, bigSegmentsStatus);
 
         /// <summary>
         /// Returns a new instance with the <see cref="InExperiment"/> property set to the specified
@@ -192,7 +214,7 @@ namespace LaunchDarkly.Sdk
             {
                 case EvaluationReasonKind.Fallthrough:
                 case EvaluationReasonKind.RuleMatch:
-                    return new EvaluationReason(_kind, _ruleIndex, _ruleId, _prerequisiteKey, _errorKind, inExperiment);
+                    return new EvaluationReason(_kind, _ruleIndex, _ruleId, _prerequisiteKey, _errorKind, inExperiment, _bigSegmentsStatus);
                 default:
                     return this;
             }
@@ -203,12 +225,12 @@ namespace LaunchDarkly.Sdk
             obj is EvaluationReason o &&
                 _kind == o._kind && _ruleId == o._ruleId && _ruleIndex == o._ruleIndex &&
                     _prerequisiteKey == o._prerequisiteKey && _errorKind == o._errorKind &&
-                    _inExperiment == o._inExperiment;
+                    _inExperiment == o._inExperiment && _bigSegmentsStatus == o._bigSegmentsStatus;
 
         /// <inheritdoc/>
         public override int GetHashCode() =>
             new HashCodeBuilder().With(_kind).With(_ruleIndex).With(_ruleId).With(_prerequisiteKey)
-                .With(_errorKind).With(_inExperiment).Value;
+                .With(_errorKind).With(_inExperiment).With(_bigSegmentsStatus).Value;
 
         /// <inheritdoc/>
         public override string ToString()
@@ -311,5 +333,36 @@ namespace LaunchDarkly.Sdk
         /// Indicates that an unexpected exception stopped flag evaluation; check the log for details.
         /// </summary>
         Exception
+    }
+
+    /// <summary>
+    /// Defines the possible values of <see cref="EvaluationReason.BigSegmentsStatus"/>.
+    /// </summary>
+    [JsonStreamConverter(typeof(LdJsonConverters.BigSegmentsStatusConverter))]
+    public enum BigSegmentsStatus
+    {
+        /// <summary>
+        /// Indicates that the big segment query involved in the flag evaluation was successful, and
+        /// that the segment state is considered up to date.
+        /// </summary>
+        Healthy,
+
+        /// <summary>
+        /// Indicates that the big segment query involved in the flag evaluation was successful, but
+        /// that the segment state may not be up to date.
+        /// </summary>
+        Stale,
+
+        /// <summary>
+        /// Indicates that big segments could not be queried for the flag evaluation because the SDK
+        /// configuration did not include a big segment store.
+        /// </summary>
+        NotConfigured,
+
+        /// <summary>
+        /// Indicates that the big segment query involved in the flag evaluation failed, for instance
+        /// due to a database error.
+        /// </summary>
+        StoreError
     }
 }

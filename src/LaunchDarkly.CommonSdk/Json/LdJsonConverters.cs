@@ -60,6 +60,7 @@ namespace LaunchDarkly.Sdk.Json
                     string prerequisiteKey = null;
                     EvaluationErrorKind? errorKind = null;
                     bool inExperiment = false;
+                    BigSegmentsStatus? bigSegmentsStatus = null;
 
                     while (obj.Next(ref reader))
                     {
@@ -102,28 +103,52 @@ namespace LaunchDarkly.Sdk.Json
                         {
                             inExperiment = reader.Bool();
                         }
+                        else if (name == "bigSegmentsStatus")
+                        {
+                            try
+                            {
+                                bigSegmentsStatus = BigSegmentsStatusConverter.FromIdentifier(reader.String());
+                            }
+                            catch (ArgumentException)
+                            {
+                                throw new SyntaxException("unsupported value for \"bigSegmentsStatus\"", 0);
+                            }
+                        }
                     }
 
+                    EvaluationReason reason;
                     switch (kind) // it's guaranteed to have a value, otherwise there'd be a required property error above
                     {
                         case EvaluationReasonKind.Off:
-                            return EvaluationReason.OffReason;
+                            reason = EvaluationReason.OffReason;
+                            break;
                         case EvaluationReasonKind.Fallthrough:
-                            return inExperiment ?
-                                EvaluationReason.FallthroughReason.WithInExperiment(true) :
-                                EvaluationReason.FallthroughReason;
+                            reason = EvaluationReason.FallthroughReason;
+                            break;
                         case EvaluationReasonKind.TargetMatch:
-                            return EvaluationReason.TargetMatchReason;
+                            reason = EvaluationReason.TargetMatchReason;
+                            break;
                         case EvaluationReasonKind.RuleMatch:
-                            var ruleMatch = EvaluationReason.RuleMatchReason(ruleIndex ?? 0, ruleId);
-                            return inExperiment ? ruleMatch.WithInExperiment(true) : ruleMatch;
+                            reason = EvaluationReason.RuleMatchReason(ruleIndex ?? 0, ruleId);
+                            break;
                         case EvaluationReasonKind.PrerequisiteFailed:
-                            return EvaluationReason.PrerequisiteFailedReason(prerequisiteKey);
+                            reason = EvaluationReason.PrerequisiteFailedReason(prerequisiteKey);
+                            break;
                         case EvaluationReasonKind.Error:
-                            return EvaluationReason.ErrorReason(errorKind ?? EvaluationErrorKind.Exception);
+                            reason = EvaluationReason.ErrorReason(errorKind ?? EvaluationErrorKind.Exception);
+                            break;
                         default:
                             return null;
                     }
+                    if (inExperiment)
+                    {
+                        reason = reason.WithInExperiment(true);
+                    }
+                    if (bigSegmentsStatus.HasValue)
+                    {
+                        reason = reason.WithBigSegmentsStatus(bigSegmentsStatus);
+                    }
+                    return reason;
                 }
                 catch (Exception e)
                 {
@@ -155,7 +180,55 @@ namespace LaunchDarkly.Sdk.Json
                 {
                     obj.Name("inExperiment").Bool(true); // omit property if false
                 }
+                if (value.BigSegmentsStatus.HasValue)
+                {
+                    obj.Name("bigSegmentsStatus").String(
+                        BigSegmentsStatusConverter.ToIdentifier(value.BigSegmentsStatus.Value));
+                }
                 obj.End();
+            }
+        }
+
+        public sealed class BigSegmentsStatusConverter : IJsonStreamConverter
+        {
+            public object ReadJson(ref JReader reader) => ReadJsonValue(ref reader);
+
+            public void WriteJson(object instance, IValueWriter writer) =>
+                WriteJsonValue((EvaluationErrorKind)instance, writer);
+
+            public static BigSegmentsStatus ReadJsonValue(ref JReader reader) =>
+                FromIdentifier(reader.String());
+
+            public static void WriteJsonValue(EvaluationErrorKind instance, IValueWriter writer) =>
+                writer.String(ToIdentifier((BigSegmentsStatus)instance));
+
+            internal static BigSegmentsStatus FromIdentifier(string value)
+            {
+                foreach (BigSegmentsStatus k in Enum.GetValues(typeof(BigSegmentsStatus)))
+                {
+                    if (ToIdentifier(k) == value)
+                    {
+                        return k;
+                    }
+                }
+                throw new ArgumentException("invalid BigSegmentsStatus");
+            }
+
+            internal static string ToIdentifier(BigSegmentsStatus value)
+            {
+                switch (value)
+                {
+                    case BigSegmentsStatus.Healthy:
+                        return "HEALTHY";
+                    case BigSegmentsStatus.Stale:
+                        return "STALE";
+                    case BigSegmentsStatus.NotConfigured:
+                        return "NOT_CONFIGURED";
+                    case BigSegmentsStatus.StoreError:
+                        return "STORE_ERROR";
+                    default:
+                        throw new ArgumentException();
+                }
             }
         }
 
