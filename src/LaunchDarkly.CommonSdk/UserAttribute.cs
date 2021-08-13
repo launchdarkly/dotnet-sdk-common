@@ -15,9 +15,9 @@ namespace LaunchDarkly.Sdk
     /// </para>
     /// <para>
     /// For a fuller description of user attributes and how they can be referenced in feature
-    /// flag rules, see the reference guides on
-    /// <a href="https://docs.launchdarkly.com/home/managing-users/user-attributes">Setting user attributes</a>
-    /// and <a href="https://docs.launchdarkly.com/home/managing-flags/targeting-users">Targeting users</a>.
+    /// flag rules, read the reference guides on
+    /// <a href="https://docs.launchdarkly.com/home/users/attributes">Setting user attributes</a>
+    /// and <a href="https://docs.launchdarkly.com/home/flags/targeting-users">Targeting users</a>.
     /// </para>
     /// </remarks>
     /// <seealso cref="User"/>
