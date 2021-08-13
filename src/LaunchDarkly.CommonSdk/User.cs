@@ -64,7 +64,7 @@ namespace LaunchDarkly.Sdk
 
         /// <summary>
         /// The secondary key for a user, which can be used in
-        /// <see href="https://docs.launchdarkly.com/docs/targeting-users#section-targeting-rules-based-on-user-attributes">feature flag targeting</see>.
+        /// <see href="https://docs.launchdarkly.com/home/flags/targeting-users#targeting-rules-based-on-user-attributes">feature flag targeting</see>.
         /// </summary>
         /// <remarks>
         /// The use of the secondary key in targeting is as follows: if you have chosen to bucket users by a
@@ -186,7 +186,7 @@ namespace LaunchDarkly.Sdk
             _custom = ImmutableDictionary.Create<string, LdValue>();
             _privateAttributeNames = ImmutableHashSet.Create<string>();
         }
-        
+
         /// <summary>
         /// Creates a user by specifying all properties.
         /// </summary>

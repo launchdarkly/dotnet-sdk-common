@@ -44,7 +44,7 @@ namespace LaunchDarkly.Sdk
         /// Sets the secondary key for a user.
         /// </summary>
         /// <remarks>
-        /// This affects <see href="https://docs.launchdarkly.com/docs/targeting-users#section-targeting-rules-based-on-user-attributes">feature flag targeting</see>
+        /// This affects <see href="https://docs.launchdarkly.com/home/flags/targeting-users#targeting-rules-based-on-user-attributes">feature flag targeting</see>
         /// as follows: if you have chosen to bucket users by a specific attribute, the secondary key (if set)
         /// is used to further distinguish between users who are otherwise identical according to that attribute.
         /// </remarks>
@@ -134,13 +134,13 @@ namespace LaunchDarkly.Sdk
         /// <param name="anonymous">true if the user is anonymous</param>
         /// <returns>the same builder</returns>
         IUserBuilder AnonymousOptional(bool? anonymous);
-        
+
         /// <summary>
         /// Adds a custom attribute whose value is a JSON value of any kind.
         /// </summary>
         /// <remarks>
         /// <para>
-        /// When set to one of the <a href="http://docs.launchdarkly.com/docs/targeting-users#targeting-based-on-user-attributes">built-in
+        /// When set to one of the <a href="https://docs.launchdarkly.com/home/flags/targeting-users#targeting-rules-based-on-user-attributes">built-in
         /// user attribute keys</a>, this custom attribute will be ignored.
         /// </para>
         /// </remarks>
@@ -159,7 +159,7 @@ namespace LaunchDarkly.Sdk
         /// Adds a custom attribute with a boolean value.
         /// </summary>
         /// <remarks>
-        /// When set to one of the <see href="http://docs.launchdarkly.com/docs/targeting-users#targeting-based-on-user-attributes">built-in
+        /// When set to one of the <see href="https://docs.launchdarkly.com/home/flags/targeting-users#targeting-rules-based-on-user-attributes">built-in
         /// user attribute keys</see>, this custom attribute will be ignored.
         /// </remarks>
         /// <param name="name">the key for the custom attribute</param>
@@ -171,7 +171,7 @@ namespace LaunchDarkly.Sdk
         /// Adds a custom attribute with a string value.
         /// </summary>
         /// <remarks>
-        /// When set to one of the <see href="http://docs.launchdarkly.com/docs/targeting-users#targeting-based-on-user-attributes">built-in
+        /// When set to one of the <see href="https://docs.launchdarkly.com/home/flags/targeting-users#targeting-rules-based-on-user-attributes">built-in
         /// user attribute keys</see>, this custom attribute will be ignored.
         /// </remarks>
         /// <param name="name">the key for the custom attribute</param>
@@ -183,7 +183,7 @@ namespace LaunchDarkly.Sdk
         /// Adds a custom attribute with an integer value.
         /// </summary>
         /// <remarks>
-        /// When set to one of the <see href="http://docs.launchdarkly.com/docs/targeting-users#targeting-based-on-user-attributes">built-in
+        /// When set to one of the <see href="https://docs.launchdarkly.com/home/flags/targeting-users#targeting-rules-based-on-user-attributes">built-in
         /// user attribute keys</see>, this custom attribute will be ignored.
         /// </remarks>
         /// <param name="name">the key for the custom attribute</param>
@@ -195,7 +195,7 @@ namespace LaunchDarkly.Sdk
         /// Adds a custom attribute with a floating-point value.
         /// </summary>
         /// <remarks>
-        /// When set to one of the <see href="http://docs.launchdarkly.com/docs/targeting-users#targeting-based-on-user-attributes">built-in
+        /// When set to one of the <see href="https://docs.launchdarkly.com/home/flags/targeting-users#targeting-rules-based-on-user-attributes">built-in
         /// user attribute keys</see>, this custom attribute will be ignored.
         /// </remarks>
         /// <param name="name">the key for the custom attribute</param>
@@ -317,43 +317,43 @@ namespace LaunchDarkly.Sdk
             _ipAddress = ipAddress;
             return CanMakeAttributePrivate("ip");
         }
-        
+
         public IUserBuilderCanMakeAttributePrivate Country(string country)
         {
             _country = country;
             return CanMakeAttributePrivate("country");
         }
-        
+
         public IUserBuilderCanMakeAttributePrivate FirstName(string firstName)
         {
             _firstName = firstName;
             return CanMakeAttributePrivate("firstName");
         }
-        
+
         public IUserBuilderCanMakeAttributePrivate LastName(string lastName)
         {
             _lastName = lastName;
             return CanMakeAttributePrivate("lastName");
         }
-        
+
         public IUserBuilderCanMakeAttributePrivate Name(string name)
         {
             _name = name;
             return CanMakeAttributePrivate("name");
         }
-        
+
         public IUserBuilderCanMakeAttributePrivate Avatar(string avatar)
         {
             _avatar = avatar;
             return CanMakeAttributePrivate("avatar");
         }
-        
+
         public IUserBuilderCanMakeAttributePrivate Email(string email)
         {
             _email = email;
             return CanMakeAttributePrivate("email");
         }
-        
+
         public IUserBuilder Anonymous(bool anonymous)
         {
             _anonymous = anonymous;
@@ -375,22 +375,22 @@ namespace LaunchDarkly.Sdk
             _custom[name] = value;
             return CanMakeAttributePrivate(name);
         }
-        
+
         public IUserBuilderCanMakeAttributePrivate Custom(string name, bool value)
         {
             return Custom(name, LdValue.Of(value));
         }
-        
+
         public IUserBuilderCanMakeAttributePrivate Custom(string name, string value)
         {
             return Custom(name, LdValue.Of(value));
         }
-        
+
         public IUserBuilderCanMakeAttributePrivate Custom(string name, int value)
         {
             return Custom(name, LdValue.Of(value));
         }
-        
+
         public IUserBuilderCanMakeAttributePrivate Custom(string name, float value)
         {
             return Custom(name, LdValue.Of(value));
@@ -492,7 +492,7 @@ namespace LaunchDarkly.Sdk
         {
             return _builder.Custom(name, value);
         }
-        
+
         public IUserBuilderCanMakeAttributePrivate Custom(string name, bool value)
         {
             return _builder.Custom(name, value);
