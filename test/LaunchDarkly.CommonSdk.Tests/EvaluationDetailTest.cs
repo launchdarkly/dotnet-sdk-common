@@ -1,6 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using LaunchDarkly.Sdk.Json;
+using LaunchDarkly.TestHelpers;
 using Xunit;
 
 namespace LaunchDarkly.Sdk
@@ -124,31 +124,20 @@ namespace LaunchDarkly.Sdk
         [Fact]
         public void TestEqualityAndHashCode()
         {
-            // For parameterless (singleton) reasons, object.Equals and object.HashCode() already do what
-            // we want. Test our implementations for the parameterized reasons. The two parameters for
-            // each call should construct values that are *not* equal to each other.
-            VerifyEqualityAndHashCode(() => EvaluationReason.RuleMatchReason(0, "rule1"),
-                () => EvaluationReason.RuleMatchReason(1, "rule2"));
-            VerifyEqualityAndHashCode(() => EvaluationReason.RuleMatchReason(0, "rule1"),
-                () => EvaluationReason.RuleMatchReason(0, "rule1").WithBigSegmentsStatus(BigSegmentsStatus.Stale));
-            VerifyEqualityAndHashCode(() => EvaluationReason.FallthroughReason,
-                () => EvaluationReason.FallthroughReason.WithInExperiment(true));
-            VerifyEqualityAndHashCode(() => EvaluationReason.RuleMatchReason(0, "rule1"),
-                () => EvaluationReason.RuleMatchReason(1, "rule2"));
-            VerifyEqualityAndHashCode(() => EvaluationReason.RuleMatchReason(0, "rule1"),
-                () => EvaluationReason.RuleMatchReason(0, "rule1").WithInExperiment(true));
-            VerifyEqualityAndHashCode(() => EvaluationReason.PrerequisiteFailedReason("a"),
-                () => EvaluationReason.PrerequisiteFailedReason("b"));
-            VerifyEqualityAndHashCode(() => EvaluationReason.ErrorReason(EvaluationErrorKind.FlagNotFound),
-                () => EvaluationReason.ErrorReason(EvaluationErrorKind.Exception));
-        }
-
-        private void VerifyEqualityAndHashCode(Func<EvaluationReason> createA, Func<EvaluationReason> createB)
-        {
-            Assert.Equal(createA(), createA());
-            Assert.NotEqual(createA(), createB());
-            Assert.Equal(createA().GetHashCode(), createA().GetHashCode());
-            Assert.NotEqual(createA().GetHashCode(), createB().GetHashCode());
+            TypeBehavior.CheckEqualsAndHashCode(
+                // each value in this list should be unequal to all the other values and equal to itself
+                () => EvaluationReason.OffReason,
+                () => EvaluationReason.FallthroughReason,
+                () => EvaluationReason.FallthroughReason.WithInExperiment(true),
+                () => EvaluationReason.RuleMatchReason(0, "rule1"),
+                () => EvaluationReason.RuleMatchReason(0, "rule1").WithInExperiment(true),
+                () => EvaluationReason.RuleMatchReason(0, "rule1").WithBigSegmentsStatus(BigSegmentsStatus.Stale),
+                () => EvaluationReason.RuleMatchReason(1, "rule2"),
+                () => EvaluationReason.PrerequisiteFailedReason("a"),
+                () => EvaluationReason.PrerequisiteFailedReason("b"),
+                () => EvaluationReason.ErrorReason(EvaluationErrorKind.FlagNotFound),
+                () => EvaluationReason.ErrorReason(EvaluationErrorKind.Exception)
+                );
         }
 
         private void AssertJsonEqual(string expectedString, string actualString)
