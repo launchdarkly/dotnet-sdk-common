@@ -28,3 +28,5 @@ jobs:
 # in the API docs for the actual SDKs. However, we do still do a docs build during
 # the release, so we can verify that the XML comments are well-formed, and also so
 # can preview the docs in a dry run.
+documentation:
+  title: .NET SDK Common Types
