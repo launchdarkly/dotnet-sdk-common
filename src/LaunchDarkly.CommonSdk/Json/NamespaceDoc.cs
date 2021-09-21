@@ -21,15 +21,15 @@ namespace LaunchDarkly.Sdk.Json
     /// three ways to convert any such type to or from JSON:
     /// </para>
     /// <list type="bullet">
-    /// <item> On platforms that support the <c>System.Text.Json</c> API, these types already
-    /// have the necessary attributes to behave correctly with that API. </item>
-    /// <item> You may use the <see cref="LdJsonSerialization.SerializeObject{T}(T)"/> and
+    /// <item><description> On platforms that support the <c>System.Text.Json</c> API, these types already
+    /// have the necessary attributes to behave correctly with that API. </description></item>
+    /// <item><description> You may use the <see cref="LdJsonSerialization.SerializeObject{T}(T)"/> and
     /// <see cref="LdJsonSerialization.DeserializeObject{T}(string)"/> methods in
-    /// <see cref="LdJsonSerialization"/> to convert to or from a JSON-encoded string. </item>
-    /// <item> You may use the lower-level <c>LaunchDarkly.JsonStream</c> API
+    /// <see cref="LdJsonSerialization"/> to convert to or from a JSON-encoded string. </description></item>
+    /// <item><description> You may use the lower-level <c>LaunchDarkly.JsonStream</c> API
     /// (https://github.com/launchdarkly/dotnet-jsonstream) in conjunction with the converters
     /// in <see cref="LdJsonConverters"/>.
-    /// </item>
+    /// </description></item>
     /// </list>
     /// <para>
     /// Earlier versions of the LaunchDarkly SDKs used <c>Newtonsoft.Json</c> for JSON
