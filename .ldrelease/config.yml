@@ -1,8 +1,10 @@
+version: 2
+
 repo:
   public: dotnet-sdk-common
   private: dotnet-sdk-common-private
 
-releasableBranches:
+branches:
   - name: master
     description: 5.x - for Xamarin 2.0+ and .NET 6.0+
   - name: 4.x
@@ -14,13 +16,17 @@ publications:
   - url: https://nuget.org/packages/LaunchDarkly.CommonSdk
     description: NuGet
 
-circleci:
-  windows:
-    context: org-global
-    LD_RELEASE_TEST_TARGET_FRAMEWORK: net452
+jobs:
+  - docker: {}
+    template:
+      name: dotnet-linux
+    env:
+      LD_RELEASE_TEST_TARGET_FRAMEWORK: net50
+      LD_RELEASE_DOCS_TARGET_FRAMEWORK: netstandard2.0
 
-template:
-  name: dotnet-windows
-
-# Note that we don't generate HTML docs for this project, because it will be included
-# in the API docs for the actual SDKs.
+# Note that we don't publish HTML docs for this project, because it will be included
+# in the API docs for the actual SDKs. However, we do still do a docs build during
+# the release, so we can verify that the XML comments are well-formed, and also so
+# can preview the docs in a dry run.
+documentation:
+  title: .NET SDK Common Types

@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using LaunchDarkly.JsonStream;
 using LaunchDarkly.Sdk.Json;
+using LaunchDarkly.TestHelpers;
 using Xunit;
 
 namespace LaunchDarkly.Sdk
@@ -381,86 +381,54 @@ namespace LaunchDarkly.Sdk
         [Fact]
         public void TestEqualsAndHashCodeForPrimitives()
         {
-            AssertValueAndHashEqual(LdValue.Null, LdValue.Null);
-            AssertValueAndHashEqual(LdValue.Of(true), LdValue.Of(true));
-            AssertValueAndHashNotEqual(LdValue.Of(true), LdValue.Of(false));
-            AssertValueAndHashEqual(LdValue.Of(1), LdValue.Of(1));
-            AssertValueAndHashEqual(LdValue.Of(1), LdValue.Of(1.0f));
-            AssertValueAndHashNotEqual(LdValue.Of(1), LdValue.Of(2));
-            AssertValueAndHashEqual(LdValue.Of("a"), LdValue.Of("a"));
-            AssertValueAndHashNotEqual(LdValue.Of("a"), LdValue.Of("b"));
-            Assert.NotEqual(LdValue.Of(false), LdValue.Of(0));
-        }
-
-        private void AssertValueAndHashEqual(LdValue a, LdValue b)
-        {
-            Assert.Equal(a, b);
-            Assert.Equal(a.GetHashCode(), b.GetHashCode());
-            Assert.True(a == b);
-            Assert.False(a != b);
-        }
-
-        private void AssertValueAndHashNotEqual(LdValue a, LdValue b)
-        {
-            Assert.NotEqual(a, b);
-            Assert.NotEqual(a.GetHashCode(), b.GetHashCode());
-            Assert.False(a == b);
-            Assert.True(a != b);
+            TypeBehavior.CheckEqualsAndHashCode(
+                // each value in this list should be unequal to all the other values and equal to itself
+                () => LdValue.Null,
+                () => LdValue.Of(true),
+                () => LdValue.Of(false),
+                () => LdValue.Of(1),
+                () => LdValue.Of(2),
+                () => LdValue.Of("a"),
+                () => LdValue.Of("b")
+                );
         }
         
         [Fact]
         public void EqualsUsesDeepEqualityForArrays()
         {
-            var a0 = LdValue.BuildArray().Add("a")
-                .Add(LdValue.BuildArray().Add("b").Add("c").Build())
-                .Build();
-            var a1 = LdValue.BuildArray().Add("a")
-                .Add(LdValue.BuildArray().Add("b").Add("c").Build())
-                .Build();
-            AssertValueAndHashEqual(a0, a1);
-
-            var a2 = LdValue.BuildArray().Add("a").Build();
-            AssertValueAndHashNotEqual(a0, a2);
-
-            var a3 = LdValue.BuildArray().Add("a").Add("b").Add("c").Build();
-            AssertValueAndHashNotEqual(a0, a3);
-
-            var a4 = LdValue.BuildArray().Add("a")
-                .Add(LdValue.BuildArray().Add("b").Add("x").Build())
-                .Build();
-            AssertValueAndHashNotEqual(a0, a4);
+            TypeBehavior.CheckEqualsAndHashCode(
+                () => LdValue.BuildArray().Add("a")
+                    .Add(LdValue.BuildArray().Add("b").Add("c").Build())
+                    .Build(),
+                () => LdValue.BuildArray().Add("a").Build(),
+                () => LdValue.BuildArray().Add("a").Add("b").Add("c").Build(),
+                () => LdValue.BuildArray().Add("a")
+                    .Add(LdValue.BuildArray().Add("b").Add("x").Build())
+                    .Build()
+                );
         }
 
         [Fact]
         public void EqualsUsesDeepEqualityForObjects()
         {
-            var o0 = LdValue.BuildObject()
-                .Add("a", "b")
-                .Add("c", LdValue.BuildObject().Add("d", "e").Build())
-                .Build();
-            var o1 = LdValue.BuildObject()
-                .Add("c", LdValue.BuildObject().Add("d", "e").Build())
-                .Add("a", "b")
-                .Build();
-            AssertValueAndHashEqual(o0, o1);
-
-            var o2 = LdValue.BuildObject()
-                .Add("a", "b")
-                .Build();
-            AssertValueAndHashNotEqual(o0, o2);
-
-            var o3 = LdValue.BuildObject()
-                .Add("a", "b")
-                .Add("c", LdValue.BuildObject().Add("d", "e").Build())
-                .Add("f", "g")
-                .Build();
-            AssertValueAndHashNotEqual(o0, o3);
-            
-            var o4 = LdValue.BuildObject()
-                .Add("a", "b")
-                .Add("c", LdValue.BuildObject().Add("d", "f").Build())
-                .Build();
-            AssertValueAndHashNotEqual(o0, o4);
+            TypeBehavior.CheckEqualsAndHashCode(
+                () => LdValue.BuildObject()
+                    .Add("a", "b")
+                    .Add("c", LdValue.BuildObject().Add("d", "e").Build())
+                    .Build(),
+                () => LdValue.BuildObject()
+                    .Add("a", "b")
+                    .Build(),
+                () => LdValue.BuildObject()
+                    .Add("a", "b")
+                    .Add("c", LdValue.BuildObject().Add("d", "e").Build())
+                    .Add("f", "g")
+                    .Build(),
+                () => LdValue.BuildObject()
+                    .Add("a", "b")
+                    .Add("c", LdValue.BuildObject().Add("d", "f").Build())
+                    .Build()
+                );
         }
 
         [Fact]

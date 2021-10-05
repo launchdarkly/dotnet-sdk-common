@@ -19,6 +19,9 @@
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
 
+    <!-- fail if XML comments are missing or invalid -->
+    <WarningsAsErrors>1570,1572,1573,1574,1580,1581,1591,1711,1712</WarningsAsErrors>
+
     <!-- ensure that dependency DLLs are copied to output folder too - this makes life easier for the packaging-test script -->
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
 
@@ -27,7 +30,7 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <PackageReference Include="System.Collections.Immutable" Version="1.5.0" />
+    <PackageReference Include="System.Collections.Immutable" Version="1.7.1" />
     <PackageReference Include="LaunchDarkly.JsonStream" Version="[1.0.2,2.0.0)" />
   </ItemGroup>
   
