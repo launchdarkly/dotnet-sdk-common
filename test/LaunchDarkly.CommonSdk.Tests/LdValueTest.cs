@@ -175,6 +175,8 @@ namespace LaunchDarkly.Sdk
         [Fact]
         public void CanGetValuesAsList()
         {
+            Assert.Equal(new LdValue[] { LdValue.Of("x"), LdValue.Of(true) },
+                LdValue.BuildArray().Add("x").Add(true).Build().List);
             Assert.Equal(new bool[] { true, false }, LdValue.Convert.Bool.ArrayFrom(new bool[] { true, false }).AsList(LdValue.Convert.Bool));
             Assert.Equal(new bool[] { true, false }, LdValue.Convert.Bool.ArrayOf(true, false).AsList(LdValue.Convert.Bool));
             Assert.Equal(new bool[] { true, false }, LdValue.BuildArray().Add(true).Add(false).Build().AsList(LdValue.Convert.Bool));
@@ -246,6 +248,8 @@ namespace LaunchDarkly.Sdk
             };
             foreach (var value in values)
             {
+                Assert.Equal(0, value.List.Count);
+
                 // use list conversion
                 var emptyList = value.AsList(LdValue.Convert.Bool);
                 Assert.Equal(0, emptyList.Count);
@@ -279,6 +283,8 @@ namespace LaunchDarkly.Sdk
         [Fact]
         public void CanGetValueAsDictionary()
         {
+            AssertDictsEqual(MakeDictionary(LdValue.Of("x"), LdValue.Of(true)),
+                LdValue.BuildObject().Add("1", "x").Add("2", true).Build().Dictionary);
             AssertDictsEqual(MakeDictionary(true, false),
                 LdValue.Convert.Bool.ObjectFrom(MakeDictionary(true, false)).AsDictionary(LdValue.Convert.Bool));
             AssertDictsEqual(MakeDictionary(true, false),
@@ -364,6 +370,8 @@ namespace LaunchDarkly.Sdk
             {
                 Assert.Equal(LdValue.Null, value.Get("1"));
 
+                Assert.Equal(0, value.Dictionary.Count);
+
                 var emptyDict = value.AsDictionary(LdValue.Convert.Bool);
                 Assert.Equal(0, emptyDict.Count);
                 Assert.False(emptyDict.ContainsKey("1"));
@@ -429,6 +437,30 @@ namespace LaunchDarkly.Sdk
                     .Add("c", LdValue.BuildObject().Add("d", "f").Build())
                     .Build()
                 );
+        }
+
+        [Fact]
+        public void ObjectBuilderAddDoesNotAllowDuplicates()
+        {
+            var builder = LdValue.BuildObject().Add("a", 1).Add("b", 2);
+            Assert.ThrowsAny<Exception>(() => builder.Add("a", 3));
+        }
+
+        [Fact]
+        public void ObjectBuilderSetAllowsDuplicates()
+        {
+            var builder = LdValue.BuildObject().Add("a", 1).Add("b", 2);
+            builder.Set("a", 3);
+            Assert.Equal(LdValue.BuildObject().Add("a", 3).Add("b", 2).Build(), builder.Build());
+        }
+
+        [Fact]
+        public void ObjectBuilderCanCopyProperties()
+        {
+            var builder = LdValue.BuildObject().Add("a", 0)
+                .Copy(LdValue.BuildObject().Add("a", 1).Add("b", 2).Build())
+                .Copy(LdValue.Of("ignore this"));
+            Assert.Equal(LdValue.BuildObject().Add("a", 1).Add("b", 2).Build(), builder.Build());
         }
 
         [Fact]
