@@ -131,10 +131,6 @@ namespace LaunchDarkly.Sdk
             _arrayValue = null;
         }
 
-        internal ImmutableList<LdValue> List => _arrayValue;
-
-        internal ImmutableDictionary<string, LdValue> Dictionary => _objectValue;
-
         #endregion
 
         #region Public factory methods
@@ -254,10 +250,8 @@ namespace LaunchDarkly.Sdk
         /// Starts building an object value.
         /// </summary>
         /// <returns>an <see cref="ObjectBuilder"/></returns>
-        public static ObjectBuilder BuildObject()
-        {
-            return new ObjectBuilder();
-        }
+        public static ObjectBuilder BuildObject() =>
+            new ObjectBuilder();
 
         /// <summary>
         /// Parses a value from a JSON-encoded string.
@@ -406,6 +400,17 @@ namespace LaunchDarkly.Sdk
         /// </para>
         /// </remarks>
         public double AsDouble => Type == LdValueType.Number ? _doubleValue : 0;
+
+        /// <summary>
+        /// Returns an immutable list of values if this value is an array; otherwise an empty list.
+        /// </summary>
+        public ImmutableList<LdValue> List => _arrayValue ?? ImmutableList<LdValue>.Empty;
+
+        /// <summary>
+        /// Returns an immutable dictionary of values if this value is an object; otherwise an empty dictionary.
+        /// </summary>
+        public ImmutableDictionary<string, LdValue> Dictionary => _objectValue ??
+            ImmutableDictionary<string, LdValue>.Empty;
 
         /// <summary>
         /// The number of values if this is an array or object; otherwise zero.
@@ -730,11 +735,8 @@ namespace LaunchDarkly.Sdk
             /// <param name="key">the key to add</param>
             /// <param name="value">the value to add</param>
             /// <returns>the same builder</returns>
-            public ObjectBuilder Add(string key, bool value)
-            {
-                _builder.Add(key, LdValue.Of(value));
-                return this;
-            }
+            public ObjectBuilder Add(string key, bool value) =>
+                Add(key, LdValue.Of(value));
 
             /// <summary>
             /// Adds a key-value pair to the object being built.
@@ -742,11 +744,8 @@ namespace LaunchDarkly.Sdk
             /// <param name="key">the key to add</param>
             /// <param name="value">the value to add</param>
             /// <returns>the same builder</returns>
-            public ObjectBuilder Add(string key, long value)
-            {
-                _builder.Add(key, LdValue.Of(value));
-                return this;
-            }
+            public ObjectBuilder Add(string key, long value) =>
+                Add(key, LdValue.Of(value));
 
             /// <summary>
             /// Adds a key-value pair to the object being built.
@@ -754,9 +753,70 @@ namespace LaunchDarkly.Sdk
             /// <param name="key">the key to add</param>
             /// <param name="value">the value to add</param>
             /// <returns>the same builder</returns>
-            public ObjectBuilder Add(string key, double value)
+            public ObjectBuilder Add(string key, double value) =>
+                Add(key, LdValue.Of(value));
+
+            /// <summary>
+            /// Adds a key-value pair to the object being built or replaces an existing key.
+            /// </summary>
+            /// <param name="key">the key</param>
+            /// <param name="value">the value to add or replace</param>
+            /// <returns>the same builder</returns>
+            public ObjectBuilder Set(string key, LdValue value)
             {
-                _builder.Add(key, LdValue.Of(value));
+                _builder.Remove(key);
+                _builder.Add(key, value);
+                return this;
+            }
+
+            /// <summary>
+            /// Adds a key-value pair to the object being built or replaces an existing key.
+            /// </summary>
+            /// <param name="key">the key</param>
+            /// <param name="value">the value to add or replace</param>
+            /// <returns>the same builder</returns>
+            public ObjectBuilder Set(string key, bool value) =>
+                Set(key, LdValue.Of(value));
+
+            /// <summary>
+            /// Adds a key-value pair to the object being built or replaces an existing key.
+            /// </summary>
+            /// <param name="key">the key</param>
+            /// <param name="value">the value to add or replace</param>
+            /// <returns>the same builder</returns>
+            public ObjectBuilder Set(string key, long value) =>
+                Set(key, LdValue.Of(value));
+
+            /// <summary>
+            /// Adds a key-value pair to the object being built or replaces an existing key.
+            /// </summary>
+            /// <param name="key">the key</param>
+            /// <param name="value">the value to add or replace</param>
+            /// <returns>the same builder</returns>
+            public ObjectBuilder Set(string key, double value) =>
+                Set(key, LdValue.Of(value));
+
+            /// <summary>
+            /// Adds a key-value pair to the object being built or replaces an existing key.
+            /// </summary>
+            /// <param name="key">the key</param>
+            /// <param name="value">the value to add or replace</param>
+            /// <returns>the same builder</returns>
+            public ObjectBuilder Set(string key, string value) =>
+                Set(key, LdValue.Of(value));
+
+            /// <summary>
+            /// Copies existing property keys and values from an existing JSON object; does
+            /// nothing if the value is not an object.
+            /// </summary>
+            /// <param name="fromObject">a JSON value</param>
+            /// <returns>the same builder</returns>
+            public ObjectBuilder Copy(LdValue fromObject)
+            {
+                foreach (var kv in fromObject.AsDictionary(Convert.Json))
+                {
+                    Set(kv.Key, kv.Value);
+                }
                 return this;
             }
 
