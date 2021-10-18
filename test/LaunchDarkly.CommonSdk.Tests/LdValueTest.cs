@@ -455,6 +455,15 @@ namespace LaunchDarkly.Sdk
         }
 
         [Fact]
+        public void ObjectBuilderRemove()
+        {
+            var builder = LdValue.BuildObject().Add("a", 1).Add("b", 2);
+            builder.Remove("a");
+            builder.Remove("c"); // nonexistent key is no-op
+            Assert.Equal(LdValue.BuildObject().Add("b", 2).Build(), builder.Build());
+        }
+
+        [Fact]
         public void ObjectBuilderCanCopyProperties()
         {
             var builder = LdValue.BuildObject().Add("a", 0)
