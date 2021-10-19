@@ -757,17 +757,24 @@ namespace LaunchDarkly.Sdk
                 Add(key, LdValue.Of(value));
 
             /// <summary>
+            /// Removes a key from the object, or does nothing if no such key exists.
+            /// </summary>
+            /// <param name="key">the key</param>
+            /// <returns>the same builder</returns>
+            public ObjectBuilder Remove(string key)
+            {
+                _builder.Remove(key);
+                return this;
+            }
+
+            /// <summary>
             /// Adds a key-value pair to the object being built or replaces an existing key.
             /// </summary>
             /// <param name="key">the key</param>
             /// <param name="value">the value to add or replace</param>
             /// <returns>the same builder</returns>
-            public ObjectBuilder Set(string key, LdValue value)
-            {
-                _builder.Remove(key);
-                _builder.Add(key, value);
-                return this;
-            }
+            public ObjectBuilder Set(string key, LdValue value) =>
+                Remove(key).Add(key, value);
 
             /// <summary>
             /// Adds a key-value pair to the object being built or replaces an existing key.
