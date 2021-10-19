@@ -192,6 +192,18 @@ namespace LaunchDarkly.Sdk
         IUserBuilderCanMakeAttributePrivate Custom(string name, int value);
 
         /// <summary>
+        /// Adds a custom attribute with a <see langword="long"/> value.
+        /// </summary>
+        /// <remarks>
+        /// When set to one of the <see href="https://docs.launchdarkly.com/home/flags/targeting-users#targeting-rules-based-on-user-attributes">built-in
+        /// user attribute keys</see>, this custom attribute will be ignored.
+        /// </remarks>
+        /// <param name="name">the key for the custom attribute</param>
+        /// <param name="value">the value for the custom attribute</param>
+        /// <returns>the same builder</returns>
+        IUserBuilderCanMakeAttributePrivate Custom( string name, long value );
+
+        /// <summary>
         /// Adds a custom attribute with a floating-point value.
         /// </summary>
         /// <remarks>
@@ -202,6 +214,18 @@ namespace LaunchDarkly.Sdk
         /// <param name="value">the value for the custom attribute</param>
         /// <returns>the same builder</returns>
         IUserBuilderCanMakeAttributePrivate Custom(string name, float value);
+
+        /// <summary>
+        /// Adds a custom attribute with a <see langword="double"/> value.
+        /// </summary>
+        /// <remarks>
+        /// When set to one of the <see href="https://docs.launchdarkly.com/home/flags/targeting-users#targeting-rules-based-on-user-attributes">built-in
+        /// user attribute keys</see>, this custom attribute will be ignored.
+        /// </remarks>
+        /// <param name="name">the key for the custom attribute</param>
+        /// <param name="value">the value for the custom attribute</param>
+        /// <returns>the same builder</returns>
+        IUserBuilderCanMakeAttributePrivate Custom( string name, double value );
     }
 
     /// <summary>
@@ -391,7 +415,17 @@ namespace LaunchDarkly.Sdk
             return Custom(name, LdValue.Of(value));
         }
 
+        public IUserBuilderCanMakeAttributePrivate Custom(string name, long value)
+        {
+            return Custom(name, LdValue.Of(value));
+        }
+
         public IUserBuilderCanMakeAttributePrivate Custom(string name, float value)
+        {
+            return Custom(name, LdValue.Of(value));
+        }
+
+        public IUserBuilderCanMakeAttributePrivate Custom(string name, double value)
         {
             return Custom(name, LdValue.Of(value));
         }
@@ -508,7 +542,17 @@ namespace LaunchDarkly.Sdk
             return _builder.Custom(name, value);
         }
 
+        public IUserBuilderCanMakeAttributePrivate Custom(string name, long value)
+        {
+            return _builder.Custom(name, value);
+        }
+
         public IUserBuilderCanMakeAttributePrivate Custom(string name, float value)
+        {
+            return _builder.Custom(name, value);
+        }
+
+        public IUserBuilderCanMakeAttributePrivate Custom(string name, double value)
         {
             return _builder.Custom(name, value);
         }
