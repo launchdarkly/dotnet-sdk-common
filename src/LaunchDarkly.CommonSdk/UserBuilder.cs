@@ -140,6 +140,11 @@ namespace LaunchDarkly.Sdk
         /// </summary>
         /// <remarks>
         /// <para>
+        /// The rules for allowable data types in custom attributes are the same as for flag
+        /// variation values. For more details, see our documentation on
+        /// <see href="https://docs.launchdarkly.com/sdk/concepts/flag-types">flag value types</see>.
+        /// </para>
+        /// <para>
         /// When set to one of the <a href="https://docs.launchdarkly.com/home/flags/targeting-users#targeting-rules-based-on-user-attributes">built-in
         /// user attribute keys</a>, this custom attribute will be ignored.
         /// </para>
@@ -196,8 +201,9 @@ namespace LaunchDarkly.Sdk
         /// </summary>
         /// <remarks>
         /// <para>
-        /// See <see cref="LdValue"/> and <see cref="LdValue.Of(long)"/> regarding limitations on
-        /// numeric precision in LaunchDarkly.
+        /// Numeric values in custom attributes have some precision limitations, the same as for
+        /// numeric values in flag variations. For more details, see our documentation on
+        /// <see href="https://docs.launchdarkly.com/sdk/concepts/flag-types">flag value types</see>.
         /// </para>
         /// <para>
         /// When set to one of the <see href="https://docs.launchdarkly.com/home/flags/targeting-users#targeting-rules-based-on-user-attributes">built-in
@@ -214,8 +220,9 @@ namespace LaunchDarkly.Sdk
         /// </summary>
         /// <remarks>
         /// <para>
-        /// See <see cref="LdValue"/> and <see cref="LdValue.Of(float)"/> regarding limitations on
-        /// numeric precision in LaunchDarkly.
+        /// Numeric values in custom attributes have some precision limitations, the same as for
+        /// numeric values in flag variations. For more details, see our documentation on
+        /// <see href="https://docs.launchdarkly.com/sdk/concepts/flag-types">flag value types</see>.
         /// </para>
         /// <para>
         /// When set to one of the <see href="https://docs.launchdarkly.com/home/flags/targeting-users#targeting-rules-based-on-user-attributes">built-in
@@ -232,8 +239,9 @@ namespace LaunchDarkly.Sdk
         /// </summary>
         /// <remarks>
         /// <para>
-        /// See <see cref="LdValue"/> and <see cref="LdValue.Of(double)"/> regarding limitations on
-        /// numeric precision in LaunchDarkly.
+        /// Numeric values in custom attributes have some precision limitations, the same as for
+        /// numeric values in flag variations. For more details, see our documentation on
+        /// <see href="https://docs.launchdarkly.com/sdk/concepts/flag-types">flag value types</see>.
         /// </para>
         /// <para>
         /// When set to one of the <see href="https://docs.launchdarkly.com/home/flags/targeting-users#targeting-rules-based-on-user-attributes">built-in
