@@ -195,20 +195,32 @@ namespace LaunchDarkly.Sdk
         /// Adds a custom attribute with a <see langword="long"/> value.
         /// </summary>
         /// <remarks>
+        /// <para>
+        /// See <see cref="LdValue"/> and <see cref="LdValue.Of(long)"/> regarding limitations on
+        /// numeric precision in LaunchDarkly.
+        /// </para>
+        /// <para>
         /// When set to one of the <see href="https://docs.launchdarkly.com/home/flags/targeting-users#targeting-rules-based-on-user-attributes">built-in
         /// user attribute keys</see>, this custom attribute will be ignored.
+        /// </para>
         /// </remarks>
         /// <param name="name">the key for the custom attribute</param>
         /// <param name="value">the value for the custom attribute</param>
         /// <returns>the same builder</returns>
-        IUserBuilderCanMakeAttributePrivate Custom( string name, long value );
+        IUserBuilderCanMakeAttributePrivate Custom(string name, long value);
 
         /// <summary>
         /// Adds a custom attribute with a floating-point value.
         /// </summary>
         /// <remarks>
+        /// <para>
+        /// See <see cref="LdValue"/> and <see cref="LdValue.Of(float)"/> regarding limitations on
+        /// numeric precision in LaunchDarkly.
+        /// </para>
+        /// <para>
         /// When set to one of the <see href="https://docs.launchdarkly.com/home/flags/targeting-users#targeting-rules-based-on-user-attributes">built-in
         /// user attribute keys</see>, this custom attribute will be ignored.
+        /// </para>
         /// </remarks>
         /// <param name="name">the key for the custom attribute</param>
         /// <param name="value">the value for the custom attribute</param>
@@ -219,13 +231,19 @@ namespace LaunchDarkly.Sdk
         /// Adds a custom attribute with a <see langword="double"/> value.
         /// </summary>
         /// <remarks>
+        /// <para>
+        /// See <see cref="LdValue"/> and <see cref="LdValue.Of(double)"/> regarding limitations on
+        /// numeric precision in LaunchDarkly.
+        /// </para>
+        /// <para>
         /// When set to one of the <see href="https://docs.launchdarkly.com/home/flags/targeting-users#targeting-rules-based-on-user-attributes">built-in
         /// user attribute keys</see>, this custom attribute will be ignored.
+        /// </para>
         /// </remarks>
         /// <param name="name">the key for the custom attribute</param>
         /// <param name="value">the value for the custom attribute</param>
         /// <returns>the same builder</returns>
-        IUserBuilderCanMakeAttributePrivate Custom( string name, double value );
+        IUserBuilderCanMakeAttributePrivate Custom(string name, double value);
     }
 
     /// <summary>

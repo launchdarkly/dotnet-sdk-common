@@ -51,6 +51,14 @@ namespace LaunchDarkly.Sdk
     /// the type of custom attributes in <see cref="User"/> and <see cref="IUserBuilder"/>.
     /// </para>
     /// <para>
+    /// LaunchDarkly allows feature flag variations and custom user attributes to be of any JSON
+    /// type, with some restrictions. Notably, while JSON does not define any limit on the size or
+    /// precision of numeric values, LaunchDarkly stores numeric values as double-precision
+    /// floating point (the equivalent of the `double` type in C#); so, if you need to accurately
+    /// represent numbers with greater precision, or decimal non-integers that have no exact
+    /// binary floating-point equivalent such as 0.3, it is best to store them as strings.
+    /// </para>
+    /// <para>
     /// Note that this is a <see langword="struct"/>, not a class, so it is always passed by value
     /// and is not nullable; JSON nulls are represented by the constant <see cref="Null"/> and can
     /// be detected with <see cref="IsNull"/>. Whenever possible, <see cref="LdValue"/>
@@ -158,8 +166,8 @@ namespace LaunchDarkly.Sdk
         /// Note that the LaunchDarkly service, and most of the SDKs, represent numeric values internally
         /// in 64-bit floating-point, which has slightly less precision than a signed 64-bit
         /// <see langword="long"/>; therefore, the full range of <see langword="long"/> values cannot be
-        /// accurately represented. If you need to set a user attribute to a numeric value with more
-        /// significant digits than will fit in a <see cref="double"/>, it is best to encode it as a string.
+        /// accurately represented. If you need to set a user attribute to a numeric value that cannot
+        /// be precisely converted to <see langword="double"/>, it is best to encode it as a string.
         /// </remarks>
         /// <param name="value">the initial value</param>
         /// <returns>a struct that wraps the value</returns>
@@ -169,6 +177,15 @@ namespace LaunchDarkly.Sdk
         /// <summary>
         /// Initializes an <see cref="LdValue"/> from a <see langword="float"/> value.
         /// </summary>
+        /// <remarks>
+        /// Note that the LaunchDarkly service, and most of the SDKs, represent numeric values internally
+        /// in 64-bit floating-point (<see langword="double"/>); some <see langword="float"/> values may
+        /// not accurately convert to <see langword="double"/>, some non-integer values such as 0.3
+        /// cannot be accurately represented in any binary floating-point format, and floating-point
+        /// representations in general may not translate exactly on every platform that LaunchDarkly
+        /// supports. If you need to set a user attribute to a non-integer numeric value with exact
+        /// decimal accuracy, it is best to encode it as a string.
+        /// </remarks>
         /// <param name="value">the initial value</param>
         /// <returns>a struct that wraps the value</returns>
         public static LdValue Of(float value) =>
@@ -177,6 +194,14 @@ namespace LaunchDarkly.Sdk
         /// <summary>
         /// Initializes an <see cref="LdValue"/> from a <see langword="double"/> value.
         /// </summary>
+        /// <remarks>
+        /// Note that the LaunchDarkly service, and most of the SDKs, represent numeric values internally
+        /// in 64-bit floating-point (<see langword="double"/>); some non-integer values such as 0.3
+        /// cannot be accurately represented in any binary floating-point format, and floating-point
+        /// representations in general may not translate exactly on every platform that LaunchDarkly
+        /// supports. If you need to set a user attribute to a non-integer numeric value with exact
+        /// decimal accuracy, it is best to encode it as a string.
+        /// </remarks>
         /// <param name="value">the initial value</param>
         /// <returns>a struct that wraps the value</returns>
         public static LdValue Of(double value) =>
@@ -1005,7 +1030,7 @@ namespace LaunchDarkly.Sdk
             /// in 64-bit floating-point, which has slightly less precision than a signed 64-bit
             /// <see langword="long"/>; therefore, the full range of <see langword="long"/> values cannot be
             /// accurately represented. If you need to set a user attribute to a numeric value with more
-            /// significant digits than will fit in a <see cref="double"/>, it is best to encode it as a string.
+            /// significant digits than will fit in a <see langword="double"/>, it is best to encode it as a string.
             /// </para>
             /// </remarks>
             public static readonly Converter<long> Long = new ConverterImpl<long>(
