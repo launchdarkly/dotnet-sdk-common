@@ -239,9 +239,21 @@ namespace LaunchDarkly.Sdk
         }
 
         [Fact]
+        public void BuilderCanSetLongCustomAttribute()
+        {
+            TestCustomAttribute<long>(1634661422123L, (b, n, v) => b.Custom(n, v), LdValue.Convert.Long);
+        }
+
+        [Fact]
         public void BuilderCanSetFloatCustomAttribute()
         {
             TestCustomAttribute<float>(1.5f, (b, n, v) => b.Custom(n, v), LdValue.Convert.Float);
+        }
+
+        [Fact]
+        public void BuilderCanSetDoubleCustomAttribute()
+        {
+            TestCustomAttribute<double>(double.MaxValue, (b, n, v) => b.Custom(n, v), LdValue.Convert.Double);
         }
         
         [Fact]
