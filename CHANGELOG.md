@@ -2,6 +2,15 @@
 
 All notable changes to `LaunchDarkly.CommonSdk` will be documented in this file. For full release notes for the projects that depend on this project, see their respective changelogs. This file describes changes only to the common code. This project adheres to [Semantic Versioning](http://semver.org).
 
+## [5.4.0] - 2021-10-22
+### Added:
+- `LdValue.ObjectBuilder.Remove`.
+- User builder `Custom` overloads for `long` and `double`.
+
+### Changed:
+- Added more doc comment text about numeric precision issues with JSON numbers.
+- Updated `LaunchDarkly.JsonStream` to 1.0.3.
+
 ## [5.3.0] - 2021-10-14
 ### Added:
 - Convenience methods for working with JSON object and array values: `LdValue.Dictionary`, `LdValue.List`, `LdValue.ObjectBuilder.Set`, and `LdValue.ObjectBuilder.Copy`.
