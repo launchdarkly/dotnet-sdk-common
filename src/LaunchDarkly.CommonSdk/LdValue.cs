@@ -51,6 +51,12 @@ namespace LaunchDarkly.Sdk
     /// the type of custom attributes in <see cref="User"/> and <see cref="IUserBuilder"/>.
     /// </para>
     /// <para>
+    /// LaunchDarkly allows feature flag variations and custom user attributes to be of any JSON
+    /// type, with some restrictions (notably, regarding numeric precision). For more details, see
+    /// our documentation on <see href="https://docs.launchdarkly.com/sdk/concepts/flag-types">flag
+    /// value types</see>.
+    /// </para>
+    /// <para>
     /// Note that this is a <see langword="struct"/>, not a class, so it is always passed by value
     /// and is not nullable; JSON nulls are represented by the constant <see cref="Null"/> and can
     /// be detected with <see cref="IsNull"/>. Whenever possible, <see cref="LdValue"/>
@@ -155,11 +161,9 @@ namespace LaunchDarkly.Sdk
         /// Initializes an <see cref="LdValue"/> from a <see langword="long"/> value.
         /// </summary>
         /// <remarks>
-        /// Note that the LaunchDarkly service, and most of the SDKs, represent numeric values internally
-        /// in 64-bit floating-point, which has slightly less precision than a signed 64-bit
-        /// <see langword="long"/>; therefore, the full range of <see langword="long"/> values cannot be
-        /// accurately represented. If you need to set a user attribute to a numeric value with more
-        /// significant digits than will fit in a <see cref="double"/>, it is best to encode it as a string.
+        /// Numeric values in LaunchDarkly have some precision limitations. For more details, see our
+        /// documentation on <see href="https://docs.launchdarkly.com/sdk/concepts/flag-types">flag
+        /// value types</see>.
         /// </remarks>
         /// <param name="value">the initial value</param>
         /// <returns>a struct that wraps the value</returns>
@@ -169,6 +173,11 @@ namespace LaunchDarkly.Sdk
         /// <summary>
         /// Initializes an <see cref="LdValue"/> from a <see langword="float"/> value.
         /// </summary>
+        /// <remarks>
+        /// Numeric values in LaunchDarkly have some precision limitations. For more details, see our
+        /// documentation on <see href="https://docs.launchdarkly.com/sdk/concepts/flag-types">flag
+        /// value types</see>.
+        /// </remarks>
         /// <param name="value">the initial value</param>
         /// <returns>a struct that wraps the value</returns>
         public static LdValue Of(float value) =>
@@ -177,6 +186,11 @@ namespace LaunchDarkly.Sdk
         /// <summary>
         /// Initializes an <see cref="LdValue"/> from a <see langword="double"/> value.
         /// </summary>
+        /// <remarks>
+        /// Numeric values in LaunchDarkly have some precision limitations. For more details, see our
+        /// documentation on <see href="https://docs.launchdarkly.com/sdk/concepts/flag-types">flag
+        /// value types</see>.
+        /// </remarks>
         /// <param name="value">the initial value</param>
         /// <returns>a struct that wraps the value</returns>
         public static LdValue Of(double value) =>
@@ -668,6 +682,11 @@ namespace LaunchDarkly.Sdk
             /// <summary>
             /// Adds a value to the array being built.
             /// </summary>
+            /// <remarks>
+            /// Numeric values in LaunchDarkly have some precision limitations. For more details, see our
+            /// documentation on <see href="https://docs.launchdarkly.com/sdk/concepts/flag-types">flag
+            /// value types</see>.
+            /// </remarks>
             /// <param name="value">the value to add</param>
             /// <returns>the same builder</returns>
             public ArrayBuilder Add(long value)
@@ -679,6 +698,11 @@ namespace LaunchDarkly.Sdk
             /// <summary>
             /// Adds a value to the array being built.
             /// </summary>
+            /// <remarks>
+            /// Numeric values in LaunchDarkly have some precision limitations. For more details, see our
+            /// documentation on <see href="https://docs.launchdarkly.com/sdk/concepts/flag-types">flag
+            /// value types</see>.
+            /// </remarks>
             /// <param name="value">the value to add</param>
             /// <returns>the same builder</returns>
             public ArrayBuilder Add(double value)
@@ -741,6 +765,11 @@ namespace LaunchDarkly.Sdk
             /// <summary>
             /// Adds a key-value pair to the object being built.
             /// </summary>
+            /// <remarks>
+            /// Numeric values in LaunchDarkly have some precision limitations. For more details, see our
+            /// documentation on <see href="https://docs.launchdarkly.com/sdk/concepts/flag-types">flag
+            /// value types</see>.
+            /// </remarks>
             /// <param name="key">the key to add</param>
             /// <param name="value">the value to add</param>
             /// <returns>the same builder</returns>
@@ -750,6 +779,11 @@ namespace LaunchDarkly.Sdk
             /// <summary>
             /// Adds a key-value pair to the object being built.
             /// </summary>
+            /// <remarks>
+            /// Numeric values in LaunchDarkly have some precision limitations. For more details, see our
+            /// documentation on <see href="https://docs.launchdarkly.com/sdk/concepts/flag-types">flag
+            /// value types</see>.
+            /// </remarks>
             /// <param name="key">the key to add</param>
             /// <param name="value">the value to add</param>
             /// <returns>the same builder</returns>
@@ -757,17 +791,24 @@ namespace LaunchDarkly.Sdk
                 Add(key, LdValue.Of(value));
 
             /// <summary>
+            /// Removes a key from the object, or does nothing if no such key exists.
+            /// </summary>
+            /// <param name="key">the key</param>
+            /// <returns>the same builder</returns>
+            public ObjectBuilder Remove(string key)
+            {
+                _builder.Remove(key);
+                return this;
+            }
+
+            /// <summary>
             /// Adds a key-value pair to the object being built or replaces an existing key.
             /// </summary>
             /// <param name="key">the key</param>
             /// <param name="value">the value to add or replace</param>
             /// <returns>the same builder</returns>
-            public ObjectBuilder Set(string key, LdValue value)
-            {
-                _builder.Remove(key);
-                _builder.Add(key, value);
-                return this;
-            }
+            public ObjectBuilder Set(string key, LdValue value) =>
+                Remove(key).Add(key, value);
 
             /// <summary>
             /// Adds a key-value pair to the object being built or replaces an existing key.
@@ -781,6 +822,11 @@ namespace LaunchDarkly.Sdk
             /// <summary>
             /// Adds a key-value pair to the object being built or replaces an existing key.
             /// </summary>
+            /// <remarks>
+            /// Numeric values in LaunchDarkly have some precision limitations. For more details, see our
+            /// documentation on <see href="https://docs.launchdarkly.com/sdk/concepts/flag-types">flag
+            /// value types</see>.
+            /// </remarks>
             /// <param name="key">the key</param>
             /// <param name="value">the value to add or replace</param>
             /// <returns>the same builder</returns>
@@ -790,6 +836,11 @@ namespace LaunchDarkly.Sdk
             /// <summary>
             /// Adds a key-value pair to the object being built or replaces an existing key.
             /// </summary>
+            /// <remarks>
+            /// Numeric values in LaunchDarkly have some precision limitations. For more details, see our
+            /// documentation on <see href="https://docs.launchdarkly.com/sdk/concepts/flag-types">flag
+            /// value types</see>.
+            /// </remarks>
             /// <param name="key">the key</param>
             /// <param name="value">the value to add or replace</param>
             /// <returns>the same builder</returns>
@@ -998,7 +1049,7 @@ namespace LaunchDarkly.Sdk
             /// in 64-bit floating-point, which has slightly less precision than a signed 64-bit
             /// <see langword="long"/>; therefore, the full range of <see langword="long"/> values cannot be
             /// accurately represented. If you need to set a user attribute to a numeric value with more
-            /// significant digits than will fit in a <see cref="double"/>, it is best to encode it as a string.
+            /// significant digits than will fit in a <see langword="double"/>, it is best to encode it as a string.
             /// </para>
             /// </remarks>
             public static readonly Converter<long> Long = new ConverterImpl<long>(
