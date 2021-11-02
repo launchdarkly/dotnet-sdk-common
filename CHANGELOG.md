@@ -2,6 +2,10 @@
 
 All notable changes to `LaunchDarkly.CommonSdk` will be documented in this file. For full release notes for the projects that depend on this project, see their respective changelogs. This file describes changes only to the common code. This project adheres to [Semantic Versioning](http://semver.org).
 
+## [5.4.1] - 2021-11-02
+### Fixed:
+- Copying a user with `User.Builder(existingUser)` was incorrectly changing the default `null` value of `AnonymousOptional` to `false`. This normally has no significance since LaunchDarkly treats those two values the same, but it could have broken tests that expected a copied user to be equal.
+
 ## [5.4.0] - 2021-10-22
 ### Added:
 - `LdValue.ObjectBuilder.Remove`.
