@@ -330,7 +330,7 @@ namespace LaunchDarkly.Sdk
             _name = fromUser.Name;
             _avatar = fromUser.Avatar;
             _email = fromUser.Email;
-            _anonymous = fromUser.Anonymous;
+            _anonymous = fromUser.AnonymousOptional;
             _privateAttributeNames = fromUser._privateAttributeNames.Count == 0 ? null :
                 fromUser._privateAttributeNames.ToBuilder();
             _custom = fromUser._custom.Count == 0 ? null : fromUser._custom.ToBuilder();
