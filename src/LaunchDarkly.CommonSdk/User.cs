@@ -271,7 +271,7 @@ namespace LaunchDarkly.Sdk
                 Object.Equals(Name, u.Name) &&
                 Object.Equals(Avatar, u.Avatar) &&
                 Object.Equals(Email, u.Email) &&
-                Object.Equals(Anonymous, u.Anonymous) &&
+                AnonymousOptional == u.AnonymousOptional &&
                 Custom.Count == u.Custom.Count &&
                 Custom.Keys.All(k => u.Custom.ContainsKey(k) && Object.Equals(Custom[k], u.Custom[k])) &&
                 PrivateAttributeNames.SetEquals(u.PrivateAttributeNames);
