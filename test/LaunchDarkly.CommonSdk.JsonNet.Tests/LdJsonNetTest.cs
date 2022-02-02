@@ -13,6 +13,11 @@ namespace LaunchDarkly.Sdk.Json
 
         private sealed class ObjectWithNullableReason
         {
+            // The reason we use an enclosing class here to test the serialization of a nullable EvaluationReason?
+            // is that if we pass an "EvaluationReason?" value to SerializeObject, the type of the parameter in
+            // that method is actually "object" and so what is really passed is either an EvaluationReason or a
+            // plain old null-- it doesn't really see an "EvaluationReason?". But if it's in a property like this,
+            // it really will detect the type.
             public EvaluationReason? reason { get; set; }
         }
 
