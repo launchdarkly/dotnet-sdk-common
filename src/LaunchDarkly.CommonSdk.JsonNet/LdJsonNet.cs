@@ -84,7 +84,7 @@ namespace LaunchDarkly.Sdk.Json
         /// </remarks>
         public static JsonConverter Converter =>
             IJsonSerializableType is null ?
-                throw new InvalidOperationException("JsonNetIntegration cannot be used unless the LaunchDarkly .NET SDK or Xamarin SDK is present") :
+                throw new InvalidOperationException("LdJsonNet.Converter cannot be used unless a LaunchDarkly .NET SDK is present") :
                 JsonStreamConverterFactory.Instance;
 
         private static Type DetectSerializableInterfaceType()
