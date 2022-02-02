@@ -2,6 +2,13 @@
 
 All notable changes to `LaunchDarkly.CommonSdk` will be documented in this file. For full release notes for the projects that depend on this project, see their respective changelogs. This file describes changes only to the common code. This project adheres to [Semantic Versioning](http://semver.org).
 
+## [5.5.0] - 2022-02-02
+### Added:
+- `UnixMillisecondTime` now has a JSON converter like other `LaunchDarkly.Sdk` types.
+
+### Fixed:
+- When using `LaunchDarkly.CommonSdk.JsonNet`, nullable value types such as `EvaluationReason?` were not being serialized correctly.
+
 ## [5.4.1] - 2021-11-02
 ### Fixed:
 - Copying a user with `User.Builder(existingUser)` was incorrectly changing the default `null` value of `AnonymousOptional` to `false`. This normally has no significance since LaunchDarkly treats those two values the same, but it could have broken tests that expected a copied user to be equal.
