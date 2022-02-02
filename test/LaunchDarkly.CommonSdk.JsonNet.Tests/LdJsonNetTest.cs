@@ -70,8 +70,12 @@ namespace LaunchDarkly.Sdk.Json
         {
 
             Assert.Equal(ExpectedEvaluationReason,
-                JsonConvert.DeserializeObject<ObjectWithNullableReason>(@"{""reason"":" + ExpectedEvaluationReasonJson + "}").reason);
-            Assert.Null(JsonConvert.DeserializeObject<ObjectWithNullableReason>(@"{""reason"":null}").reason);
+                JsonConvert.DeserializeObject<ObjectWithNullableReason>(
+                    @"{""reason"":" + ExpectedEvaluationReasonJson + "}",
+                    LdJsonNet.Converter).reason);
+            Assert.Null(JsonConvert.DeserializeObject<ObjectWithNullableReason>(
+                @"{""reason"":null}",
+                LdJsonNet.Converter).reason);
         }
     }
 }

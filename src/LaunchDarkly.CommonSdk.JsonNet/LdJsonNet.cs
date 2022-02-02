@@ -123,6 +123,14 @@ namespace LaunchDarkly.Sdk.Json
 
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
+            if (objectType.IsGenericType && objectType.GetGenericTypeDefinition() == typeof(Nullable<>))
+            {
+                objectType = Nullable.GetUnderlyingType(objectType);
+                if (reader.TokenType == JsonToken.Null)
+                {
+                    return null;
+                }
+            }
             var raw = DefaultSerializer.Deserialize<JRaw>(reader);
             return JsonStreamConvert.DeserializeObject(raw.Value.ToString(), objectType);
         }
