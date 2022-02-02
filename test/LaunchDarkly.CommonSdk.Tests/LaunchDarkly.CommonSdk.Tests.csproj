@@ -16,4 +16,9 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3" />
     <PackageReference Include="LaunchDarkly.TestHelpers" Version="1.1.0" />
   </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' != 'net452' ">
+    <PackageReference Include="System.Text.Json" Version="5.0.0" />
+  </ItemGroup>
+
 </Project>
