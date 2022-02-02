@@ -3,7 +3,7 @@
 [![NuGet](https://img.shields.io/nuget/v/LaunchDarkly.CommonSdk.svg?style=flat-square)](https://www.nuget.org/packages/LaunchDarkly.CommonSdk/)
 [![CircleCI](https://circleci.com/gh/launchdarkly/dotnet-sdk-common.svg?style=shield)](https://circleci.com/gh/launchdarkly/dotnet-sdk-common)
 
-This project contains .NET classes and interfaces that are shared between the LaunchDarkly .NET and Xamarin SDKs. Code that is specific to one or the other is in [dotnet-server-sdk](https://github.com/launchdarkly/dotnet-server-sdk) or [xamarin-client-sdk](https://github.com/launchdarkly/xamarin-client-sdk).
+This project contains .NET classes and interfaces that are shared between the LaunchDarkly .NET server-side and client-side SDKs. Code that is specific to one or the other is in [dotnet-server-sdk](https://github.com/launchdarkly/dotnet-server-sdk) or [dotnet-client-sdk](https://github.com/launchdarkly/dotnet-client-sdk).
 
 It also contains the optional add-on package [`LaunchDarkly.CommonSdk.JsonNet`](./src/LaunchDarkly.CommonSdk.JsonNet/README.md), which makes it easier to use LaunchDarkly types with the popular Json.NET library.
 

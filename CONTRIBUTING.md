@@ -4,7 +4,7 @@ LaunchDarkly has published an [SDK contributor's guide](https://docs.launchdarkl
 
 ## Submitting bug reports and feature requests
 
-In general, issues should be filed in the issue trackers for the [.NET server-side SDK](https://github.com/launchdarkly/dotnet-server-sdk/issues) or the [Xamarin client-side SDK](https://github.com/launchdarkly/xamarin-client-sdk/issues) rather than in this repository, unless you have a specific implementation issue regarding the code in this repository.
+In general, issues should be filed in the issue trackers for the [.NET server-side SDK](https://github.com/launchdarkly/dotnet-server-sdk/issues) or the [.NET client-side SDK](https://github.com/launchdarkly/dotnet-client-sdk/issues) rather than in this repository, unless you have a specific implementation issue regarding the code in this repository.
 
 ## Submitting pull requests
 

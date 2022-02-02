@@ -1,4 +1,5 @@
 ﻿using System;
+using LaunchDarkly.Sdk.Json;
 using Xunit;
 
 using static LaunchDarkly.Sdk.UnixMillisecondTime;
@@ -50,6 +51,14 @@ namespace LaunchDarkly.Sdk
                 }
                 Assert.Equal(a.GetHashCode(), OfMillis(a).GetHashCode());
             }
+        }
+
+        [Fact]
+        public void JsonConversion()
+        {
+            Assert.Equal("12345", LdJsonSerialization.SerializeObject(UnixMillisecondTime.OfMillis(12345)));
+            Assert.Equal(UnixMillisecondTime.OfMillis(12345),
+                LdJsonSerialization.DeserializeObject<UnixMillisecondTime>("12345"));
         }
     }
 }
