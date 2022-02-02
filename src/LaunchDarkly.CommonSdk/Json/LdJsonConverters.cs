@@ -428,30 +428,6 @@ namespace LaunchDarkly.Sdk.Json
         }
 
         /// <summary>
-        /// The JSON converter for <see cref="UnixMillisecondTime"/>.
-        /// </summary>
-        public sealed class UnixMillisecondTimeConverter: IJsonStreamConverter
-        {
-            public object ReadJson(ref JReader reader)
-            {
-                var maybeValue = reader.LongOrNull();
-                return maybeValue is null ? (UnixMillisecondTime?)null : UnixMillisecondTime.OfMillis(maybeValue.Value);
-            }
-
-            public void WriteJson(object value, IValueWriter writer)
-            {
-                if (value is null)
-                {
-                    writer.Null();
-                }
-                else
-                {
-                    writer.Long(((UnixMillisecondTime)value).Value);
-                }
-            }
-        }
-
-        /// <summary>
         /// The JSON converter for <see cref="User"/>.
         /// </summary>
         public sealed class UserConverter : IJsonStreamConverter
