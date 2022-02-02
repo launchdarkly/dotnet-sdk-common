@@ -113,7 +113,9 @@ namespace LaunchDarkly.Sdk.Json
         };
 
         public override bool CanConvert(Type objectType) =>
-            LdJsonNet.IJsonSerializableType.IsAssignableFrom(objectType);
+            LdJsonNet.IJsonSerializableType.IsAssignableFrom(objectType) ||
+            objectType.IsGenericType && objectType.GetGenericTypeDefinition() == typeof(Nullable<>) &&
+                LdJsonNet.IJsonSerializableType.IsAssignableFrom(Nullable.GetUnderlyingType(objectType));
 
         public override bool CanRead => true;
 

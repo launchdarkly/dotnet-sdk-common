@@ -8,11 +8,19 @@ namespace LaunchDarkly.Sdk.Json
     {
         private static readonly User ExpectedUser = User.WithKey("user-key");
         private const string ExpectedUserJson = @"{""key"":""user-key""}";
+        private static readonly EvaluationReason ExpectedEvaluationReason = EvaluationReason.OffReason;
+        private const string ExpectedEvaluationReasonJson = @"{""kind"":""OFF""}";
+
+        private sealed class ObjectWithNullableReason
+        {
+            public EvaluationReason? reason { get; set; }
+        }
 
         [Fact]
         public void SerializeWithExplicitConverter()
         {
             Assert.Equal(ExpectedUserJson, JsonConvert.SerializeObject(ExpectedUser, LdJsonNet.Converter));
+            Assert.Equal(ExpectedEvaluationReasonJson, JsonConvert.SerializeObject(ExpectedEvaluationReason, LdJsonNet.Converter));
         }
 
         [Fact]
@@ -23,6 +31,7 @@ namespace LaunchDarkly.Sdk.Json
                 Converters = new List<JsonConverter> { LdJsonNet.Converter }
             };
             Assert.Equal(ExpectedUserJson, JsonConvert.SerializeObject(ExpectedUser, settings));
+            Assert.Equal(ExpectedEvaluationReasonJson, JsonConvert.SerializeObject(ExpectedEvaluationReason, settings));
         }
 
         [Fact]
@@ -39,6 +48,25 @@ namespace LaunchDarkly.Sdk.Json
                 Converters = new List<JsonConverter> { LdJsonNet.Converter }
             };
             Assert.Equal(ExpectedUser, JsonConvert.DeserializeObject<User>(ExpectedUserJson, settings));
+        }
+
+        [Fact]
+        public void NullableValueTypeIsSerializedCorrectly()
+        {
+
+            Assert.Equal(@"{""reason"":" + ExpectedEvaluationReasonJson + "}",
+                JsonConvert.SerializeObject(new ObjectWithNullableReason { reason = ExpectedEvaluationReason }, LdJsonNet.Converter));
+            Assert.Equal(@"{""reason"":null}",
+                JsonConvert.SerializeObject(new ObjectWithNullableReason { reason = null }, LdJsonNet.Converter));
+        }
+
+        [Fact]
+        public void NullableValueTypeIsDeserializedCorrectly()
+        {
+
+            Assert.Equal(ExpectedEvaluationReason,
+                JsonConvert.DeserializeObject<ObjectWithNullableReason>(@"{""reason"":" + ExpectedEvaluationReasonJson + "}").reason);
+            Assert.Null(JsonConvert.DeserializeObject<ObjectWithNullableReason>(@"{""reason"":null}").reason);
         }
     }
 }
