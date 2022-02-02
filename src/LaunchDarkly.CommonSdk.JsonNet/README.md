@@ -1,8 +1,8 @@
 # LaunchDarkly SDK Json.NET Adapter
 
-The add-on package `LaunchDarkly.CommonSdk.JsonNet` allows JSON-serializable data types from the LaunchDarkly .NET SDK and Xamarin SDK, such as `User` and `LdValue`, to be encoded and decoded correctly by the [Json.NET](https://www.newtonsoft.com/json) library (`Newtonsoft.Json`).
+The add-on package `LaunchDarkly.CommonSdk.JsonNet` allows JSON-serializable data types from LaunchDarkly .NET SDKs, such as `User` and `LdValue`, to be encoded and decoded correctly by the [Json.NET](https://www.newtonsoft.com/json) library (`Newtonsoft.Json`).
 
-Earlier versions of the LaunchDarkly SDKs used Json.NET internally, so nothing additional was needed to make this work. However, starting with LaunchDarkly .NET SDK 6.0 and LaunchDarkly Xamarin SDK 2.0, the Json.NET dependency was removed and so these types do not contain the `[JsonConverter]` annotation that would tell Json.NET how to encode and decode them.
+Earlier versions of the LaunchDarkly SDKs used Json.NET internally, so nothing additional was needed to make this work. However, in later SDK releases, the Json.NET dependency was removed and so these types do not contain the `[JsonConverter]` annotation that would tell Json.NET how to encode and decode them.
 
 It is always possible to encode or decode these types explicitly using the `LaunchDarkly.Sdk.Json.LdJsonSerialization` class. But if you want them to be handled automatically by code that uses Json.NET, just do the following:
 
