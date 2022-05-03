@@ -29,7 +29,7 @@ namespace LaunchDarkly.Sdk.Json
     /// </para>
     /// </remarks>
     /// <seealso cref="LdJsonSerialization"/>
-    public static class LdJsonConverters
+    public static partial class LdJsonConverters
     {
 #pragma warning disable CS1591 // don't bother with XML comments for these low-level helpers
         public sealed class EvaluationReasonConverter : IJsonStreamConverter
