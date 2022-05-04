@@ -224,6 +224,17 @@ namespace LaunchDarkly.Sdk
         }
 
         /// <summary>
+        /// The list of all attribute references marked as private for this specific Context.
+        /// </summary>
+        /// <remarks>
+        /// This includes all attribute names/paths that were specified with
+        /// <see cref="ContextBuilder.Private(string[])"/> or <see cref="ContextBuilder.Private(AttributeRef[])"/>.
+        /// If there are none, it is an empty list (never null).
+        /// </remarks>
+        public ImmutableList<AttributeRef> PrivateAttributes => _privateAttributes ??
+            ImmutableList.Create<AttributeRef>();
+
+        /// <summary>
         /// Returns all of the individual contexts Contained in a multi-kind Context.
         /// </summary>
         /// <remarks>

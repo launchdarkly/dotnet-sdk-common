@@ -77,6 +77,20 @@ namespace LaunchDarkly.Sdk
 		}
 
 		[Fact]
+		public void PrivateAttributes()
+        {
+			Assert.Equal(ImmutableList.Create<AttributeRef>(),
+				Context.New("my-key").PrivateAttributes);
+
+			Assert.Equal(ImmutableList.Create(AttributeRef.FromLiteral("a"), AttributeRef.FromLiteral("b")),
+				Context.Builder("my-key").Private("a", "b").Build().PrivateAttributes);
+
+			Assert.Equal(ImmutableList.Create(AttributeRef.FromPath("/a"), AttributeRef.FromPath("/a/b")),
+				Context.Builder("my-key").Private(AttributeRef.FromPath("/a"), AttributeRef.FromPath("/a/b")).
+					Build().PrivateAttributes);
+		}
+
+		[Fact]
 		public void GetValue()
 		{
 			// equivalent to GetValue(AttributeRef) for simple attribute name
