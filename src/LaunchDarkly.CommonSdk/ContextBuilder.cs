@@ -440,7 +440,29 @@ namespace LaunchDarkly.Sdk
 
         internal ContextBuilder CopyFrom(Context c)
         {
-            // TODO
+            _kind = c.Kind;
+            _key = c.Key;
+            _name = c.Name;
+            _transient = c.Transient;
+            _secondary = c.Secondary;
+            if (c._attributes is null)
+            {
+                _attributes = null;
+            }
+            else
+            {
+                _attributes = ImmutableDictionary.CreateBuilder<string, LdValue>();
+                _attributes.AddRange(c._attributes);
+            }
+            if (c._privateAttributes is null)
+            {
+                _privateAttributes = null;
+            }
+            else
+            {
+                _privateAttributes = ImmutableList.CreateBuilder<AttributeRef>();
+                _privateAttributes.AddRange(c._privateAttributes);
+            }
             return this;
         }
     }

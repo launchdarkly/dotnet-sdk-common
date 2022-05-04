@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿using System;
+using System.Collections.Immutable;
 using LaunchDarkly.Sdk.Json;
 using LaunchDarkly.TestHelpers;
 using Xunit;
@@ -258,7 +259,31 @@ namespace LaunchDarkly.Sdk
 		[Fact]
 		public void Equality()
 		{
-			TypeBehavior.CheckEqualsAndHashCode<Context>(
+			TypeBehavior.CheckEqualsAndHashCode(MakeContextFactories());
+		}
+
+		[Fact]
+		public void BuilderFromContext()
+        {
+			foreach (var cf in MakeContextFactories())
+            {
+				var c = cf();
+				if (!c.Defined || c.Multiple)
+                {
+					continue;
+                }
+				var c1 = Context.BuilderFromContext(c).Build();
+				if (!c.Equals(c1))
+                {
+					System.Console.WriteLine("yo");
+                }
+				Assert.Equal(c, c1);
+            }
+        }
+
+		private static Func<Context>[] MakeContextFactories() =>
+			new Func<Context>[]
+			{
 				() => new Context(),
 				() => Context.New("a"),
 				() => Context.New("b"),
@@ -294,7 +319,6 @@ namespace LaunchDarkly.Sdk
 				() => Context.NewMulti(Context.NewWithKind("k1", "a"), Context.NewWithKind("k3", "b")),
 				() => Context.NewMulti(Context.NewWithKind("k1", "a"), Context.NewWithKind("k2", "b"),
 					Context.NewWithKind("k3", "c"))
-				);
-		}
+			};
 	}
 }
