@@ -273,10 +273,6 @@ namespace LaunchDarkly.Sdk
 					continue;
                 }
 				var c1 = Context.BuilderFromContext(c).Build();
-				if (!c.Equals(c1))
-                {
-					System.Console.WriteLine("yo");
-                }
 				Assert.Equal(c, c1);
             }
         }
