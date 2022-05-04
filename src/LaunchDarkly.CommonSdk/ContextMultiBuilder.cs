@@ -57,7 +57,7 @@ namespace LaunchDarkly.Sdk
             var list = _contexts.ToImmutableList();
             if (list.IsEmpty)
             {
-                return new Context(Context.ErrKindMultiWithNoKinds);
+                return new Context(Errors.ContextKindMultiWithNoKinds);
             }
             if (list.Count == 1)
             {

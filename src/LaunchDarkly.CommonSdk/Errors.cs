@@ -7,5 +7,14 @@ namespace LaunchDarkly.Sdk
         internal const string AttrExtraSlash = "attribute reference contained a double slash or a trailing slash";
         internal const string AttrInvalidEscape =
             "attribute reference contained an escape character (~) that was not followed by 0 or 1";
+
+        internal const string ContextUninitialized = "tried to use uninitialized Context";
+        internal const string ContextNoKey = "context key must not be null or empty";
+        internal const string ContextKindCannotBeKind = "\"kind\" is not a valid context kind";
+        internal const string ContextKindInvalidChars = "context kind contains disallowed characters";
+        internal const string ContextKindMultiForSingle = "context of kind \"multi\" must be created with NewMulti or NewMultiBuilder";
+        internal const string ContextKindMultiWithNoKinds = "multi-kind context must contain at least one kind";
+        internal const string ContextKindMultiWithinMulti = "multi-kind context cannot contain other multi-kind contexts";
+        internal const string ContextKindMultiDuplicates = "multi-kind context cannot have same kind more than once";
     }
 }

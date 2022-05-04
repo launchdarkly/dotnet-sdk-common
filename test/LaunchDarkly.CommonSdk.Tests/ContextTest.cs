@@ -8,12 +8,35 @@ namespace LaunchDarkly.Sdk
     public class ContextTest
     {
         [Fact]
-        public void UninitializedContext()
+        public void InvalidContexts()
         {
             var c = new Context();
             Assert.False(c.Defined);
-            Assert.Equal("tried to use uninitialized Context", c.Error);
-        }
+            Assert.Equal(Errors.ContextUninitialized, c.Error);
+
+			ShouldBeInvalid(Context.New(null), Errors.ContextNoKey);
+			ShouldBeInvalid(Context.New(""), Errors.ContextNoKey);
+			ShouldBeInvalid(Context.NewWithKind("kind", "key"), Errors.ContextKindCannotBeKind);
+			ShouldBeInvalid(Context.NewWithKind("ørg", "key"), Errors.ContextKindInvalidChars);
+			ShouldBeInvalid(Context.NewWithKind("multi", "key"), Errors.ContextKindMultiForSingle);
+			ShouldBeInvalid(Context.NewMulti(), Errors.ContextKindMultiWithNoKinds);
+			ShouldBeInvalid(Context.NewMulti(
+				Context.New("key1"),
+				Context.NewMulti(Context.NewWithKind("kind2", "key2"), Context.NewWithKind("kind3", "key3"))
+				), Errors.ContextKindMultiWithinMulti);
+			ShouldBeInvalid(Context.NewMulti(Context.NewWithKind("kind1", "key1"), Context.NewWithKind("kind1", "key2")),
+				Errors.ContextKindMultiDuplicates);
+		}
+
+		private static void ShouldBeInvalid(Context c, string error)
+		{
+			Assert.True(c.Defined);
+			Assert.Equal(error, c.Error);
+
+			// we guarantee that Kind and Key are never null even for invalid contexts
+			Assert.Equal("", c.Kind);
+			Assert.Equal("", c.Key);
+		}
 
         [Fact]
         public void Multiple()
@@ -226,6 +249,10 @@ namespace LaunchDarkly.Sdk
 			Assert.True(multi.TryGetContextByKind("kind2", out var m2));
 			Assert.Equal(c2, m2);
 			Assert.False(multi.TryGetContextByKind("kind3", out var _));
+
+			Assert.Equal(multi, Context.MultiBuilder().Add(c1).Add(c2).Build());
+			Assert.Equal(c1, Context.NewMulti(c1));
+			Assert.Equal(c1, Context.MultiBuilder().Add(c1).Build());
 		}
 
 		[Fact]

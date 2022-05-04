@@ -28,15 +28,6 @@ namespace LaunchDarkly.Sdk
     /// </remarks>
     public readonly struct Context : IEquatable<Context>
     {
-        internal const string ErrUninitialized = "tried to use uninitialized Context";
-        internal const string ErrNoKey = "context key must not be null or empty";
-        internal const string ErrKindCannotBeKind = "\"kind\" is not a valid context kind";
-        internal const string ErrKindMultiForSingle = "context of kind \"multi\" must be created with NewMulti or NewMultiBuilder";
-        internal const string ErrKindMultiWithNoKinds = "multi-kind context must contain at least one kind";
-        internal const string ErrKindMultiWithinMulti = "multi-kind context cannot contain other multi-kind contexts";
-        internal const string ErrKindMultiDuplicates = "multi-kind context cannot have same kind more than once";
-        internal const string ErrKindInvalidChars = "context kind contains disallowed characters";
-
         /// <summary>
         /// 
         /// </summary>
@@ -95,7 +86,7 @@ namespace LaunchDarkly.Sdk
         /// </para>
         /// </remarks>
         /// <seealso cref="Defined"/>
-        public string Error => Defined ? _error : ErrUninitialized;
+        public string Error => Defined ? _error : Errors.ContextUninitialized;
 
         /// <summary>
         /// The Context's kind attribute.
@@ -319,9 +310,13 @@ namespace LaunchDarkly.Sdk
         /// <seealso cref="MultiBuilder"/>
         public static Context NewMulti(params Context[] contexts)
         {
-            if (contexts is null || contexts.Length == 1)
+            if (contexts is null || contexts.Length == 0)
             {
-                return new Context(ErrKindMultiWithNoKinds);
+                return new Context(Errors.ContextKindMultiWithNoKinds);
+            }
+            if (contexts.Length == 1)
+            {
+                return contexts[0];
             }
             return new Context(ImmutableList.Create(contexts));
         }
@@ -399,7 +394,7 @@ namespace LaunchDarkly.Sdk
             var error = ValidateKind(kind);
             if (error is null && (key is null || key == ""))
             {
-                error = ErrNoKey;
+                error = Errors.ContextNoKey;
             }
 
             _error = error;
@@ -471,7 +466,7 @@ namespace LaunchDarkly.Sdk
                 {
                     errors = new List<string>();
                 }
-                errors.Add(ErrKindMultiWithinMulti);
+                errors.Add(Errors.ContextKindMultiWithinMulti);
             }
             if (duplicates)
             {
@@ -479,7 +474,7 @@ namespace LaunchDarkly.Sdk
                 {
                     errors = new List<string>();
                 }
-                errors.Add(ErrKindMultiDuplicates);
+                errors.Add(Errors.ContextKindMultiDuplicates);
             }
 
             _error = (errors is null || errors.Count == 0) ? null :
@@ -789,15 +784,15 @@ namespace LaunchDarkly.Sdk
             switch (kind)
             {
                 case "kind":
-                    return ErrKindCannotBeKind;
+                    return Errors.ContextKindCannotBeKind;
                 case "multi":
-                    return ErrKindMultiForSingle;
+                    return Errors.ContextKindMultiForSingle;
                 default:
                     foreach (var ch in kind)
                     {
                         if ((ch < 'a' || ch > 'z') && (ch < 'A' || ch > 'Z') && (ch < '0' || ch > '9') &&
                             ch != '.' && ch != '_' && ch != '-') {
-                            return ErrKindInvalidChars;
+                            return Errors.ContextKindInvalidChars;
                         }
                     }
                     return null;
