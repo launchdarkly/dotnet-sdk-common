@@ -12,21 +12,21 @@ namespace LaunchDarkly.Sdk
         {
             var a = new AttributeRef();
             Assert.False(a.Defined);
-            Assert.Equal("attribute reference cannot be empty", a.Error);
+            Assert.Equal(Errors.AttrEmpty, a.Error);
             Assert.Equal("", a.ToString());
             Assert.Equal(0, a.Depth);
         }
 
         [Theory]
-        [InlineData("", "attribute reference cannot be empty")]
-        [InlineData("/", "attribute reference cannot be empty")]
-        [InlineData("//", "attribute reference contained a double slash or a trailing slash")]
-        [InlineData("/a//b", "attribute reference contained a double slash or a trailing slash")]
-        [InlineData("/a/b/", "attribute reference contained a double slash or a trailing slash")]
-        [InlineData("/a~x", "attribute reference contained an escape character (~) that was not followed by 0 or 1")]
-        [InlineData("/a~", "attribute reference contained an escape character (~) that was not followed by 0 or 1")]
-        [InlineData("/a/b~x", "attribute reference contained an escape character (~) that was not followed by 0 or 1")]
-        [InlineData("/a/b~", "attribute reference contained an escape character (~) that was not followed by 0 or 1")]
+        [InlineData("", Errors.AttrEmpty)]
+        [InlineData("/", Errors.AttrEmpty)]
+        [InlineData("//", Errors.AttrExtraSlash)]
+        [InlineData("/a//b", Errors.AttrExtraSlash)]
+        [InlineData("/a/b/", Errors.AttrExtraSlash)]
+        [InlineData("/a~x", Errors.AttrInvalidEscape)]
+        [InlineData("/a~", Errors.AttrInvalidEscape)]
+        [InlineData("/a/b~x", Errors.AttrInvalidEscape)]
+        [InlineData("/a/b~", Errors.AttrInvalidEscape)]
         public void InvalidRef(string s, string expectedError)
         {
             var a = AttributeRef.FromPath(s);
@@ -85,7 +85,7 @@ namespace LaunchDarkly.Sdk
             Assert.Equal(AttributeRef.FromPath("/~1"), a3);
 
             var a4 = AttributeRef.FromLiteral("");
-            Assert.Equal("attribute reference cannot be empty", a4.Error);
+            Assert.Equal(Errors.AttrEmpty, a4.Error);
         }
 
         [Theory]
