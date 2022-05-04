@@ -76,11 +76,7 @@ namespace LaunchDarkly.Sdk
     [JsonStreamConverter(typeof(LdJsonConverters.AttributeRefConverter))]
     public readonly struct AttributeRef : IEquatable<AttributeRef>, IJsonSerializable
     {
-        private const string ErrEmpty = "attribute reference cannot be empty";
-        private const string ErrExtraSlash = "attribute reference contained a double slash or a trailing slash";
-        private const string ErrInvalidEscape =
-            "attribute reference contained an escape character (~) that was not followed by 0 or 1";
-
+        
         private readonly string _error;
         private readonly string _rawPath;
         private readonly string _singlePathComponent;
@@ -125,7 +121,7 @@ namespace LaunchDarkly.Sdk
             {
                 if (_error is null && _rawPath is null)
                 {
-                    return ErrEmpty;
+                    return Errors.AttrEmpty;
                 }
                 return _error;
             }
@@ -208,7 +204,7 @@ namespace LaunchDarkly.Sdk
         {
             if (refPath is null || refPath == "" || refPath == "/")
             {
-                return new AttributeRef(ErrEmpty, refPath);
+                return new AttributeRef(Errors.AttrEmpty, refPath);
             }
             if (refPath[0] != '/')
             {
@@ -222,7 +218,7 @@ namespace LaunchDarkly.Sdk
                 var unescaped = UnescapePath(refPath.Substring(1));
                 if (unescaped is null)
                 {
-                    return new AttributeRef(ErrInvalidEscape, refPath);
+                    return new AttributeRef(Errors.AttrInvalidEscape, refPath);
                 }
                 return new AttributeRef(refPath, unescaped, null);
             }
@@ -233,12 +229,12 @@ namespace LaunchDarkly.Sdk
                 var p = parsed[i + 1];
                 if (p == "")
                 {
-                    return new AttributeRef(ErrExtraSlash, refPath);
+                    return new AttributeRef(Errors.AttrExtraSlash, refPath);
                 }
                 var unescaped = UnescapePath(p);
                 if (unescaped is null)
                 {
-                    return new AttributeRef(ErrInvalidEscape, refPath);
+                    return new AttributeRef(Errors.AttrInvalidEscape, refPath);
                 }
                 components[i] = new Component(
                     unescaped,
@@ -268,7 +264,7 @@ namespace LaunchDarkly.Sdk
         {
             if (attributeName is null || attributeName == "")
             {
-                return new AttributeRef(ErrEmpty, attributeName);
+                return new AttributeRef(Errors.AttrEmpty, attributeName);
             }
             if (attributeName[0] != '/')
             {
