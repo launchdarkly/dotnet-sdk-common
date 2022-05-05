@@ -12,6 +12,7 @@ namespace LaunchDarkly.Sdk
         {
             var a = new AttributeRef();
             Assert.False(a.Defined);
+            Assert.False(a.Valid);
             Assert.Equal(Errors.AttrEmpty, a.Error);
             Assert.Equal("", a.ToString());
             Assert.Equal(0, a.Depth);
@@ -31,6 +32,7 @@ namespace LaunchDarkly.Sdk
         {
             var a = AttributeRef.FromPath(s);
             Assert.True(a.Defined);
+            Assert.False(a.Valid);
             Assert.Equal(expectedError, a.Error);
             Assert.Equal(s, a.ToString());
             Assert.Equal(0, a.Depth);
@@ -44,6 +46,7 @@ namespace LaunchDarkly.Sdk
         {
             var a = AttributeRef.FromPath(s);
             Assert.True(a.Defined);
+            Assert.True(a.Valid);
             Assert.Null(a.Error);
             Assert.Equal(s, a.ToString());
             Assert.Equal(1, a.Depth);
@@ -60,6 +63,7 @@ namespace LaunchDarkly.Sdk
         {
             var a = AttributeRef.FromPath(s);
             Assert.True(a.Defined);
+            Assert.True(a.Valid);
             Assert.Null(a.Error);
             Assert.Equal(s, a.ToString());
             Assert.Equal(1, a.Depth);

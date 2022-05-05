@@ -85,13 +85,14 @@ namespace LaunchDarkly.Sdk
         /// <summary>
         /// True if the AttributeRef has a value, meaning that it is not an uninitialized struct
         /// (<c>new AttributeRef()</c>). That does not guarantee that the value is valid; use
-        /// <see cref="Error"/> to test that.
+        /// <see cref="Valid"/> or <see cref="Error"/> to test that.
         /// </summary>
+        /// <seealso cref="Valid"/>
         /// <seealso cref="Error"/>
         public bool Defined => !(_rawPath is null) || !(_error is null);
 
         /// <summary>
-        /// Null for a valid AttributeRef, or a non-null error message for an invalid AttributeRef.
+        /// True for a valid AttributeRef, false for an invalid AttributeRef.
         /// </summary>
         /// <remarks>
         /// <para>
@@ -114,6 +115,17 @@ namespace LaunchDarkly.Sdk
         /// syntax.
         /// </para>
         /// </remarks>
+        /// <seealso cref="Defined"/>
+        /// <seealso cref="Error"/>
+        public bool Valid => Error is null;
+
+        /// <summary>
+        /// Null for a valid AttributeRef, or a non-null error message for an invalid AttributeRef.
+        /// </summary>
+        /// <remarks>
+        /// If this is null, then <see cref="Valid"/> is true. If it is non-null, then <see cref="Valid"/> is false.
+        /// </remarks>
+        /// <seealso cref="Valid"/>
         /// <seealso cref="Defined"/>
         public string Error
         {

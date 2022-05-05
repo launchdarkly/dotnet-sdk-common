@@ -42,11 +42,12 @@ namespace LaunchDarkly.Sdk
         /// True if this is a Context that was created with a constructor or builder (regardless of
         /// whether its properties are valid), or false if it is an empty uninitialized struct.
         /// </summary>
+        /// <seealso cref="Valid"/>
         /// <seealso cref="Error"/>
         public bool Defined { get; }
 
         /// <summary>
-        /// Null for a valid Context, or an error message for an invalid Context.
+        /// True for a valid Context, false for an invalid Context.
         /// </summary>
         /// <remarks>
         /// <para>
@@ -85,6 +86,17 @@ namespace LaunchDarkly.Sdk
         /// are not sure if you have a valid Context, you can check the <see cref="Error"/> property.
         /// </para>
         /// </remarks>
+        /// <seealso cref="Error"/>
+        /// <seealso cref="Defined"/>
+        public bool Valid => Error is null;
+
+        /// <summary>
+        /// Null for a valid Context, or an error message for an invalid Context.
+        /// </summary>
+        /// <remarks>
+        /// If this is null, then <see cref="Valid"/> is true. If it is non-null, then <see cref="Valid"/> is false.
+        /// </remarks>
+        /// <seealso cref="Valid"/>
         /// <seealso cref="Defined"/>
         public string Error => Defined ? _error : Errors.ContextUninitialized;
 
@@ -607,7 +619,7 @@ namespace LaunchDarkly.Sdk
         /// <seealso cref="GetValue(string)"/>
         public LdValue GetValue(AttributeRef attributeRef)
         {
-            if (!(attributeRef.Error is null))
+            if (!attributeRef.Valid)
             {
                 return LdValue.Null;
             }

@@ -13,7 +13,8 @@ namespace LaunchDarkly.Sdk
         {
             var c = new Context();
             Assert.False(c.Defined);
-            Assert.Equal(Errors.ContextUninitialized, c.Error);
+			Assert.False(c.Valid);
+			Assert.Equal(Errors.ContextUninitialized, c.Error);
 
 			ShouldBeInvalid(Context.New(null), Errors.ContextNoKey);
 			ShouldBeInvalid(Context.New(""), Errors.ContextNoKey);
@@ -32,6 +33,7 @@ namespace LaunchDarkly.Sdk
 		private static void ShouldBeInvalid(Context c, string error)
 		{
 			Assert.True(c.Defined);
+			Assert.False(c.Valid);
 			Assert.Equal(error, c.Error);
 
 			// we guarantee that Kind and Key are never null even for invalid contexts
@@ -43,10 +45,13 @@ namespace LaunchDarkly.Sdk
         public void Multiple()
         {
             var sc = Context.New("my-key");
-            var mc = Context.NewMulti(Context.New("my-key"), Context.NewWithKind("org", "my-key"));
-            Assert.False(sc.Multiple);
+			Assert.False(sc.Multiple);
+
+			var mc = Context.NewMulti(Context.New("my-key"), Context.NewWithKind("org", "my-key"));
             Assert.True(mc.Multiple);
-        }
+			Assert.True(mc.Defined);
+			Assert.True(mc.Valid);
+		}
 
         [Fact]
         public void OptionalAttributeNames()
