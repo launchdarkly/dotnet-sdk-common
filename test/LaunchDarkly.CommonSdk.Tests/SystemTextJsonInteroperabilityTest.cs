@@ -12,6 +12,8 @@ namespace LaunchDarkly.Sdk
         // Framework 4.5.x) as they do with LdJsonSerialization. We get this for free due to how
         // LaunchDarkly.JsonStream's [JsonStreamConverter] annotation works.
 
+        private static readonly AttributeRef ExpectedAttributeRef = AttributeRef.FromLiteral("a");
+        private const string ExpectedAttributeRefJson = @"""a""";
         private static readonly User ExpectedUser = User.WithKey("user-key");
         private const string ExpectedUserJson = @"{""key"":""user-key""}";
         private static readonly EvaluationReason ExpectedEvaluationReason = EvaluationReason.OffReason;
@@ -41,6 +43,10 @@ namespace LaunchDarkly.Sdk
             public LdValue? value { get; set; } // see above
             // "LdValue?" is a bit pointless, since an LdValue can already encode null, but it is a struct so this should work
         }
+
+        [Fact]
+        public void AttributeRefConversion() =>
+            VerifySerializationAndDeserialization(ExpectedAttributeRef, ExpectedAttributeRefJson);
 
         [Fact]
         public void EvaluationReasonConversion() =>
