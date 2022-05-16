@@ -693,6 +693,10 @@ namespace LaunchDarkly.Sdk
         /// <returns>true if found, false if not found</returns>
         public bool TryGetContextByKind(string kind, out Context context)
         {
+            if (string.IsNullOrEmpty(kind))
+            {
+                kind = DefaultKind;
+            }
             if (Multiple)
             {
                 foreach (var c in _multiContexts)

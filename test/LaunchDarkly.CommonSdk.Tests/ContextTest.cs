@@ -273,6 +273,13 @@ namespace LaunchDarkly.Sdk
 			Assert.Equal(multi, Context.MultiBuilder().Add(c1).Add(c2).Build());
 			Assert.Equal(c1, Context.NewMulti(c1));
 			Assert.Equal(c1, Context.MultiBuilder().Add(c1).Build());
+
+			var uc1 = Context.NewWithKind(Context.DefaultKind, "key1");
+			var multi2 = Context.NewMulti(uc1, c2);
+			Assert.True(multi2.TryGetContextByKind("", out var uc1a));
+			Assert.Equal(uc1, uc1a);
+			Assert.True(multi2.TryGetContextByKind(null, out var uc1b));
+			Assert.Equal(uc1, uc1b);
 		}
 
 		[Fact]
