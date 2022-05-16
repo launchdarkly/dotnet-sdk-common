@@ -5,7 +5,7 @@ repo:
   private: dotnet-sdk-common-private
 
 branches:
-  - name: master
+  - name: main
     description: 5.x - for Xamarin 2.0+ and .NET 6.0+
   - name: 4.x
     description: for Xamarin 1.x
