@@ -29,7 +29,7 @@ namespace LaunchDarkly.Sdk
     public readonly struct Context : IEquatable<Context>
     {
         /// <summary>
-        /// 
+        /// A constant for the default <see cref="Kind"/> of "user".
         /// </summary>
         public const string DefaultKind = "user";
 
@@ -465,7 +465,7 @@ namespace LaunchDarkly.Sdk
                     {
                         errors = new List<string>();
                     }
-                    errors.Add(string.Format("({0}) {1}", c.Kind, c.Error));
+                    errors.Add($"({c.Kind}) {c.Error}");
                 }
                 else if (c.Multiple)
                 {
@@ -704,7 +704,8 @@ namespace LaunchDarkly.Sdk
                     if (c.Kind == kind)
                     {
                         context = c;
-                        return true;                    }
+                        return true;
+                    }
                 }
                 context = new Context();
                 return false;
