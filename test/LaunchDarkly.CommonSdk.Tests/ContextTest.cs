@@ -53,6 +53,18 @@ namespace LaunchDarkly.Sdk
 			Assert.True(mc.Valid);
 		}
 
+		[Fact]
+		public void FullyQualifiedKey()
+        {
+			Assert.Equal("abc", Context.New("abc").FullyQualifiedKey);
+			Assert.Equal("abc:d", Context.New("abc:d").FullyQualifiedKey);
+			Assert.Equal("kind1:key1", Context.NewWithKind("kind1", "key1").FullyQualifiedKey);
+			Assert.Equal("kind1:key%3A2", Context.NewWithKind("kind1", "key:2").FullyQualifiedKey);
+			Assert.Equal("kind1:key1:kind2:key%3A2", Context.NewMulti(
+				Context.NewWithKind("kind1", "key1"), Context.NewWithKind("kind2", "key:2")
+				).FullyQualifiedKey);
+		}
+
         [Fact]
         public void OptionalAttributeNames()
         {
