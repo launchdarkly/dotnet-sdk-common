@@ -6,7 +6,7 @@ using LaunchDarkly.Sdk.Json;
 namespace LaunchDarkly.Sdk
 {
     /// <summary>
-    /// An attribute name or path expression identifying a value within a Context.
+    /// An attribute name or path expression identifying a value within a <see cref="Context"/>.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -15,9 +15,9 @@ namespace LaunchDarkly.Sdk
     /// Applications are unlikely to need to use the AttributeRef type directly.
     /// </para>
     /// <para>
-    /// It can be used to retrieve a value with Context.GetValue(), or to identify an attribute or
-    /// nested value that should be considered private with Builder.Private() (the SDK configuration can
-    /// also have a list of private attribute references).
+    /// It can be used to retrieve a value with <see cref="Context.GetValue(AttributeRef)"/>, or to
+    /// identify an attribute or nested value that should be considered private with Builder.Private()
+    /// (the SDK configuration can also have a list of private attribute references).
     /// </para>
     /// <para>
     /// Parsing and validation are done at the time that <see cref="FromPath(string)"/> or
@@ -85,13 +85,14 @@ namespace LaunchDarkly.Sdk
         /// <summary>
         /// True if the AttributeRef has a value, meaning that it is not an uninitialized struct
         /// (<c>new AttributeRef()</c>). That does not guarantee that the value is valid; use
-        /// <see cref="Error"/> to test that.
+        /// <see cref="Valid"/> or <see cref="Error"/> to test that.
         /// </summary>
+        /// <seealso cref="Valid"/>
         /// <seealso cref="Error"/>
         public bool Defined => !(_rawPath is null) || !(_error is null);
 
         /// <summary>
-        /// Null for a valid AttributeRef, or a non-null error message for an invalid AttributeRef.
+        /// True for a valid AttributeRef, false for an invalid AttributeRef.
         /// </summary>
         /// <remarks>
         /// <para>
@@ -106,14 +107,25 @@ namespace LaunchDarkly.Sdk
         /// </list>
         /// <para>
         /// Otherwise, the AttributeRef is valid, but that does not guarantee that such an attribute exists
-        /// in any given Context. For instance, NewRef("name") is a valid Ref, but a specific Context might
-        /// or might not have a name.
+        /// in any given <see cref="Context"/>. For instance, NewRef("name") is a valid Ref, but a specific
+        /// Context might or might not have a name.
         /// </para>
         /// <para>
         /// See comments on the <see cref="AttributeRef"/> type for more details of the attribute reference
         /// syntax.
         /// </para>
         /// </remarks>
+        /// <seealso cref="Defined"/>
+        /// <seealso cref="Error"/>
+        public bool Valid => Error is null;
+
+        /// <summary>
+        /// Null for a valid AttributeRef, or a non-null error message for an invalid AttributeRef.
+        /// </summary>
+        /// <remarks>
+        /// If this is null, then <see cref="Valid"/> is true. If it is non-null, then <see cref="Valid"/> is false.
+        /// </remarks>
+        /// <seealso cref="Valid"/>
         /// <seealso cref="Defined"/>
         public string Error
         {
