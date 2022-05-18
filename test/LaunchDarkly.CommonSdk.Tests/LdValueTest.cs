@@ -248,7 +248,7 @@ namespace LaunchDarkly.Sdk
             };
             foreach (var value in values)
             {
-                Assert.Equal(0, value.List.Count);
+                Assert.Empty(value.List);
 
                 // use list conversion
                 var emptyList = value.AsList(LdValue.Convert.Bool);
@@ -370,7 +370,7 @@ namespace LaunchDarkly.Sdk
             {
                 Assert.Equal(LdValue.Null, value.Get("1"));
 
-                Assert.Equal(0, value.Dictionary.Count);
+                Assert.Empty(value.Dictionary);
 
                 var emptyDict = value.AsDictionary(LdValue.Convert.Bool);
                 Assert.Equal(0, emptyDict.Count);

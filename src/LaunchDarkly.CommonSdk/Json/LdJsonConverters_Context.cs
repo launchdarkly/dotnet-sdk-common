@@ -56,7 +56,7 @@ namespace LaunchDarkly.Sdk.Json
                     obj.Name("kind").String("multi");
                     foreach (var mc in c._multiContexts)
                     {
-                        WriteJsonSingle(mc, obj.Name(mc.Kind), false);
+                        WriteJsonSingle(mc, obj.Name(mc.Kind.Value), false);
                     }
                     obj.End();
                 }
@@ -236,7 +236,7 @@ namespace LaunchDarkly.Sdk.Json
             private void WriteJsonSingle(in Context c, IValueWriter writer, bool includeKind)
             {
                 var obj = writer.Object();
-                obj.MaybeName("kind", includeKind).String(c.Kind);
+                obj.MaybeName("kind", includeKind).String(c.Kind.Value);
                 obj.Name("key").String(c.Key);
                 obj.MaybeName("name", c.Name != null).String(c.Name);
                 obj.MaybeName("transient", c.Transient).Bool(c.Transient);

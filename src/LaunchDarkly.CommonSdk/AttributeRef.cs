@@ -15,7 +15,7 @@ namespace LaunchDarkly.Sdk
     /// Applications are unlikely to need to use the AttributeRef type directly.
     /// </para>
     /// <para>
-    /// It can be used to retrieve a value with <see cref="Context.GetValue(AttributeRef)"/>, or to
+    /// It can be used to retrieve a value with <see cref="Context.GetValue(in AttributeRef)"/>, or to
     /// identify an attribute or nested value that should be considered private with Builder.Private()
     /// (the SDK configuration can also have a list of private attribute references).
     /// </para>

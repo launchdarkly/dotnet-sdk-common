@@ -15,8 +15,8 @@ namespace LaunchDarkly.Sdk
     /// <remarks>
     /// <para>
     /// To create a Context of a single kind, such as a user, you may use <see cref="New(string)"/>
-    /// or <see cref="NewWithKind"/> when only the key matters; or, to specify other attributes,
-    /// use <see cref="Builder(string)"/>.
+    /// or <see cref="New(ContextKind, string)"/> when only the key matters; or, to specify other
+    /// attributes, use <see cref="Builder(string)"/>.
     /// </para>
     /// <para>
     /// To create a Context with multiple kinds, use <see cref="NewMulti(Context[])"/> or
@@ -34,11 +34,6 @@ namespace LaunchDarkly.Sdk
     [JsonStreamConverter(typeof(LdJsonConverters.ContextConverter))]
     public readonly struct Context : IEquatable<Context>, IJsonSerializable
     {
-        /// <summary>
-        /// A constant for the default <see cref="Kind"/> of "user".
-        /// </summary>
-        public const string DefaultKind = "user";
-
         private readonly string _error;
         internal readonly ImmutableList<Context> _multiContexts;
         internal readonly ImmutableDictionary<string, LdValue> _attributes;
@@ -113,13 +108,10 @@ namespace LaunchDarkly.Sdk
         /// <para>
         /// Every valid Context has a non-empty kind. For multi-kind contexts, this value is
         /// <c>"multi"</c> and the kinds within the Context can be inspected with <see cref="MultiKindContexts"/>
-        /// or <see cref="TryGetContextByKind(string, out Context)"/>.
-        /// </para>
-        /// <para>
-        /// For rules regarding the kind value, see <see cref="ContextBuilder.Kind(string)"/>.
+        /// or <see cref="TryGetContextByKind(ContextKind, out Context)"/>.
         /// </para>
         /// </remarks>
-        public string Kind { get; }
+        public ContextKind Kind { get; }
 
         /// <summary>
         /// The Context's key attribute.
@@ -127,12 +119,12 @@ namespace LaunchDarkly.Sdk
         /// <remarks>
         /// <para>
         /// For a single-kind context, this value is set by a Context factory method
-        /// (<see cref="New(string)"/>, <see cref="NewWithKind(string, string)"/>), or
+        /// (<see cref="New(string)"/>, <see cref="New(ContextKind, string)"/>), or
         /// by <see cref="Builder(string)"/> or <see cref="ContextBuilder.Key(string)"/>.
         /// </para>
         /// <para>
         /// For a multi-kind context, there is no single value and <see cref="Key"/> return an
-        /// empty string. Use <see cref="MultiKindContexts"/> or <see cref="TryGetContextByKind(string, out Context)"/>
+        /// empty string. Use <see cref="MultiKindContexts"/> or <see cref="TryGetContextByKind(ContextKind, out Context)"/>
         /// to inspect a Context for a particular kind, then get the <see cref="Key"/> from it.
         /// </para>
         /// <para>
@@ -151,7 +143,7 @@ namespace LaunchDarkly.Sdk
         /// </para>
         /// <para>
         /// For a multi-kind context, there is no single value and <see cref="Name"/> returns
-        /// null. Use <see cref="MultiKindContexts"/> or <see cref="TryGetContextByKind(string, out Context)"/>
+        /// null. Use <see cref="MultiKindContexts"/> or <see cref="TryGetContextByKind(ContextKind, out Context)"/>
         /// to inspect a Context for a particular kind, then get the <see cref="Name"/> from it.
         /// </para>
         /// </remarks>
@@ -168,7 +160,7 @@ namespace LaunchDarkly.Sdk
         /// </para>
         /// <para>
         /// For a multi-kind context, there is no single value and <see cref="Transient"/> returns
-        /// false. Use <see cref="MultiKindContexts"/> or <see cref="TryGetContextByKind(string, out Context)"/>
+        /// false. Use <see cref="MultiKindContexts"/> or <see cref="TryGetContextByKind(ContextKind, out Context)"/>
         /// to inspect a Context for a particular kind, then get the <see cref="Transient"/> value from it.
         /// </para>
         /// </remarks>
@@ -184,7 +176,7 @@ namespace LaunchDarkly.Sdk
         /// </para>
         /// <para>
         /// For a multi-kind context, there is no single value and <see cref="Secondary"/> returns
-        /// null. Use <see cref="MultiKindContexts"/> or <see cref="TryGetContextByKind(string, out Context)"/>
+        /// null. Use <see cref="MultiKindContexts"/> or <see cref="TryGetContextByKind(ContextKind, out Context)"/>
         /// to inspect a Context for a particular kind, then get the <see cref="Secondary"/> value from it.
         /// </para>
         /// </remarks>
@@ -206,7 +198,7 @@ namespace LaunchDarkly.Sdk
         /// <para>
         /// If this value is true, then <see cref="Kind"/> is guaranteed to be "multi", and you can inspect the
         /// individual Contexts for each kind with <see cref="MultiKindContexts"/> or
-        /// <see cref="TryGetContextByKind(string, out Context)"/>.
+        /// <see cref="TryGetContextByKind(ContextKind, out Context)"/>.
         /// </para>
         /// <para>
         /// If this value is false, then <see cref="Kind"/> is guaranteed to have a value that is not "multi"/
@@ -265,26 +257,26 @@ namespace LaunchDarkly.Sdk
         /// If this is a single-kind Context, then it returns an empty list.
         /// </para>
         /// </remarks>
-        /// <seealso cref="TryGetContextByKind(string, out Context)"/>
+        /// <seealso cref="TryGetContextByKind(ContextKind, out Context)"/>
         public ImmutableList<Context> MultiKindContexts =>
             _multiContexts ?? ImmutableList.Create<Context>();
 
         /// <summary>
-        /// Creates a single-kind Context with a Kind of <see cref="DefaultKind"/> and the specified key.
+        /// Creates a single-kind Context with a Kind of <see cref="ContextKind.Default"/> and the specified key.
         /// </summary>
         /// <remarks>
         /// To specify additional properties, use <see cref="Builder(string)"/>. To create a
         /// multi-kind Context, use <see cref="NewMulti(Context[])"/> or <see cref="MultiBuilder"/>.
         /// To create a single-kind Context of a different kind than "user", use
-        /// <see cref="NewWithKind(string, string)"/>.
+        /// <see cref="New(ContextKind, string)"/>.
         /// </remarks>
         /// <param name="key">the context key</param>
         /// <returns>a Context</returns>
-        /// <seealso cref="NewWithKind(string, string)"/>
+        /// <seealso cref="New(ContextKind, string)"/>
         /// <seealso cref="Builder(string)"/>
         public static Context New(string key) =>
             new Context(
-                DefaultKind,
+                ContextKind.Default,
                 key,
                 null,
                 false,
@@ -306,7 +298,7 @@ namespace LaunchDarkly.Sdk
         /// <param name="kind">the context kind</param>
         /// <param name="key">the context key</param>
         /// <returns>a Context</returns>
-        public static Context NewWithKind(string kind, string key) =>
+        public static Context New(ContextKind kind, string key) =>
             new Context(
                 kind,
                 key,
@@ -323,8 +315,8 @@ namespace LaunchDarkly.Sdk
         /// </summary>
         /// <remarks>
         /// <para>
-        /// To create a single-kind Context, use <see cref="New(string)"/>, <see cref="NewWithKind(string, string)"/>,
-        /// or <see cref="Builder(string)"/>.
+        /// To create a single-kind Context, use <see cref="New(string)"/>,
+        /// <see cref="New(ContextKind, string)"/>, or <see cref="Builder(string)"/>.
         /// </para>
         /// <para>
         /// For the returned Context to be valid, the contexts list must not be empty, and all of its
@@ -354,14 +346,14 @@ namespace LaunchDarkly.Sdk
 
         /// <summary>
         /// Creates a ContextBuilder for building a Context, initializing its <see cref="ContextBuilder.Key(string)"/>
-        /// and setting <see cref="ContextBuilder.Kind(string)"/> to <see cref="DefaultKind"/>.
+        /// and setting <see cref="ContextBuilder.Kind(string)"/> to <see cref="ContextKind.Default"/>.
         /// </summary>
         /// <remarks>
         /// <para>
         /// You may use <see cref="ContextBuilder"/> methods to set additional attributes and/or change the
         /// <see cref="ContextBuilder.Kind(string)"/> before calling <see cref="ContextBuilder.Build"/>.
         /// If you do not change any values, the defaults for the Context are that its <see cref="Kind"/> is
-        /// <see cref="DefaultKind"/> ("user"), its <see cref="Key"/> is set to whatever value you passed for
+        /// <see cref="ContextKind.Default"/> ("user"), its <see cref="Key"/> is set to whatever value you passed for
         /// <paramref name="key"/>, its <see cref="Transient"/> attribute is false, and it has no values for any
         /// other attributes.
         /// </para>
@@ -406,7 +398,7 @@ namespace LaunchDarkly.Sdk
             new ContextMultiBuilder();
 
         internal Context(
-            string kind,
+            ContextKind kind,
             string key,
             string name,
             bool transient,
@@ -418,12 +410,7 @@ namespace LaunchDarkly.Sdk
         {
             Defined = true;
 
-            if (kind is null)
-            {
-                kind = DefaultKind;
-            }
-
-            var error = ValidateKind(kind);
+            var error = kind.Validate();
             if (error is null)
             {
                 if (key is null || (key == "" && !allowEmptyKey))
@@ -442,12 +429,12 @@ namespace LaunchDarkly.Sdk
                 Secondary = secondary;
                 _attributes = attributes;
                 _privateAttributes = privateAttributes;
-                FullyQualifiedKey = (Kind == DefaultKind) ? key :
+                FullyQualifiedKey = Kind.IsDefault ? key :
                     (Kind + ":" + WebUtility.UrlEncode(key));
             }
             else
             {
-                Kind = "";
+                Kind = new ContextKind();
                 Key = "";
                 Name = null;
                 Transient = false;
@@ -517,8 +504,8 @@ namespace LaunchDarkly.Sdk
 
             if (_error is null)
             {
-                Kind = "multi";
-                _multiContexts = contexts.OrderBy(c => c.Kind).ToImmutableList();
+                Kind = ContextKind.Multi;
+                _multiContexts = contexts.OrderBy(c => c.Kind.Value).ToImmutableList();
                 var buildKey = new StringBuilder();
                 foreach (var c in contexts)
                 {
@@ -532,7 +519,7 @@ namespace LaunchDarkly.Sdk
             }
             else
             {
-                Kind = "";
+                Kind = new ContextKind();
                 _multiContexts = null;
                 FullyQualifiedKey = "";
             }
@@ -550,7 +537,7 @@ namespace LaunchDarkly.Sdk
             Defined = true;
             _error = error;
             _multiContexts = null;
-            Kind = "";
+            Kind = new ContextKind();
             Key = "";
             Name = null;
             Transient = false;
@@ -574,12 +561,12 @@ namespace LaunchDarkly.Sdk
         /// </para>
         /// <para>
         /// For a multi-kind context, the only supported attribute name is "kind". Use
-        /// <see cref="MultiKindContexts"/> or <see cref="TryGetContextByKind(string, out Context)"/> to inspect
+        /// <see cref="MultiKindContexts"/> or <see cref="TryGetContextByKind(ContextKind, out Context)"/> to inspect
         /// a Context for a particular kind and then get its attributes.
         /// </para>
         /// <para>
         /// This method does not support complex expressions for getting individual values out of JSON objects
-        /// or arrays, such as "/address/street". Use <see cref="GetValue(AttributeRef)"/> with an
+        /// or arrays, such as "/address/street". Use <see cref="GetValue(in AttributeRef)"/> with an
         /// <see cref="AttributeRef"/> for that purpose.
         /// </para>
         /// <para>
@@ -593,7 +580,7 @@ namespace LaunchDarkly.Sdk
         /// </remarks>
         /// <param name="attributeName">the desired attribute name</param>
         /// <returns>the value or <see cref="LdValue.Null"/></returns>
-        /// <seealso cref="GetValue(AttributeRef)"/>
+        /// <seealso cref="GetValue(in AttributeRef)"/>
         public LdValue GetValue(string attributeName) =>
             GetValue(AttributeRef.FromLiteral(attributeName));
 
@@ -613,7 +600,7 @@ namespace LaunchDarkly.Sdk
         /// </para>
         /// <para>
         /// For a multi-kind context, the only supported attribute name is "kind". Use
-        /// <see cref="MultiKindContexts"/> or <see cref="TryGetContextByKind(string, out Context)"/> to inspect
+        /// <see cref="MultiKindContexts"/> or <see cref="TryGetContextByKind(ContextKind, out Context)"/> to inspect
         /// a Context for a particular kind and then get its attributes.
         /// </para>
         /// <para>
@@ -629,7 +616,7 @@ namespace LaunchDarkly.Sdk
         /// <param name="attributeRef">an attribute reference</param>
         /// <returns>the value or <see cref="LdValue.Null"/></returns>
         /// <seealso cref="GetValue(string)"/>
-        public LdValue GetValue(AttributeRef attributeRef)
+        public LdValue GetValue(in AttributeRef attributeRef)
         {
             if (!attributeRef.Valid)
             {
@@ -646,7 +633,7 @@ namespace LaunchDarkly.Sdk
             {
                 if (attributeRef.Depth == 1 && name == "kind")
                 {
-                    return LdValue.Of(Kind);
+                    return LdValue.Of(Kind.Value);
                 }
                 return LdValue.Null; // multi-kind context has no other addressable attributes
             }
@@ -695,20 +682,12 @@ namespace LaunchDarkly.Sdk
         /// <see cref="Kind"/> of that context. If the method is called on a multi-kind context, then
         /// the kind can match any of the individual contexts within.
         /// </para>
-        /// <para>
-        /// If <paramref name="kind"/> is an empty string or null, <see cref="DefaultKind"/> is used
-        /// instead.
-        /// </para>
         /// </remarks>
         /// <param name="kind">the desired context kind</param>
         /// <param name="context">receives the context that was found, if successful</param>
         /// <returns>true if found, false if not found</returns>
-        public bool TryGetContextByKind(string kind, out Context context)
+        public bool TryGetContextByKind(ContextKind kind, out Context context)
         {
-            if (string.IsNullOrEmpty(kind))
-            {
-                kind = DefaultKind;
-            }
             if (Multiple)
             {
                 foreach (var c in _multiContexts)
@@ -843,32 +822,12 @@ namespace LaunchDarkly.Sdk
             return LdJsonSerialization.SerializeObject(this);
         }
 
-        private static string ValidateKind(string kind)
-        {
-            switch (kind)
-            {
-                case "kind":
-                    return Errors.ContextKindCannotBeKind;
-                case "multi":
-                    return Errors.ContextKindMultiForSingle;
-                default:
-                    foreach (var ch in kind)
-                    {
-                        if ((ch < 'a' || ch > 'z') && (ch < 'A' || ch > 'Z') && (ch < '0' || ch > '9') &&
-                            ch != '.' && ch != '_' && ch != '-') {
-                            return Errors.ContextKindInvalidChars;
-                        }
-                    }
-                    return null;
-            }
-        }
-
         private LdValue GetTopLevelAddressableAttributeSingleKind(string name)
         {
             switch (name)
             {
                 case "kind":
-                    return LdValue.Of(Kind);
+                    return LdValue.Of(Kind.Value);
                 case "key":
                     return LdValue.Of(Key);
                 case "name":
