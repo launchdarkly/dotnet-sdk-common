@@ -67,7 +67,8 @@ namespace LaunchDarkly.Sdk
                 _transient,
                 _secondary,
                 _attributes?.ToImmutableDictionary(),
-                _privateAttributes?.ToImmutableList()
+                _privateAttributes?.ToImmutableList(),
+                _allowEmptyKey
                 );
         }
 

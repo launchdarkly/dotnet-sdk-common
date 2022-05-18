@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Net;
 using System.Text;
+using LaunchDarkly.JsonStream;
 using LaunchDarkly.Sdk.Json;
 
 namespace LaunchDarkly.Sdk
@@ -25,8 +26,13 @@ namespace LaunchDarkly.Sdk
     /// An uninitialized Context struct is not valid for use in any SDK operations. Also, a Context can
     /// be in an error state if it was built with invalid attributes. See <see cref="Error"/>.
     /// </para>
+    /// <para>
+    /// A Context can be converted to or from JSON using a standard schema; see
+    /// <see cref="LdJsonConverters.ContextConverter"/>.
+    /// </para>
     /// </remarks>
-    public readonly struct Context : IEquatable<Context>
+    [JsonStreamConverter(typeof(LdJsonConverters.ContextConverter))]
+    public readonly struct Context : IEquatable<Context>, IJsonSerializable
     {
         /// <summary>
         /// A constant for the default <see cref="Kind"/> of "user".
@@ -284,7 +290,8 @@ namespace LaunchDarkly.Sdk
                 false,
                 null,
                 null,
-                null
+                null,
+                false
                 );
 
         /// <summary>
@@ -307,7 +314,8 @@ namespace LaunchDarkly.Sdk
                 false,
                 null,
                 null,
-                null
+                null,
+                false
                 );
 
         /// <summary>
@@ -404,7 +412,8 @@ namespace LaunchDarkly.Sdk
             bool transient,
             string secondary,
             ImmutableDictionary<string, LdValue> attributes,
-            ImmutableList<AttributeRef> privateAttributes
+            ImmutableList<AttributeRef> privateAttributes,
+            bool allowEmptyKey
             )
         {
             Defined = true;
@@ -415,9 +424,12 @@ namespace LaunchDarkly.Sdk
             }
 
             var error = ValidateKind(kind);
-            if (error is null && (key is null || key == ""))
+            if (error is null)
             {
-                error = Errors.ContextNoKey;
+                if (key is null || (key == "" && !allowEmptyKey))
+                {
+                    error = Errors.ContextNoKey;
+                }
             }
 
             _error = error;
@@ -805,6 +817,30 @@ namespace LaunchDarkly.Sdk
                 }
             }
             return hashBuilder.Value;
+        }
+
+        /// <summary>
+        /// Returns a string representation of the Context.
+        /// </summary>
+        /// <remarks>
+        /// For a valid Context, this is currently defined as being the same as the JSON representation,
+        /// since that is the simplest way to represent all of the Context properties. However, application
+        /// code should not rely on <see cref="ToString"/> always being the same as the JSON representation.
+        /// If you specifically want the latter, use <see cref="LdJsonSerialization.SerializeObject{T}(T)"/>.
+        /// For an invalid Context, ToString() returns a description of why it is invalid.
+        /// </remarks>
+        /// <returns>a string representation</returns>
+        public override string ToString()
+        {
+            if (!Defined)
+            {
+                return "(uninitialized Context)";
+            }
+            if (!(Error is null))
+            {
+                return "(invalid Context: " + Error + ")";
+            }
+            return LdJsonSerialization.SerializeObject(this);
         }
 
         private static string ValidateKind(string kind)

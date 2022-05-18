@@ -16,5 +16,13 @@ namespace LaunchDarkly.Sdk
         internal const string ContextKindMultiWithNoKinds = "multi-kind context must contain at least one kind";
         internal const string ContextKindMultiWithinMulti = "multi-kind context cannot contain other multi-kind contexts";
         internal const string ContextKindMultiDuplicates = "multi-kind context cannot have same kind more than once";
+
+        internal const string JsonContextEmptyKind = "context kind cannot be empty";
+        internal static string JsonContextMissingProperty(string name) =>
+             string.Format(@"context missing required property ""{0}""", name);
+        internal static string JsonContextWrongType(string name, LdValueType badType) =>
+             string.Format(@"unsupported type ""{0}"" for context property ""{1}""", badType, name);
+        internal static string JsonSerializeInvalidContext(string error) =>
+            "cannot serialize invalid Context: " + error;
     }
 }
