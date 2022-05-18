@@ -28,79 +28,70 @@ namespace LaunchDarkly.Sdk
         /// </summary>
         public string AttributeName { get; }
 
-        internal Func<User, LdValue> BuiltInGetter { get; }
-
-        /// <summary>
-        /// True for a built-in attribute or false for a custom attribute.
-        /// </summary>
-        public bool BuiltIn => BuiltInGetter != null;
-
-        private UserAttribute(string name, Func<User, LdValue> builtInGetter)
+        private UserAttribute(string name)
         {
             AttributeName = name;
-            BuiltInGetter = builtInGetter;
         }
 
         /// <summary>
         /// Represents the user key attribute.
         /// </summary>
         public static readonly UserAttribute Key =
-            new UserAttribute("key", u => LdValue.Of(u.Key));
+            new UserAttribute("key");
 
         /// <summary>
         /// Represents the secondary key attribute.
         /// </summary>
         public static readonly UserAttribute Secondary =
-            new UserAttribute("secondary", u => LdValue.Of(u.Secondary));
+            new UserAttribute("secondary");
 
         /// <summary>
         /// Represents the IP address attribute.
         /// </summary>
         public static readonly UserAttribute IPAddress =
-            new UserAttribute("ip", u => LdValue.Of(u.IPAddress));
+            new UserAttribute("ip");
 
         /// <summary>
         /// Represents the user email attribute.
         /// </summary>
         public static readonly UserAttribute Email =
-            new UserAttribute("email", u => LdValue.Of(u.Email));
+            new UserAttribute("email");
 
         /// <summary>
         /// Represents the full name attribute.
         /// </summary>
         public static readonly UserAttribute Name =
-            new UserAttribute("name", u => LdValue.Of(u.Name));
+            new UserAttribute("name");
 
         /// <summary>
         /// Represents the avatar URL attribute.
         /// </summary>
         public static readonly UserAttribute Avatar =
-            new UserAttribute("avatar", u => LdValue.Of(u.Avatar));
+            new UserAttribute("avatar");
 
         /// <summary>
         /// Represents the first name attribute.
         /// </summary>
         public static readonly UserAttribute FirstName =
-            new UserAttribute("firstName", u => LdValue.Of(u.FirstName));
+            new UserAttribute("firstName");
 
         /// <summary>
         /// Represents the last name attribute.
         /// </summary>
         public static readonly UserAttribute LastName =
-            new UserAttribute("lastName", u => LdValue.Of(u.LastName));
+            new UserAttribute("lastName");
 
         /// <summary>
         /// Represents the country attribute.
         /// </summary>
         public static readonly UserAttribute Country =
-            new UserAttribute("country", u => LdValue.Of(u.Country));
+            new UserAttribute("country");
 
         /// <summary>
         /// Represents the anonymous attribute.
         /// </summary>
         public static readonly UserAttribute Anonymous =
-            new UserAttribute("anonymous", u => u.AnonymousOptional.HasValue ?
-                LdValue.Of(u.AnonymousOptional.Value) : LdValue.Null);
+            new UserAttribute("anonymous");
 
         private static Dictionary<string, UserAttribute> _builtins =
             new UserAttribute[]
@@ -119,7 +110,7 @@ namespace LaunchDarkly.Sdk
             {
                 return a;
             }
-            return new UserAttribute(name, null);
+            return new UserAttribute(name);
         }
 
 #pragma warning disable CS1591  // don't need XML comments for these standard methods

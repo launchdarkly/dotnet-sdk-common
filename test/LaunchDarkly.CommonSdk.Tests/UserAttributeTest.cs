@@ -9,7 +9,7 @@ namespace LaunchDarkly.Sdk
         public void TestBuiltIns()
         {
             TestBuiltInString(UserAttribute.Key, "key", (b, v) => b.Key(v));
-            TestBuiltInString(UserAttribute.Secondary, "secondary", (b, v) => b.Secondary(v));
+            // TestBuiltInString(UserAttribute.Secondary, "secondary", (b, v) => b.Secondary(v)); // Secondary is no longer addressable like a regular attribute
             TestBuiltInString(UserAttribute.IPAddress, "ip", (b, v) => b.IPAddress(v));
             TestBuiltInString(UserAttribute.Email, "email", (b, v) => b.Email(v));
             TestBuiltInString(UserAttribute.Name, "name", (b, v) => b.Name(v));
@@ -19,20 +19,18 @@ namespace LaunchDarkly.Sdk
             TestBuiltInString(UserAttribute.Country, "country", (b, v) => b.Country(v));
 
             Assert.Equal("anonymous", UserAttribute.Anonymous.AttributeName);
-            Assert.True(UserAttribute.Anonymous.BuiltIn);
-            Assert.Equal(LdValue.Null, User.WithKey(".").GetAttribute(UserAttribute.Anonymous));
+            Assert.Equal(LdValue.Null, User.WithKey(".").GetValue(UserAttribute.Anonymous.AttributeName));
             Assert.Equal(LdValue.Of(true), User.Builder(".").Anonymous(true).Build()
-                .GetAttribute(UserAttribute.Anonymous));
+                .GetValue("transient"));
         }
 
         [Fact]
         public void TestCustom()
         {
             var a = UserAttribute.ForName("age");
-            Assert.False(a.BuiltIn);
-            Assert.Equal(LdValue.Null, User.WithKey(".").GetAttribute(a));
+            Assert.Equal(LdValue.Null, User.WithKey(".").GetValue(a.AttributeName));
             Assert.Equal(LdValue.Of(99), User.Builder(".").Custom("age", LdValue.Of(99)).Build()
-                .GetAttribute(a));
+                .GetValue(a.AttributeName));
         }
 
         [Fact]
@@ -62,10 +60,9 @@ namespace LaunchDarkly.Sdk
         {
             Assert.Equal(name, a.AttributeName);
 
-            Assert.True(a.BuiltIn);
             var b = User.Builder(".");
             setter(b, "x");
-            Assert.Equal(LdValue.Of("x"), b.Build().GetAttribute(a));
+            Assert.Equal(LdValue.Of("x"), b.Build().GetValue(a.AttributeName));
         }
     }
 }

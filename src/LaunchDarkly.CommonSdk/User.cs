@@ -7,143 +7,56 @@ using LaunchDarkly.Sdk.Json;
 namespace LaunchDarkly.Sdk
 {
     /// <summary>
-    /// Attributes of a user for whom you are evaluating feature flags.
+    /// Contains legacy methods for constructing simple evaluation contexts, using the older LaunchDarkly
+    /// SDK model for user properties.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <see cref="User"/> contains any user-specific properties that may be used in feature flag
-    /// configurations to produce different flag variations for different users. You may define
-    /// these properties however you wish.
+    /// The SDK now uses the type <see cref="Context"/> to represent an evaluation context that might
+    /// represent a user, or some other kind of entity, or multiple kinds. But in older SDK versions,
+    /// this was limited to one kind and was represented by the type lduser.User. This differed from
+    /// Context in several ways:
+    /// </para>
+    /// <list type="bullet">
+    /// <item><description>There was always a single implicit context kind of "user".</description></item>
+    /// <item><description>Unlike Context where only a few attributes such as <see cref="Context.Key"/>
+    /// and <see cref="Context.Name"/> have special behavior, the user model defined many other built-in
+    /// attributes such as <c>email</c> which, like <c>name</c>, were constrained to only allow string
+    /// values. These had specific setter methods in <see cref="UserBuilder"/>.</description></item>
+    /// <item><description>The property that is now called <see cref="Context.Transient"/> was called
+    /// Anonymous.</description></item>
+    /// </list>
+    /// <para>
+    /// The User class now exists only as a container for static methods; the SDK now operates only on
+    /// Contexts. <see cref="User.WithKey(string)"/> has been changed to return a Context.
+    /// <see cref="User.Builder(string)"/> and the <see cref="UserBuilder"/> type have been retained,
+    /// and modified to be a wrapper for <see cref="ContextBuilder"/>. This allows code that used the
+    /// older model to still work with minor adjustments.
     /// </para>
     /// <para>
-    /// The only mandatory property is the <see cref="Key"/>, which must uniquely identify each user.
-    /// For authenticated users, this may be a username or e-mail address. For anonymous users,
-    /// this could be an IP address or session ID.
+    /// For any code that still uses these methods, the significant differences from older SDK versions are:
     /// </para>
-    /// <para>
-    /// Besides the mandatory key, <see cref="User"/> supports two kinds of optional attributes:
-    /// interpreted attributes (e.g. <see cref="IPAddress"/> and <see cref="Country"/>) and custom
-    /// attributes. LaunchDarkly can parse interpreted attributes and attach meaning to them. For
-    /// example, from an <see cref="IPAddress"/>, LaunchDarkly can do a geo IP lookup and determine
-    /// the user's country.
-    /// </para>
-    /// <para>
-    /// Custom attributes are not parsed by LaunchDarkly. They can be used in custom rules-- for example, a
-    /// custom attribute such as "customer_ranking" can be used to launch a feature to the top 10% of users
-    /// on a site. Custom attributes can have values of any type supported by JSON.
-    /// </para>
-    /// <para>
-    /// Instances of <c>User</c> are immutable once created. They can be created with the factory method
-    /// <see cref="User.WithKey(string)"/>, or using a builder pattern with <see cref="User.Builder(string)"/>
-    /// or <see cref="User.Builder(User)"/>.
-    /// </para>
-    /// <para>
-    /// For converting this type to or from JSON, see <see cref="LaunchDarkly.Sdk.Json"/>.
-    /// </para>
+    /// <list type="bullet">
+    /// <item><description>They now return a <see cref="Context"/>, so you will need to update any part of
+    /// your code that referred to the User type by name.</description></item>
+    /// <item><description>The SDK no longer supports setting the key to an empty string. If you do this,
+    /// the returned Context will be invalid (as indicated by a non-nil <see cref="Context.Error"/>) and
+    /// the SDK will refuse to use it for evaluations or events.</description></item>
+    /// <item><description>Previously, the Anonymous property (now called Transient) had three states:
+    /// true, false, or undefined/null. Undefined/null and false were functionally the same in terms of
+    /// the LaunchDarkly dashboard/indexing behavior, but they were represented differently in JSON and
+    /// could behave differently if referenced in a flag rule (an undefined/null value would not match
+    /// "anonymous is false"). Now, the property is a simple boolean defaulting to false, and the undefined
+    /// state is the same as false.</description></item>
+    /// </list>
     /// </remarks>
-    [JsonStreamConverter(typeof(LdJsonConverters.UserConverter))]
-    public class User : IEquatable<User>, IJsonSerializable
+    public static class User
     {
-        private readonly string _key;
-        private readonly string _secondary;
-        private readonly string _ip;
-        private readonly string _country;
-        private readonly string _firstName;
-        private readonly string _lastName;
-        private readonly string _name;
-        private readonly string _avatar;
-        private readonly string _email;
-        private readonly bool? _anonymous;
-        internal readonly ImmutableDictionary<string, LdValue> _custom;
-        internal readonly ImmutableHashSet<string> _privateAttributeNames;
-
         /// <summary>
-        /// The unique key for the user.
-        /// </summary>
-        public string Key => _key;
-
-        /// <summary>
-        /// The secondary key for a user, which can be used in
-        /// <see href="https://docs.launchdarkly.com/home/flags/targeting-users#targeting-rules-based-on-user-attributes">feature flag targeting</see>.
+        /// Creates an <see cref="IUserBuilder"/> for constructing a <see cref="Context"/> object using a
+        /// fluent syntax. The resulting Context will have a <see cref="Context.Kind"/> of "user". 
         /// </summary>
         /// <remarks>
-        /// The use of the secondary key in targeting is as follows: if you have chosen to bucket users by a
-        /// specific attribute, the secondary key (if set) is used to further distinguish between users who are
-        /// otherwise identical according to that attribute.
-        /// </remarks>
-        public string Secondary => _secondary;
-
-        /// <summary>
-        /// The IP address of the user.
-        /// </summary>
-        public string IPAddress => _ip;
-
-        /// <summary>
-        /// The country code for the user.
-        /// </summary>
-        public string Country => _country;
-
-        /// <summary>
-        /// The user's first name.
-        /// </summary>
-        public string FirstName => _firstName;
-
-        /// <summary>
-        /// The user's last name.
-        /// </summary>
-        public string LastName => _lastName;
-
-        /// <summary>
-        /// The user's full name.
-        /// </summary>
-        public string Name => _name;
-
-        /// <summary>
-        /// The user's avatar.
-        /// </summary>
-        public string Avatar => _avatar;
-
-        /// <summary>
-        /// The user's email address.
-        /// </summary>
-        public string Email => _email;
-
-        /// <summary>
-        /// Whether or not the user is anonymous.
-        /// </summary>
-        public bool Anonymous => _anonymous.HasValue && _anonymous.Value;
-
-        /// <summary>
-        /// Whether or not the user is anonymous, if that has been specified.
-        /// </summary>
-        /// <remarks>
-        /// Although the <see cref="Anonymous"/> property defaults to <see langword="false"/> in terms
-        /// of LaunchDarkly's user indexing behavior, for historical reasons <see langword="null"/>
-        /// (the property has not been explicitly set) may behave differently from being explicitly set
-        /// to <see langword="false"/>, if this property is referenced in a feature flag rule. This
-        /// property getter, and the corresponding setter in <see cref="IUserBuilder"/>, allow you to
-        /// treat the property as nullable.
-        /// </remarks>
-        public bool? AnonymousOptional => _anonymous;
-
-        /// <summary>
-        /// Custom attributes for the user.
-        /// </summary>
-        public IImmutableDictionary<string, LdValue> Custom => _custom;
-
-        /// <summary>
-        /// Used internally to track which attributes are private.
-        /// </summary>
-        public IImmutableSet<string> PrivateAttributeNames => _privateAttributeNames;
-
-        /// <summary>
-        /// Creates an <see cref="IUserBuilder"/> for constructing a user object using a fluent syntax.
-        /// </summary>
-        /// <remarks>
-        /// This is the only method for building a <see cref="User"/> if you are setting properties
-        /// besides the <see cref="User.Key"/>. The <see cref="IUserBuilder"/> has methods for setting
-        /// any number of properties, after which you call <see cref="IUserBuilder.Build"/> to get the
-        /// resulting <see cref="User"/> instance.
         /// </remarks>
         /// <example>
         /// <code>
@@ -152,19 +65,17 @@ namespace LaunchDarkly.Sdk
         /// </example>
         /// <param name="key">a <see langword="string"/> that uniquely identifies a user</param>
         /// <returns>a builder object</returns>
-        public static IUserBuilder Builder(string key)
-        {
-            return new UserBuilder(key);
-        }
+        public static IUserBuilder Builder(string key) =>
+            new UserBuilder(key);
 
         /// <summary>
-        /// Creates an <see cref="IUserBuilder"/> for constructing a user object, with its initial
-        /// properties copied from an existeing user.
+        /// Creates an <see cref="IUserBuilder"/> for constructing a <see cref="Context"/>, with its initial
+        /// properties copied from an existing Context.
         /// </summary>
         /// <remarks>
-        /// This is the same as calling <c>User.Builder(fromUser.Key)</c> and then calling the
+        /// This is the same as calling <c>User.Builder(fromContext.Key)</c> and then calling the
         /// <see cref="IUserBuilder"/> methods to set each of the individual properties from their current
-        /// values in <c>fromUser</c>. Modifying the builder does not affect the original <see cref="User"/>.
+        /// values in <c>fromUser</c>. Modifying the builder does not affect the original <see cref="Context"/>.
         /// </remarks>
         /// <example>
         /// <code>
@@ -173,133 +84,18 @@ namespace LaunchDarkly.Sdk
         ///     // this is equvalent to: user2 = User.Builder("my-key").FirstName("Jane").LastName("Schmoe").Build();
         /// </code>
         /// </example>
-        /// <param name="fromUser">the user to copy</param>
+        /// <param name="fromContext">the context to copy</param>
         /// <returns>a builder object</returns>
-        public static IUserBuilder Builder(User fromUser)
-        {
-            return new UserBuilder(fromUser);
-        }
-
-        private User(string key)
-        {
-            _key = key;
-            _custom = ImmutableDictionary.Create<string, LdValue>();
-            _privateAttributeNames = ImmutableHashSet.Create<string>();
-        }
+        public static IUserBuilder Builder(Context fromContext) =>
+            new UserBuilder(fromContext);
 
         /// <summary>
-        /// Creates a user by specifying all properties.
+        /// Creates a simple <see cref="Context"/> whose <see cref="Context.Kind"/> is "user", with
+        /// the given key and no other attributes.
         /// </summary>
-        public User(string key, string secondary, string ip, string country, string firstName,
-                    string lastName, string name, string avatar, string email, bool? anonymous,
-                    ImmutableDictionary<string, LdValue> custom, ImmutableHashSet<string> privateAttributeNames)
-        {
-            _key = key;
-            _secondary = secondary;
-            _ip = ip;
-            _country = country;
-            _firstName = firstName;
-            _lastName = lastName;
-            _name = name;
-            _avatar = avatar;
-            _email = email;
-            _anonymous = anonymous;
-            _custom = custom ?? ImmutableDictionary.Create<string, LdValue>();
-            _privateAttributeNames = privateAttributeNames ?? ImmutableHashSet.Create<string>();
-        }
-
-        /// <summary>
-        /// Creates a user with the given key.
-        /// </summary>
-        /// <param name="key">a <see langword="string"/> that uniquely identifies a user</param>
-        /// <returns>a <see cref="User"/> instance</returns>
-        public static User WithKey(string key)
-        {
-            return new User(key);
-        }
-
-        /// <summary>
-        /// Gets the value of a user attribute, if present.
-        /// </summary>
-        /// <remarks>
-        /// This can be either a built-in attribute or a custom one. It returns the value using the
-        /// <see cref="LdValue"/> type, which can have any type that is supported in JSON. If the
-        /// attribute does not exist, it returns <see cref="LdValue.Null"/>.
-        /// </remarks>
-        /// <param name="attribute">the attribute to get</param>
-        /// <returns>the attribute value or <see cref="LdValue.Null"/></returns>
-        public LdValue GetAttribute(UserAttribute attribute)
-        {
-            if (attribute.BuiltIn)
-            {
-                return attribute.BuiltInGetter(this);
-            }
-            if (_custom != null && _custom.TryGetValue(attribute.AttributeName, out var value))
-            {
-                return value;
-            }
-            return LdValue.Null;
-        }
-
-        /// <inheritdoc/>
-        public override bool Equals(object obj)
-        {
-            if (obj is User u)
-            {
-                return ((IEquatable<User>)this).Equals(u);
-            }
-            return false;
-        }
-
-        /// <inheritdoc/>
-        public bool Equals(User u)
-        {
-            if (u == null)
-            {
-                return false;
-            }
-            if (ReferenceEquals(this, u))
-            {
-                return true;
-            }
-            return Object.Equals(Key, u.Key) &&
-                Object.Equals(Secondary, u.Secondary) &&
-                Object.Equals(IPAddress, u.IPAddress) &&
-                Object.Equals(Country, u.Country) &&
-                Object.Equals(FirstName, u.FirstName) &&
-                Object.Equals(LastName, u.LastName) &&
-                Object.Equals(Name, u.Name) &&
-                Object.Equals(Avatar, u.Avatar) &&
-                Object.Equals(Email, u.Email) &&
-                AnonymousOptional == u.AnonymousOptional &&
-                Custom.Count == u.Custom.Count &&
-                Custom.Keys.All(k => u.Custom.ContainsKey(k) && Object.Equals(Custom[k], u.Custom[k])) &&
-                PrivateAttributeNames.SetEquals(u.PrivateAttributeNames);
-        }
-
-        /// <inheritdoc/>
-        public override int GetHashCode()
-        {
-            var hashBuilder = new HashCodeBuilder()
-                .With(Key)
-                .With(Secondary)
-                .With(IPAddress)
-                .With(Country)
-                .With(FirstName)
-                .With(LastName)
-                .With(Name)
-                .With(Avatar)
-                .With(Email)
-                .With(Anonymous);
-            foreach (var c in Custom)
-            {
-                hashBuilder = hashBuilder.With(c.Key).With(c.Value);
-            }
-            foreach (var p in PrivateAttributeNames)
-            {
-                hashBuilder = hashBuilder.With(p);
-            }
-            return hashBuilder.Value;
-        }
+        /// <param name="key">a <see langword="string"/> that uniquely identifies a context</param>
+        /// <returns>a <see cref="Context"/> instance</returns>
+        public static Context WithKey(string key) =>
+            Context.New(key);
     }
 }
