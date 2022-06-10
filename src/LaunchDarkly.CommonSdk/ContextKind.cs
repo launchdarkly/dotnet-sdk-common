@@ -71,7 +71,7 @@ namespace LaunchDarkly.Sdk
         /// Shortcut for calling the constructor.
         /// </summary>
         /// <param name="stringValue">the string value</param>
-        /// <returns></returns>
+        /// <returns>a <see cref="ContextKind"/> wrapping this value</returns>
         public static ContextKind Of(string stringValue) =>
             new ContextKind(stringValue);
 
