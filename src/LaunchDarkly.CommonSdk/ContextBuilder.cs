@@ -31,7 +31,7 @@ namespace LaunchDarkly.Sdk
     /// </remarks>
     public sealed class ContextBuilder
     {
-        private string _kind;
+        private ContextKind _kind = ContextKind.Default;
         private string _key;
         private string _name;
         private bool _transient;
@@ -78,15 +78,9 @@ namespace LaunchDarkly.Sdk
         /// <remarks>
         /// <para>
         /// Every Context has a kind. Setting it to an empty string or null is equivalent to
-        /// <see cref="Context.DefaultKind"/> ("user"). This value is case-sensitive. Validation rules are
-        /// as follows:
+        /// <see cref="ContextKind.Default"/> ("user"). This value is case-sensitive. For validation
+        /// rules, see <see cref="ContextKind"/>.
         /// </para>
-        /// <list type="bullet">
-        /// <item><description>It may only contain letters, numbers, and the characters ".", "_", and "-".
-        /// </description></item>
-        /// <item><description>It cannot equal the literal string "kind".</description></item>
-        /// <item><description>It cannot equal "multi".</description></item>
-        /// </list>
         /// <para>
         /// If the value is invalid at the time <see cref="Build"/> is called, you will receive an invalid
         /// Context whose <see cref="Context.Error"/> will describe the problem.
@@ -94,11 +88,22 @@ namespace LaunchDarkly.Sdk
         /// </remarks>
         /// <param name="kind">the context kind</param>
         /// <returns>the builder</returns>
-        public ContextBuilder Kind(string kind)
+        /// <seealso cref="Kind(string)"/>
+        public ContextBuilder Kind(ContextKind kind)
         {
             _kind = kind;
             return this;
         }
+
+        /// <summary>
+        /// Sets the Context's kind attribute. This is a shortcut for calling
+        /// <c>Kind(ContextKind.Of(kindString))</c>, since the method name already prevents
+        /// ambiguity about the intended type.
+        /// </summary>
+        /// <param name="kindString">the context kind</param>
+        /// <returns>the builder</returns>
+        /// <seealso cref="Kind(ContextKind)"/>
+        public ContextBuilder Kind(string kindString) => Kind(ContextKind.Of(kindString));
 
         /// <summary>
         /// Sets the Context's key attribute.

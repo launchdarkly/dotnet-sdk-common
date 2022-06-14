@@ -13,7 +13,7 @@ namespace LaunchDarkly.Sdk
             // Can't use a parameterized test for this because Xunit can't handle Context as a parameter type:
             // https://stackoverflow.com/questions/30574322/memberdata-tests-show-up-as-one-test-instead-of-many
 
-            TestBoth(Context.NewWithKind("org", "key1"), @"{""kind"": ""org"", ""key"": ""key1""}");
+            TestBoth(Context.New(ContextKind.Of("org"), "key1"), @"{""kind"": ""org"", ""key"": ""key1""}");
             TestBoth(Context.New("key1b"), @"{""kind"": ""user"", ""key"": ""key1b""}");
             TestBoth(Context.Builder("key1c").Kind("org").Build(),
                 @"{""kind"": ""org"", ""key"": ""key1c""}");
@@ -41,7 +41,7 @@ namespace LaunchDarkly.Sdk
                 @"{""kind"": ""user"", ""key"": ""key6"", ""attr1"": {""a"": 1}}");
             TestBoth(Context.Builder("key7").Private("a").Private(AttributeRef.FromPath("/b/c")).Build(),
                 @"{""kind"": ""user"", ""key"": ""key7"", ""_meta"": {""privateAttributes"": [""a"", ""/b/c""]}}");
-            TestBoth(Context.NewMulti(Context.NewWithKind("org", "my-org-key"), Context.New("my-user-key")),
+            TestBoth(Context.NewMulti(Context.New(ContextKind.Of("org"), "my-org-key"), Context.New("my-user-key")),
                 @"{""kind"": ""multi"", ""org"": {""key"": ""my-org-key""}, ""user"": {""key"": ""my-user-key""}}");
         }
 
@@ -152,7 +152,7 @@ namespace LaunchDarkly.Sdk
         public void EmptyKeyIsAllowedInOldUserSchema()
         {
             var c = LdJsonSerialization.DeserializeObject<Context>(@"{""key"": """"}");
-            Assert.Equal(Context.DefaultKind, c.Kind);
+            Assert.Equal(ContextKind.Default, c.Kind);
             Assert.Equal("", c.Key);
         }
 

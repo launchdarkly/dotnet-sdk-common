@@ -8,6 +8,11 @@ namespace LaunchDarkly.Sdk
 {
     public class ContextTest
     {
+        static readonly ContextKind kind1 = ContextKind.Of("kind1"),
+            kind2 = ContextKind.Of("kind2"), kind3 = ContextKind.Of("kind3");
+        static readonly ContextKind invalidKindThatIsLiterallyKind = ContextKind.Of("kind"),
+            invalidKindWithDisallowedChar = ContextKind.Of("ørg");
+
         [Fact]
         public void InvalidContexts()
         {
@@ -18,15 +23,15 @@ namespace LaunchDarkly.Sdk
 
             ShouldBeInvalid(Context.New(null), Errors.ContextNoKey);
             ShouldBeInvalid(Context.New(""), Errors.ContextNoKey);
-            ShouldBeInvalid(Context.NewWithKind("kind", "key"), Errors.ContextKindCannotBeKind);
-            ShouldBeInvalid(Context.NewWithKind("ørg", "key"), Errors.ContextKindInvalidChars);
-            ShouldBeInvalid(Context.NewWithKind("multi", "key"), Errors.ContextKindMultiForSingle);
+            ShouldBeInvalid(Context.New(invalidKindThatIsLiterallyKind, "key"), Errors.ContextKindCannotBeKind);
+            ShouldBeInvalid(Context.New(invalidKindWithDisallowedChar, "key"), Errors.ContextKindInvalidChars);
+            ShouldBeInvalid(Context.New(ContextKind.Multi, "key"), Errors.ContextKindMultiForSingle);
             ShouldBeInvalid(Context.NewMulti(), Errors.ContextKindMultiWithNoKinds);
             ShouldBeInvalid(Context.NewMulti(
                 Context.New("key1"),
-                Context.NewMulti(Context.NewWithKind("kind2", "key2"), Context.NewWithKind("kind3", "key3"))
+                Context.NewMulti(Context.New(kind1, "key2"), Context.New(kind2, "key3"))
                 ), Errors.ContextKindMultiWithinMulti);
-            ShouldBeInvalid(Context.NewMulti(Context.NewWithKind("kind1", "key1"), Context.NewWithKind("kind1", "key2")),
+            ShouldBeInvalid(Context.NewMulti(Context.New(kind1, "key1"), Context.New(kind1, "key2")),
                 Errors.ContextKindMultiDuplicates);
         }
 
@@ -37,7 +42,7 @@ namespace LaunchDarkly.Sdk
             Assert.Equal(error, c.Error);
 
             // we guarantee that Kind and Key are never null even for invalid contexts
-            Assert.Equal("", c.Kind);
+            Assert.Equal("", c.Kind.Value);
             Assert.Equal("", c.Key);
         }
 
@@ -47,7 +52,7 @@ namespace LaunchDarkly.Sdk
             var sc = Context.New("my-key");
             Assert.False(sc.Multiple);
 
-            var mc = Context.NewMulti(Context.New("my-key"), Context.NewWithKind("org", "my-key"));
+            var mc = Context.NewMulti(Context.New("my-key"), Context.New(kind1, "my-key"));
             Assert.True(mc.Multiple);
             Assert.True(mc.Defined);
             Assert.True(mc.Valid);
@@ -58,10 +63,10 @@ namespace LaunchDarkly.Sdk
         {
 			Assert.Equal("abc", Context.New("abc").FullyQualifiedKey);
 			Assert.Equal("abc:d", Context.New("abc:d").FullyQualifiedKey);
-			Assert.Equal("kind1:key1", Context.NewWithKind("kind1", "key1").FullyQualifiedKey);
-			Assert.Equal("kind1:key%3A2", Context.NewWithKind("kind1", "key:2").FullyQualifiedKey);
+			Assert.Equal("kind1:key1", Context.New(kind1, "key1").FullyQualifiedKey);
+			Assert.Equal("kind1:key%3A2", Context.New(kind1, "key:2").FullyQualifiedKey);
 			Assert.Equal("kind1:key1:kind2:key%3A2", Context.NewMulti(
-				Context.NewWithKind("kind1", "key1"), Context.NewWithKind("kind2", "key:2")
+				Context.New(kind1, "key1"), Context.New(kind2, "key:2")
 				).FullyQualifiedKey);
 		}
 
@@ -87,7 +92,7 @@ namespace LaunchDarkly.Sdk
             // none for multi-kind context
             Assert.Equal(ImmutableHashSet.Create<string>(),
                 Context.NewMulti(
-                    Context.NewWithKind("kind1", "key1"),
+                    Context.New(kind1, "key1"),
                     Context.Builder("key2").Name("x").Build()
                     ).
                     OptionalAttributeNames.ToImmutableHashSet());
@@ -127,7 +132,7 @@ namespace LaunchDarkly.Sdk
             ExpectAttributeNotFoundForName(c, "");
             ExpectAttributeNotFoundForName(c, "/");
 
-            var mc = Context.NewMulti(c, Context.NewWithKind("otherkind", "otherkey"));
+            var mc = Context.NewMulti(c, Context.New(ContextKind.Of("otherkind"), "otherkey"));
 
             ExpectAttributeFoundForName(LdValue.Of("multi"), mc, "kind");
 
@@ -160,9 +165,9 @@ namespace LaunchDarkly.Sdk
         [Fact]
         public void GetValueForRefSpecialTopLevelAttributes()
         {
-            var multi = Context.NewMulti(Context.New("my-key"), Context.NewWithKind("otherkind", "otherkey"));
+            var multi = Context.NewMulti(Context.New("my-key"), Context.New(ContextKind.Of("otherkind"), "otherkey"));
 
-            ExpectAttributeFoundForRef(LdValue.Of("org"), Context.NewWithKind("org", "my-key"), "kind");
+            ExpectAttributeFoundForRef(LdValue.Of("org"), Context.New(ContextKind.Of("org"), "my-key"), "kind");
             ExpectAttributeFoundForRef(LdValue.Of("multi"), multi, "kind");
 
             ExpectAttributeFoundForRef(LdValue.Of("my-key"), Context.New("my-key"), "key");
@@ -271,37 +276,38 @@ namespace LaunchDarkly.Sdk
 
             Assert.Equal("(uninitialized Context)", new Context().ToString());
 
-            Assert.Equal(@"(invalid Context: ""kind"" is not a valid context kind)", Context.NewWithKind("kind", "key").ToString());
+            Assert.Equal(@"(invalid Context: ""kind"" is not a valid context kind)",
+                Context.New(invalidKindThatIsLiterallyKind, "key").ToString());
         }
 
         [Fact]
         public void MultiKindContexts()
         {
-            var c1 = Context.NewWithKind("kind1", "key1");
-            var c2 = Context.NewWithKind("kind2", "key2");
+            var c1 = Context.New(kind1, "key1");
+            var c2 = Context.New(kind2, "key2");
             var multi = Context.NewMulti(c1, c2);
 
             Assert.Equal(ImmutableList.Create<Context>(), c1.MultiKindContexts);
-            Assert.True(c1.TryGetContextByKind("kind1", out var c1a));
+            Assert.True(c1.TryGetContextByKind(kind1, out var c1a));
             Assert.Equal(c1a, c1);
-            Assert.False(c1.TryGetContextByKind("kind2", out var _));
+            Assert.False(c1.TryGetContextByKind(kind2, out var _));
 
             Assert.Equal(ImmutableList.Create(c1, c2), multi.MultiKindContexts);
-            Assert.True(multi.TryGetContextByKind("kind1", out var m1));
+            Assert.True(multi.TryGetContextByKind(kind1, out var m1));
             Assert.Equal(c1, m1);
-            Assert.True(multi.TryGetContextByKind("kind2", out var m2));
+            Assert.True(multi.TryGetContextByKind(kind2, out var m2));
             Assert.Equal(c2, m2);
-            Assert.False(multi.TryGetContextByKind("kind3", out var _));
+            Assert.False(multi.TryGetContextByKind(kind3, out var _));
 
             Assert.Equal(multi, Context.MultiBuilder().Add(c1).Add(c2).Build());
             Assert.Equal(c1, Context.NewMulti(c1));
             Assert.Equal(c1, Context.MultiBuilder().Add(c1).Build());
 
-            var uc1 = Context.NewWithKind(Context.DefaultKind, "key1");
+            var uc1 = Context.New(ContextKind.Default, "key1");
             var multi2 = Context.NewMulti(uc1, c2);
-            Assert.True(multi2.TryGetContextByKind("", out var uc1a));
+            Assert.True(multi2.TryGetContextByKind(ContextKind.Default, out var uc1a));
             Assert.Equal(uc1, uc1a);
-            Assert.True(multi2.TryGetContextByKind(null, out var uc1b));
+            Assert.True(multi2.TryGetContextByKind(new ContextKind(""), out var uc1b));
             Assert.Equal(uc1, uc1b);
         }
 
@@ -332,8 +338,8 @@ namespace LaunchDarkly.Sdk
                 () => new Context(),
                 () => Context.New("a"),
                 () => Context.New("b"),
-                () => Context.NewWithKind("k1", "a"),
-                () => Context.NewWithKind("k1", "b"),
+                () => Context.New(kind1, "a"),
+                () => Context.New(kind1, "b"),
                 () => Context.Builder("a").Name("b").Build(),
                 () => Context.Builder("a").Name("c").Build(),
                 () => Context.Builder("a").Secondary("b").Build(),
@@ -357,13 +363,13 @@ namespace LaunchDarkly.Sdk
                     ),
                 () => Context.Builder("a").Name("b").Set("c", true).Private("name", "d").Build(),
                 TypeBehavior.ValueFactoryFromInstances(
-                    Context.NewMulti(Context.NewWithKind("k1", "a"), Context.NewWithKind("k2", "b")),
-                    Context.NewMulti(Context.NewWithKind("k2", "b"), Context.NewWithKind("k1", "a"))
+                    Context.NewMulti(Context.New(kind1, "a"), Context.New(kind2, "b")),
+                    Context.NewMulti(Context.New(kind2, "b"), Context.New(kind1, "a"))
                     ),
-                () => Context.NewMulti(Context.NewWithKind("k1", "a"), Context.NewWithKind("k2", "c")),
-                () => Context.NewMulti(Context.NewWithKind("k1", "a"), Context.NewWithKind("k3", "b")),
-                () => Context.NewMulti(Context.NewWithKind("k1", "a"), Context.NewWithKind("k2", "b"),
-                    Context.NewWithKind("k3", "c"))
+                () => Context.NewMulti(Context.New(kind1, "a"), Context.New(kind2, "c")),
+                () => Context.NewMulti(Context.New(kind1, "a"), Context.New(kind3, "b")),
+                () => Context.NewMulti(Context.New(kind1, "a"), Context.New(kind2, "b"),
+                    Context.New(kind3, "c"))
             };
     }
 }
