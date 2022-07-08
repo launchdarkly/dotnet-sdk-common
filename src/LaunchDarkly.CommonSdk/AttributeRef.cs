@@ -107,8 +107,8 @@ namespace LaunchDarkly.Sdk
         /// </list>
         /// <para>
         /// Otherwise, the AttributeRef is valid, but that does not guarantee that such an attribute exists
-        /// in any given <see cref="Context"/>. For instance, NewRef("name") is a valid Ref, but a specific
-        /// Context might or might not have a name.
+        /// in any given <see cref="Context"/>. For instance, <c>AttributeRef.FromLiteral("name")</c> is a
+        /// valid Ref, but a specific Context might or might not have a name.
         /// </para>
         /// <para>
         /// See comments on the <see cref="AttributeRef"/> type for more details of the attribute reference

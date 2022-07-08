@@ -141,21 +141,21 @@ namespace LaunchDarkly.Sdk
         public void AnonymousDefaultsToFalse()
         {
             var user = User.Builder(key).Build();
-            Assert.False(user.Transient);
+            Assert.False(user.Anonymous);
         }
 
         [Fact]
         public void BuilderCanSetAnonymousTrue()
         {
             var user = User.Builder(key).Anonymous(true).Build();
-            Assert.True(user.Transient);
+            Assert.True(user.Anonymous);
         }
 
         [Fact]
         public void BuilderCanSetAnonymousFalse()
         {
             var user = User.Builder(key).Anonymous(true).Anonymous(false).Build();
-            Assert.False(user.Transient);
+            Assert.False(user.Anonymous);
         }
 
         private void TestCustomAttribute<T>(T value,

@@ -155,16 +155,16 @@ namespace LaunchDarkly.Sdk
         /// </summary>
         /// <remarks>
         /// <para>
-        /// For a single-kind context, this value is set by <see cref="ContextBuilder.Transient(bool)"/>.
+        /// For a single-kind context, this value is set by <see cref="ContextBuilder.Anonymous(bool)"/>.
         /// It is false if no value was set.
         /// </para>
         /// <para>
-        /// For a multi-kind context, there is no single value and <see cref="Transient"/> returns
+        /// For a multi-kind context, there is no single value and <see cref="Anonymous"/> returns
         /// false. Use <see cref="MultiKindContexts"/> or <see cref="TryGetContextByKind(ContextKind, out Context)"/>
-        /// to inspect a Context for a particular kind, then get the <see cref="Transient"/> value from it.
+        /// to inspect a Context for a particular kind, then get the <see cref="Anonymous"/> value from it.
         /// </para>
         /// </remarks>
-        public bool Transient { get; }
+        public bool Anonymous { get; }
 
         /// <summary>
         /// The Context's optional secondary key attribute.
@@ -210,10 +210,10 @@ namespace LaunchDarkly.Sdk
         /// Enumerates the names of all regular optional attributes defined on this Context.
         /// </summary>
         /// <remarks>
-        /// These do not include the mandatory <see cref="Kind"/> and <see cref="Key"/>, or the metadata attributes
-        /// <see cref="Secondary"/>, <see cref="Transient"/>, and <see cref="ContextBuilder.Private(string[])"/>.
-        /// They do include <see cref="Name"/> if it has a non-null value, and also any attributes that were set
-        /// with <see cref="ContextBuilder.Set(string, LdValue)"/> or similar methods.
+        /// These do not include attributes that always have a value (<see cref="Kind"/>, <see cref="Key"/>,
+        /// <see cref="Anonymous"/>), or metadata that is not an attribute addressable in targeting rules
+        /// (<see cref="Secondary"/>, <see cref="PrivateAttributes"/>). They include any attributes with
+        /// application-defined names that have a value, and also "name" if <see cref="Name"/> has a value.
         /// </remarks>
         public IEnumerable<string> OptionalAttributeNames
         {
@@ -354,7 +354,7 @@ namespace LaunchDarkly.Sdk
         /// <see cref="ContextBuilder.Kind(string)"/> before calling <see cref="ContextBuilder.Build"/>.
         /// If you do not change any values, the defaults for the Context are that its <see cref="Kind"/> is
         /// <see cref="ContextKind.Default"/> ("user"), its <see cref="Key"/> is set to whatever value you passed for
-        /// <paramref name="key"/>, its <see cref="Transient"/> attribute is false, and it has no values for any
+        /// <paramref name="key"/>, its <see cref="Anonymous"/> attribute is false, and it has no values for any
         /// other attributes.
         /// </para>
         /// <para>
@@ -401,7 +401,7 @@ namespace LaunchDarkly.Sdk
             ContextKind kind,
             string key,
             string name,
-            bool transient,
+            bool anonymous,
             string secondary,
             ImmutableDictionary<string, LdValue> attributes,
             ImmutableList<AttributeRef> privateAttributes,
@@ -425,7 +425,7 @@ namespace LaunchDarkly.Sdk
                 Kind = kind;
                 Key = key;
                 Name = name;
-                Transient = transient;
+                Anonymous = anonymous;
                 Secondary = secondary;
                 _attributes = attributes;
                 _privateAttributes = privateAttributes;
@@ -437,7 +437,7 @@ namespace LaunchDarkly.Sdk
                 Kind = new ContextKind();
                 Key = "";
                 Name = null;
-                Transient = false;
+                Anonymous = false;
                 Secondary = null;
                 _attributes = null;
                 _privateAttributes = null;
@@ -526,7 +526,7 @@ namespace LaunchDarkly.Sdk
 
             Key = "";
             Name = null;
-            Transient = false;
+            Anonymous = false;
             Secondary = null;
             _attributes = null;
             _privateAttributes = null;
@@ -540,7 +540,7 @@ namespace LaunchDarkly.Sdk
             Kind = new ContextKind();
             Key = "";
             Name = null;
-            Transient = false;
+            Anonymous = false;
             Secondary = null;
             _attributes = null;
             _privateAttributes = null;
@@ -743,7 +743,7 @@ namespace LaunchDarkly.Sdk
                 return true;
             }
 
-            if (Key != other.Key || Name != other.Name || Transient != other.Transient ||
+            if (Key != other.Key || Name != other.Name || Anonymous != other.Anonymous ||
                 Secondary != other.Secondary)
             {
                 return false;
@@ -778,7 +778,7 @@ namespace LaunchDarkly.Sdk
                 hashBuilder = hashBuilder.With(Kind)
                     .With(Key)
                     .With(Name)
-                    .With(Transient)
+                    .With(Anonymous)
                     .With(Secondary);
                 if (!(_attributes is null))
                 {
@@ -832,8 +832,8 @@ namespace LaunchDarkly.Sdk
                     return LdValue.Of(Key);
                 case "name":
                     return LdValue.Of(Name);
-                case "transient":
-                    return LdValue.Of(Transient);
+                case "anonymous":
+                    return LdValue.Of(Anonymous);
                 default:
                     if (_attributes is null)
                     {

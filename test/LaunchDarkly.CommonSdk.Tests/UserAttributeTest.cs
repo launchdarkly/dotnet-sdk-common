@@ -19,9 +19,7 @@ namespace LaunchDarkly.Sdk
             TestBuiltInString(UserAttribute.Country, "country", (b, v) => b.Country(v));
 
             Assert.Equal("anonymous", UserAttribute.Anonymous.AttributeName);
-            Assert.Equal(LdValue.Null, User.WithKey(".").GetValue(UserAttribute.Anonymous.AttributeName));
-            Assert.Equal(LdValue.Of(true), User.Builder(".").Anonymous(true).Build()
-                .GetValue("transient"));
+            Assert.True(User.Builder(".").Anonymous(true).Build().Anonymous);
         }
 
         [Fact]

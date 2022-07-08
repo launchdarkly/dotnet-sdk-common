@@ -26,6 +26,15 @@ namespace LaunchDarkly.Sdk.Json
         {
             public object ReadJson(ref JReader reader)
             {
+                // The implementation here of unmarshaling a context/user is that we first unmarshal the
+                // whole JSON object into an LdValue (as a convenient way to represent arbitrary JSON data
+                // structures), and then decide how to translate that object into a Context. This is
+                // somewhat inefficient because we're producing dictionary-like structures that we don't
+                // intend to keep-- but a straight-ahead approach, where we would parse JSON tokens as a
+                // stream, is not really possible due to the details of the context JSON schema (we can't
+                // know what schema we're using until we see the "kind" property). And, unmarshaling context
+                // data from JSON is not a task applications are likely to be doing frequently enough for
+                // it to be performance-critical.
                 var objValue = LdValueConverter.ReadJsonValue(ref reader);
                 if (objValue.Dictionary.TryGetValue("kind", out var kindValue))
                 {
@@ -158,7 +167,7 @@ namespace LaunchDarkly.Sdk.Json
                             {
                                 throw WrongType(kv.Value, "anonymous");
                             }
-                            builder.Transient(kv.Value.AsBool);
+                            builder.Anonymous(kv.Value.AsBool);
                             break;
 
                         case "custom":
@@ -168,7 +177,19 @@ namespace LaunchDarkly.Sdk.Json
                             }
                             foreach (var kv1 in kv.Value.Dictionary)
                             {
-                                builder.Set(kv1.Key, kv1.Value);
+                                switch (kv1.Key)
+                                {
+                                    // can't allow an old-style custom attribute to overwrite a top-level one with the same name
+                                    case "kind":
+                                    case "key":
+                                    case "name":
+                                    case "anonymous":
+                                    case "_meta":
+                                        break;
+                                    default:
+                                        builder.Set(kv1.Key, kv1.Value);
+                                        break;
+                                }
                             }
                             break;
 
@@ -239,7 +260,7 @@ namespace LaunchDarkly.Sdk.Json
                 obj.MaybeName("kind", includeKind).String(c.Kind.Value);
                 obj.Name("key").String(c.Key);
                 obj.MaybeName("name", c.Name != null).String(c.Name);
-                obj.MaybeName("transient", c.Transient).Bool(c.Transient);
+                obj.MaybeName("anonymous", c.Anonymous).Bool(c.Anonymous);
                 if (!(c._attributes is null))
                 {
                     foreach (var kv in c._attributes)

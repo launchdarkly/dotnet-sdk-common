@@ -348,7 +348,7 @@ namespace LaunchDarkly.Sdk
 
         public IUserBuilder Anonymous(bool anonymous)
         {
-            _builder.Transient(anonymous);
+            _builder.Anonymous(anonymous);
             return this;
         }
 
