@@ -24,6 +24,16 @@ namespace LaunchDarkly.Sdk.Json
         /// </remarks>
         public sealed class ContextConverter : IJsonStreamConverter
         {
+            private const string AttrKind = "kind";
+            private const string AttrKey = "key";
+            private const string AttrName = "name";
+            private const string AttrAnonymous = "anonymous";
+            private const string JsonPropMeta = "_meta";
+            private const string JsonPropSecondary = "secondary";
+            private const string JsonPropPrivateAttributes = "privateAttributes";
+            private const string OldJsonPropCustom = "custom";
+            private const string OldJsonPropPrivateAttributeNames = "privateAttributeNames";
+
             public object ReadJson(ref JReader reader)
             {
                 // The implementation here of unmarshaling a context/user is that we first unmarshal the
@@ -36,13 +46,13 @@ namespace LaunchDarkly.Sdk.Json
                 // data from JSON is not a task applications are likely to be doing frequently enough for
                 // it to be performance-critical.
                 var objValue = LdValueConverter.ReadJsonValue(ref reader);
-                if (objValue.Dictionary.TryGetValue("kind", out var kindValue))
+                if (objValue.Dictionary.TryGetValue(AttrKind, out var kindValue))
                 {
                     if (!kindValue.IsString)
                     {
-                        throw WrongType(kindValue, "kind");
+                        throw WrongType(kindValue, AttrKind);
                     }
-                    if (kindValue.AsString == "multi")
+                    if (kindValue.AsString == ContextKind.Multi.Value)
                     {
                         return ReadJsonMulti(objValue);
                     }
@@ -62,7 +72,7 @@ namespace LaunchDarkly.Sdk.Json
                 if (c.Multiple)
                 {
                     var obj = writer.Object();
-                    obj.Name("kind").String("multi");
+                    obj.Name(AttrKind).String(ContextKind.Multi.Value);
                     foreach (var mc in c._multiContexts)
                     {
                         WriteJsonSingle(mc, obj.Name(mc.Kind.Value), false);
@@ -81,34 +91,22 @@ namespace LaunchDarkly.Sdk.Json
                 var kind = knownKind;
                 foreach (var kv in objValue.Dictionary)
                 {
-                    if (kv.Key == "_meta")
+                    if (kv.Key == JsonPropMeta)
                     {
-                        if (kv.Value.Type != LdValueType.Object && !kv.Value.IsNull)
-                        {
-                            throw WrongType(kv.Value, "_meta");
-                        }
+                        RequireType(kv.Value, LdValueType.Object, true, JsonPropMeta);
                         var meta = kv.Value.Dictionary;
-                        if (meta.TryGetValue("secondary", out var secondary))
+                        if (meta.TryGetValue(JsonPropSecondary, out var secondary))
                         {
-                            if (!secondary.IsString && !secondary.IsNull)
-                            {
-                                throw WrongType(secondary, "_meta.secondary");
-                            }
+                            RequireType(secondary, LdValueType.String, true, "{0}.{1}", JsonPropMeta, JsonPropSecondary);
                             builder.Secondary(secondary.AsString);
                         }
-                        if (meta.TryGetValue("privateAttributes", out var privateAttrs))
+                        if (meta.TryGetValue(JsonPropPrivateAttributes, out var privateAttrs))
                         {
-                            if (privateAttrs.Type != LdValueType.Array && !privateAttrs.IsNull)
-                            {
-                                throw WrongType(privateAttrs, "_meta.privateAttributes");
-                            }
+                            RequireType(privateAttrs, LdValueType.Array, true, "{0}.{1}", JsonPropMeta, JsonPropPrivateAttributes);
                             for (int i = 0; i < privateAttrs.List.Count; i++)
                             {
                                 var value = privateAttrs.List[i];
-                                if (!value.IsString)
-                                {
-                                    throw WrongType(value, string.Format("_meta.privateAttributes[{0}]", i));
-                                }
+                                RequireType(value, LdValueType.String, false, "{0}.{1}[{2}]", JsonPropMeta, JsonPropPrivateAttributes, i);
                                 builder.Private(value.AsString);
                             }
                         }
@@ -119,7 +117,7 @@ namespace LaunchDarkly.Sdk.Json
                         {
                             throw WrongType(kv.Value, kv.Key);
                         }
-                        if (kv.Key == "kind")
+                        if (kv.Key == AttrKind)
                         {
                             kind = kv.Value.AsString;
                         }
@@ -127,7 +125,7 @@ namespace LaunchDarkly.Sdk.Json
                 }
                 if (kind is null)
                 {
-                    throw new JsonException(Errors.JsonContextMissingProperty("kind"));
+                    throw new JsonException(Errors.JsonContextMissingProperty(AttrKind));
                 }
                 if (kind == "")
                 {
@@ -162,29 +160,23 @@ namespace LaunchDarkly.Sdk.Json
                 {
                     switch (kv.Key)
                     {
-                        case "anonymous":
-                            if (kv.Value.Type != LdValueType.Bool && !kv.Value.IsNull)
-                            {
-                                throw WrongType(kv.Value, "anonymous");
-                            }
+                        case AttrAnonymous:
+                            RequireType(kv.Value, LdValueType.Bool, true, AttrAnonymous);
                             builder.Anonymous(kv.Value.AsBool);
                             break;
 
-                        case "custom":
-                            if (kv.Value.Type != LdValueType.Object && !kv.Value.IsNull)
-                            {
-                                throw WrongType(kv.Value, "custom");
-                            }
+                        case OldJsonPropCustom:
+                            RequireType(kv.Value, LdValueType.Object, true, OldJsonPropCustom);
                             foreach (var kv1 in kv.Value.Dictionary)
                             {
                                 switch (kv1.Key)
                                 {
                                     // can't allow an old-style custom attribute to overwrite a top-level one with the same name
-                                    case "kind":
-                                    case "key":
-                                    case "name":
-                                    case "anonymous":
-                                    case "_meta":
+                                    case AttrKind:
+                                    case AttrKey:
+                                    case AttrName:
+                                    case AttrAnonymous:
+                                    case JsonPropMeta:
                                         break;
                                     default:
                                         builder.Set(kv1.Key, kv1.Value);
@@ -193,31 +185,22 @@ namespace LaunchDarkly.Sdk.Json
                             }
                             break;
 
-                        case "privateAttributeNames":
-                            if (kv.Value.Type != LdValueType.Array && !kv.Value.IsNull)
-                            {
-                                throw WrongType(kv.Value, "privateAttributeNames");
-                            }
+                        case OldJsonPropPrivateAttributeNames:
+                            RequireType(kv.Value, LdValueType.Array, true, OldJsonPropPrivateAttributeNames);
                             for (int i = 0; i < kv.Value.List.Count; i++)
                             {
                                 var value = kv.Value.List[i];
-                                if (!value.IsString)
-                                {
-                                    throw WrongType(value, string.Format("privateAttributeNames[{0}]", i));
-                                }
+                                RequireType(value, LdValueType.String, false, "{0}[{1}]", OldJsonPropPrivateAttributeNames, i);
                                 builder.Private(AttributeRef.FromLiteral(value.AsString));
                             }
                             break;
 
-                        case "secondary":
-                            if (!kv.Value.IsString && !kv.Value.IsNull)
-                            {
-                                throw WrongType(kv.Value, "secondary");
-                            }
+                        case JsonPropSecondary:
+                            RequireType(kv.Value, LdValueType.String, true, JsonPropSecondary);
                             builder.Secondary(kv.Value.AsString);
                             break;
 
-                        case "name":
+                        case AttrName:
                         case "firstName":
                         case "lastName":
                         case "email":
@@ -236,7 +219,7 @@ namespace LaunchDarkly.Sdk.Json
                             {
                                 throw WrongType(kv.Value, kv.Key);
                             }
-                            if (kv.Key == "key")
+                            if (kv.Key == AttrKey)
                             {
                                 hasKey = true;
                             }
@@ -246,9 +229,18 @@ namespace LaunchDarkly.Sdk.Json
 
                 if (!hasKey)
                 {
-                    throw new JsonException(Errors.JsonContextMissingProperty("key"));
+                    throw new JsonException(Errors.JsonContextMissingProperty(AttrKey));
                 }
                 return Validate(builder.Build());
+            }
+
+            private static void RequireType(LdValue value, LdValueType type, bool nullable,
+                string propNameFormat, params object[] propNameArgs)
+            {
+                if (value.Type != type && !(value.IsNull && nullable))
+                {
+                    throw WrongType(value, string.Format(propNameFormat, propNameArgs));
+                }
             }
 
             private static JsonException WrongType(LdValue value, string name) =>
@@ -257,10 +249,10 @@ namespace LaunchDarkly.Sdk.Json
             private void WriteJsonSingle(in Context c, IValueWriter writer, bool includeKind)
             {
                 var obj = writer.Object();
-                obj.MaybeName("kind", includeKind).String(c.Kind.Value);
-                obj.Name("key").String(c.Key);
-                obj.MaybeName("name", c.Name != null).String(c.Name);
-                obj.MaybeName("anonymous", c.Anonymous).Bool(c.Anonymous);
+                obj.MaybeName(AttrKind, includeKind).String(c.Kind.Value);
+                obj.Name(AttrKey).String(c.Key);
+                obj.MaybeName(AttrName, c.Name != null).String(c.Name);
+                obj.MaybeName(AttrAnonymous, c.Anonymous).Bool(c.Anonymous);
                 if (!(c._attributes is null))
                 {
                     foreach (var kv in c._attributes)
@@ -270,11 +262,11 @@ namespace LaunchDarkly.Sdk.Json
                 }
                 if (!(c.Secondary is null) || !(c._privateAttributes is null))
                 {
-                    var meta = obj.Name("_meta").Object();
-                    meta.MaybeName("secondary", c.Secondary != null).String(c.Secondary);
+                    var meta = obj.Name(JsonPropMeta).Object();
+                    meta.MaybeName(JsonPropSecondary, c.Secondary != null).String(c.Secondary);
                     if (!(c._privateAttributes is null))
                     {
-                        var privateArr = meta.Name("privateAttributes").Array();
+                        var privateArr = meta.Name(JsonPropPrivateAttributes).Array();
                         foreach (var pa in c._privateAttributes)
                         {
                             privateArr.String(pa.ToString());

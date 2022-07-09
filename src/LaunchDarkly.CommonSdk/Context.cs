@@ -131,6 +131,7 @@ namespace LaunchDarkly.Sdk
         /// This value is never null.
         /// </para>
         /// </remarks>
+        /// <seealso cref="ContextBuilder.Key(string)"/>
         public string Key { get; }
 
         /// <summary>
@@ -147,6 +148,7 @@ namespace LaunchDarkly.Sdk
         /// to inspect a Context for a particular kind, then get the <see cref="Name"/> from it.
         /// </para>
         /// </remarks>
+        /// <seealso cref="ContextBuilder.Name(string)"/>
         public string Name { get; }
 
         /// <summary>
@@ -159,11 +161,19 @@ namespace LaunchDarkly.Sdk
         /// It is false if no value was set.
         /// </para>
         /// <para>
+        /// Setting Anonymous to true excludes this Context from the database that is used by the dashboard. It does
+        /// not exclude it from analytics event data, so it is not the same as making attributes private; all
+        /// non-private attributes will still be included in events and data export. There is no limitation on what
+        /// other attributes may be included (so, for instance, Anonymous does not mean there is no <see cref="Name"/>),
+        /// and the Context will still have whatever <see cref="Key"/> you have given it.
+        /// </para>
+        /// <para>
         /// For a multi-kind context, there is no single value and <see cref="Anonymous"/> returns
         /// false. Use <see cref="MultiKindContexts"/> or <see cref="TryGetContextByKind(ContextKind, out Context)"/>
         /// to inspect a Context for a particular kind, then get the <see cref="Anonymous"/> value from it.
         /// </para>
         /// </remarks>
+        /// <seealso cref="ContextBuilder.Anonymous(bool)"/>
         public bool Anonymous { get; }
 
         /// <summary>
@@ -180,10 +190,11 @@ namespace LaunchDarkly.Sdk
         /// to inspect a Context for a particular kind, then get the <see cref="Secondary"/> value from it.
         /// </para>
         /// </remarks>
+        /// <seealso cref="ContextBuilder.Secondary(string)"/>
         public string Secondary { get; }
 
         /// <summary>
-        /// A a string that describes the entire Context based on Kind and Key values.
+        /// A string that describes the entire Context based on Kind and Key values.
         /// </summary>
         /// <remarks>
         /// This value is used whenever LaunchDarkly needs a string identifier based on all of the Kind and
@@ -369,11 +380,26 @@ namespace LaunchDarkly.Sdk
         /// </remarks>
         /// <param name="key">the context key</param>
         /// <returns>a builder</returns>
-        /// <seealso cref="MultiBuilder"/>
         /// <seealso cref="New(string)"/>
+        /// <seealso cref="Builder(ContextKind, string)"/>
+        /// <seealso cref="MultiBuilder"/>
         /// <seealso cref="BuilderFromContext(Context)"/>
         public static ContextBuilder Builder(string key) =>
             new ContextBuilder().Key(key);
+
+        /// <summary>
+        /// Equivalent to <see cref="Builder(string)"/>, but sets the initial value of
+        /// <see cref="ContextBuilder.Kind(ContextKind)"/> as well as the key.
+        /// </summary>
+        /// <param name="kind">the context kind</param>
+        /// <param name="key">the context key</param>
+        /// <returns>a builder</returns>
+        /// <seealso cref="New(ContextKind, string)"/>
+        /// <seealso cref="Builder(string)"/>
+        /// <seealso cref="MultiBuilder"/>
+        /// <seealso cref="BuilderFromContext(Context)"/>
+        public static ContextBuilder Builder(ContextKind kind, string key) =>
+            new ContextBuilder().Kind(kind).Key(key);
 
         /// <summary>
         /// Creates a ContextBuilder whose properties are the same as an existing single-kind Context.

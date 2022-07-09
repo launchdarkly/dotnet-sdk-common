@@ -147,6 +147,7 @@ namespace LaunchDarkly.Sdk
         /// </remarks>
         /// <param name="name">the name attribute (null to unset the attribute)</param>
         /// <returns>the builder</returns>
+        /// <seealso cref="Context.Name"/>
         public ContextBuilder Name(string name)
         {
             _name = name;
@@ -165,7 +166,9 @@ namespace LaunchDarkly.Sdk
         /// <para>
         /// Setting Anonymous to true excludes this Context from the database that is used by the dashboard. It does
         /// not exclude it from analytics event data, so it is not the same as making attributes private; all
-        /// non-private attributes will still be included in events and data export.
+        /// non-private attributes will still be included in events and data export. There is no limitation on what
+        /// other attributes may be included (so, for instance, Anonymous does not mean there is no <see cref="Name(string)"/>),
+        /// and the Context will still have whatever <see cref="Key(string)"/> you have given it.
         /// </para>
         /// <para>
         /// This value is also addressable in evaluations as the attribute name "anonymous". It is always treated as
@@ -174,6 +177,7 @@ namespace LaunchDarkly.Sdk
         /// </remarks>
         /// <param name="anonymous">true if the Context should be excluded from the LaunchDarkly database</param>
         /// <returns>the builder</returns>
+        /// <seealso cref="Context.Anonymous"/>
         public ContextBuilder Anonymous(bool anonymous)
         {
             _anonymous = anonymous;
@@ -203,6 +207,7 @@ namespace LaunchDarkly.Sdk
         /// </remarks>
         /// <param name="secondary">the secondary key, or null</param>
         /// <returns>the builder</returns>
+        /// <seealso cref="Context.Secondary"/>
         public ContextBuilder Secondary(string secondary)
         {
             _secondary = secondary;
@@ -264,6 +269,7 @@ namespace LaunchDarkly.Sdk
         /// <seealso cref="Set(string, long)"/>
         /// <seealso cref="Set(string, string)"/>
         /// <seealso cref="Remove(string)"/>
+        /// <seealso cref="Context.GetValue(string)"/>
         public ContextBuilder Set(string attributeName, LdValue value)
         {
             TrySet(attributeName, value);
@@ -278,6 +284,7 @@ namespace LaunchDarkly.Sdk
         /// <param name="value">the value to set</param>
         /// <returns>true if successful; false if the name was invalid or the value was not an allowed
         /// type for that attribute</returns>
+        /// <seealso cref="Set(string, LdValue)"/>
         public bool TrySet(string attributeName, LdValue value)
         {
             if (attributeName is null || attributeName == "")
@@ -345,6 +352,7 @@ namespace LaunchDarkly.Sdk
         /// <param name="attributeName">the attribute name to set</param>
         /// <param name="value">the value to set</param>
         /// <returns>the builder</returns>
+        /// <seealso cref="Set(string, LdValue)"/>
         public ContextBuilder Set(string attributeName, bool value) => Set(attributeName, LdValue.Of(value));
 
         /// <summary>
@@ -353,6 +361,7 @@ namespace LaunchDarkly.Sdk
         /// <param name="attributeName">the attribute name to set</param>
         /// <param name="value">the value to set</param>
         /// <returns>the builder</returns>
+        /// <seealso cref="Set(string, LdValue)"/>
         public ContextBuilder Set(string attributeName, int value) => Set(attributeName, LdValue.Of(value));
 
         /// <summary>
@@ -366,6 +375,7 @@ namespace LaunchDarkly.Sdk
         /// <param name="attributeName">the attribute name to set</param>
         /// <param name="value">the value to set</param>
         /// <returns>the builder</returns>
+        /// <seealso cref="Set(string, LdValue)"/>
         public ContextBuilder Set(string attributeName, double value) => Set(attributeName, LdValue.Of(value));
 
         /// <summary>
@@ -379,6 +389,7 @@ namespace LaunchDarkly.Sdk
         /// <param name="attributeName">the attribute name to set</param>
         /// <param name="value">the value to set</param>
         /// <returns>the builder</returns>
+        /// <seealso cref="Set(string, LdValue)"/>
         public ContextBuilder Set(string attributeName, long value) => Set(attributeName, LdValue.Of(value));
 
         /// <summary>
@@ -387,6 +398,7 @@ namespace LaunchDarkly.Sdk
         /// <param name="attributeName">the attribute name to set</param>
         /// <param name="value">the value to set</param>
         /// <returns>the builder</returns>
+        /// <seealso cref="Set(string, LdValue)"/>
         public ContextBuilder Set(string attributeName, string value) => Set(attributeName, LdValue.Of(value));
 
         /// <summary>
@@ -411,6 +423,7 @@ namespace LaunchDarkly.Sdk
         /// <param name="attributeRefs">attribute references to mark as private</param>
         /// <returns>the builder</returns>
         /// <seealso cref="Private(AttributeRef[])"/>
+        /// <seealso cref="Context.PrivateAttributes"/>
         public ContextBuilder Private(params string[] attributeRefs)
         {
             if (!(attributeRefs is null) && attributeRefs.Length != 0)
@@ -440,6 +453,7 @@ namespace LaunchDarkly.Sdk
         /// <param name="attributeRefs">attribute references to mark as private</param>
         /// <returns>the builder</returns>
         /// <seealso cref="Private(string[])"/>
+        /// <seealso cref="Context.PrivateAttributes"/>
         public ContextBuilder Private(params AttributeRef[] attributeRefs)
         {
             if (!(attributeRefs is null) && attributeRefs.Length != 0)
