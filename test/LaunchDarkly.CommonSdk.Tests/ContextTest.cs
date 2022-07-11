@@ -14,6 +14,38 @@ namespace LaunchDarkly.Sdk
             invalidKindWithDisallowedChar = ContextKind.Of("ørg");
 
         [Fact]
+        public void SingleKindConstructors()
+        {
+            var c1 = Context.New("x");
+            Assert.Equal(ContextKind.Default, c1.Kind);
+            Assert.Equal("x", c1.Key);
+            Assert.Null(c1.Name);
+            Assert.False(c1.Anonymous);
+            Assert.Null(c1.Secondary);
+            Assert.Empty(c1.PrivateAttributes);
+
+            var c2 = Context.New(kind1, "x");
+            Assert.Equal(kind1, c2.Kind);
+            Assert.Equal("x", c2.Key);
+            Assert.Null(c2.Name);
+            Assert.False(c2.Anonymous);
+            Assert.Null(c2.Secondary);
+            Assert.Empty(c2.PrivateAttributes);
+        }
+
+        [Fact]
+        public void SingleKindBuilderProperties()
+        {
+            Assert.Equal(kind1, Context.Builder(".").Kind(kind1).Build().Kind);
+            Assert.Equal("x", Context.Builder(".").Key("x").Build().Key);
+            Assert.Equal("x", Context.Builder(".").Name("x").Build().Name);
+            Assert.True(Context.Builder(".").Anonymous(true).Build().Anonymous);
+            Assert.False(Context.Builder(".").Anonymous(true).Anonymous(false).Build().Anonymous);
+            Assert.Equal(LdValue.Of("x"), Context.Builder(".").Set("a", "x").Build().GetValue("a"));
+            Assert.Equal("x", Context.Builder(".").Secondary("x").Build().Secondary);
+        }
+
+        [Fact]
         public void InvalidContexts()
         {
             var c = new Context();
