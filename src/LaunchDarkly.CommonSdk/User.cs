@@ -23,8 +23,6 @@ namespace LaunchDarkly.Sdk
     /// and <see cref="Context.Name"/> have special behavior, the user model defined many other built-in
     /// attributes such as <c>email</c> which, like <c>name</c>, were constrained to only allow string
     /// values. These had specific setter methods in <see cref="UserBuilder"/>.</description></item>
-    /// <item><description>The property that is now called <see cref="Context.Transient"/> was called
-    /// Anonymous.</description></item>
     /// </list>
     /// <para>
     /// The User class now exists only as a container for static methods; the SDK now operates only on
@@ -42,12 +40,12 @@ namespace LaunchDarkly.Sdk
     /// <item><description>The SDK no longer supports setting the key to an empty string. If you do this,
     /// the returned Context will be invalid (as indicated by a non-nil <see cref="Context.Error"/>) and
     /// the SDK will refuse to use it for evaluations or events.</description></item>
-    /// <item><description>Previously, the Anonymous property (now called Transient) had three states:
-    /// true, false, or undefined/null. Undefined/null and false were functionally the same in terms of
-    /// the LaunchDarkly dashboard/indexing behavior, but they were represented differently in JSON and
-    /// could behave differently if referenced in a flag rule (an undefined/null value would not match
-    /// "anonymous is false"). Now, the property is a simple boolean defaulting to false, and the undefined
-    /// state is the same as false.</description></item>
+    /// <item><description>Previously, the Anonymous property had three states: true, false, or
+    /// undefined/null. Undefined/null and false were functionally the same in terms of the LaunchDarkly
+    /// dashboard/indexing behavior, but they were represented differently in JSON and could behave
+    /// differently if referenced in a flag rule (an undefined/null value would not match "anonymous is
+    /// false"). Now, the property is a simple boolean defaulting to false, and the undefined state is
+    /// the same as false.</description></item>
     /// </list>
     /// </remarks>
     public static class User

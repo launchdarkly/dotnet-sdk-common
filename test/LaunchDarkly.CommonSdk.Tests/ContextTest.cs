@@ -86,7 +86,7 @@ namespace LaunchDarkly.Sdk
 
             // meta-attributes and required attributes are not included
             Assert.Equal(ImmutableHashSet.Create<string>(),
-                Context.Builder("my-key").Secondary("x").Transient(true).Build().
+                Context.Builder("my-key").Secondary("x").Anonymous(true).Build().
                     OptionalAttributeNames.ToImmutableHashSet());
 
             // none for multi-kind context
@@ -177,9 +177,9 @@ namespace LaunchDarkly.Sdk
             ExpectAttributeNotFoundForRef(Context.New("key"), "name");
             ExpectAttributeNotFoundForRef(multi, "name");
 
-            ExpectAttributeFoundForRef(LdValue.Of(false), Context.New("key"), "transient");
-            ExpectAttributeFoundForRef(LdValue.Of(true), Context.Builder("key").Transient(true).Build(), "transient");
-            ExpectAttributeNotFoundForRef(multi, "transient");
+            ExpectAttributeFoundForRef(LdValue.Of(false), Context.New("key"), "anonymous");
+            ExpectAttributeFoundForRef(LdValue.Of(true), Context.Builder("key").Anonymous(true).Build(), "anonymous");
+            ExpectAttributeNotFoundForRef(multi, "anonymous");
         }
 
         [Fact]
@@ -269,6 +269,22 @@ namespace LaunchDarkly.Sdk
         }
 
         [Fact]
+        public void SetValueByNameCannotSetMetaProperties()
+        {
+            var c1 = Context.Builder("key").Set("secondary", "x").Build();
+            Assert.Null(c1.Secondary);
+            Assert.Equal(LdValue.Of("x"), c1.GetValue("secondary"));
+
+            var c2 = Context.Builder("key").Set("privateAttributes", "x").Build();
+            Assert.Empty(c2.PrivateAttributes);
+            Assert.Equal(LdValue.Of("x"), c2.GetValue("privateAttributes"));
+
+            var c3 = Context.Builder("key").Set("_meta", LdValue.BuildObject().Set("secondary", "x").Build()).Build();
+            Assert.Null(c3.Secondary);
+            Assert.Equal(LdValue.Null, c3.GetValue("_meta"));
+        }
+
+        [Fact]
         public void ContextToString()
         {
             var c = Context.Builder("key").Name("x").Build();
@@ -344,7 +360,7 @@ namespace LaunchDarkly.Sdk
                 () => Context.Builder("a").Name("c").Build(),
                 () => Context.Builder("a").Secondary("b").Build(),
                 () => Context.Builder("a").Secondary("").Build(), // "" is not the same as undefined
-                () => Context.Builder("a").Transient(true).Build(),
+                () => Context.Builder("a").Anonymous(true).Build(),
                 () => Context.Builder("a").Set("b", true).Build(),
                 () => Context.Builder("a").Set("b", false).Build(),
                 () => Context.Builder("a").Set("b", 0).Build(),

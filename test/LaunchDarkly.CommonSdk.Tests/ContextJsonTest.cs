@@ -21,9 +21,9 @@ namespace LaunchDarkly.Sdk
                 @"{""kind"": ""user"", ""key"": ""key2"", ""name"": ""my-name""}");
             TestBoth(Context.Builder("key3").Secondary("value").Build(),
                 @"{""kind"": ""user"", ""key"": ""key3"", ""_meta"": {""secondary"": ""value""}}");
-            TestBoth(Context.Builder("key4").Transient(true).Build(),
-                @"{""kind"": ""user"", ""key"": ""key4"", ""transient"": true}");
-            TestBoth(Context.Builder("key5").Transient(false).Build(),
+            TestBoth(Context.Builder("key4").Anonymous(true).Build(),
+                @"{""kind"": ""user"", ""key"": ""key4"", ""anonymous"": true}");
+            TestBoth(Context.Builder("key5").Anonymous(false).Build(),
                 @"{""kind"": ""user"", ""key"": ""key5""}");
             TestBoth(Context.Builder("key6").Set("attr1", true).Build(),
                 @"{""kind"": ""user"", ""key"": ""key6"", ""attr1"": true}");
@@ -68,8 +68,8 @@ namespace LaunchDarkly.Sdk
         [InlineData(@"{""kind"": ""multi"", ""org"": null}")]
         [InlineData(@"{""kind"": ""multi"", ""org"": true}")]
         [InlineData(@"{""kind"": ""org"", ""key"": ""a"", ""name"": true}")]
-        [InlineData(@"{""kind"": ""org"", ""key"": ""a"", ""transient"": ""yes""}")]
-        [InlineData(@"{""kind"": ""org"", ""key"": ""a"", ""transient"": null}")]
+        [InlineData(@"{""kind"": ""org"", ""key"": ""a"", ""anonymous"": ""yes""}")]
+        [InlineData(@"{""kind"": ""org"", ""key"": ""a"", ""anonymous"": null}")]
             // invalid kind/key
         [InlineData(@"{""kind"": ""org""}")]
         [InlineData(@"{""kind"": ""user"", ""key"": """"}")]
@@ -126,9 +126,9 @@ namespace LaunchDarkly.Sdk
                 @"{""key"": ""key2"", ""avatar"": ""a""}");
             TestDeserializeOnly(Context.Builder("key3").Secondary("value").Build(),
                 @"{""key"": ""key3"", ""secondary"": ""value""}");
-            TestDeserializeOnly(Context.Builder("key4").Transient(true).Build(),
+            TestDeserializeOnly(Context.Builder("key4").Anonymous(true).Build(),
                 @"{""key"": ""key4"", ""anonymous"": true}");
-            TestDeserializeOnly(Context.Builder("key5").Transient(false).Build(),
+            TestDeserializeOnly(Context.Builder("key5").Anonymous(false).Build(),
                 @"{""key"": ""key5"", ""anonymous"": false}");
             TestDeserializeOnly(Context.Builder("key6").Set("attr1", true).Build(),
                 @"{""key"": ""key6"", ""custom"": {""attr1"": true}}");

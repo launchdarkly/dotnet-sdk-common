@@ -34,7 +34,7 @@ namespace LaunchDarkly.Sdk
         private ContextKind _kind = ContextKind.Default;
         private string _key;
         private string _name;
-        private bool _transient;
+        private bool _anonymous;
         private string _secondary;
         private ImmutableDictionary<string, LdValue>.Builder _attributes;
         private ImmutableList<AttributeRef>.Builder _privateAttributes;
@@ -64,7 +64,7 @@ namespace LaunchDarkly.Sdk
                 _kind,
                 _key,
                 _name,
-                _transient,
+                _anonymous,
                 _secondary,
                 _attributes?.ToImmutableDictionary(),
                 _privateAttributes?.ToImmutableList(),
@@ -163,20 +163,20 @@ namespace LaunchDarkly.Sdk
         /// you want to be able to see on the LaunchDarkly dashboard.
         /// </para>
         /// <para>
-        /// Setting Transient to true excludes this Context from the database that is used by the dashboard. It does
+        /// Setting Anonymous to true excludes this Context from the database that is used by the dashboard. It does
         /// not exclude it from analytics event data, so it is not the same as making attributes private; all
         /// non-private attributes will still be included in events and data export.
         /// </para>
         /// <para>
-        /// This value is also addressable in evaluations as the attribute name "transient". It is always treated as
+        /// This value is also addressable in evaluations as the attribute name "anonymous". It is always treated as
         /// a boolean true or false in evaluations.
         /// </para>
         /// </remarks>
-        /// <param name="transient">true if the Context should be transient</param>
+        /// <param name="anonymous">true if the Context should be excluded from the LaunchDarkly database</param>
         /// <returns>the builder</returns>
-        public ContextBuilder Transient(bool transient)
+        public ContextBuilder Anonymous(bool anonymous)
         {
-            _transient = transient;
+            _anonymous = anonymous;
             return this;
         }
 
@@ -189,8 +189,12 @@ namespace LaunchDarkly.Sdk
         /// (https://docs.launchdarkly.com/home/flags/targeting-users#targeting-rules-based-on-user-attributes)
         /// as follows: if you have chosen to bucket contexts by a specific attribute, the secondary key (if set)
         /// is used to further distinguish between contexts that are otherwise identical according to that attribute.
-        /// This value is not addressable as an attribute in evaluations: that is, a rule clause cannot use the
-        /// attribute name "secondary".
+        /// </para>
+        /// <para>
+        /// This is a metadata property, rather than an attribute that can be addressed in evaluations: that is,
+        /// a rule clause that references the attribute name "secondary" will not use this value, but instead will
+        /// use whatever value (if any) you have set for the name "secondary" with a method such as
+        /// <see cref="Set(string, string)"/>.
         /// </para>
         /// <para>
         /// Setting this value to an empty string is not the same as leaving it unset. If you need to clear this,
@@ -212,7 +216,9 @@ namespace LaunchDarkly.Sdk
         /// <para>
         /// This includes only attributes that are addressable in evaluations-- not metadata such as
         /// <see cref="Secondary(string)"/>. If <paramref name="attributeName"/> is "secondary" or
-        /// "privateAttributes", it is ignored and no attribute is set.
+        /// "privateAttributes", you will be setting an attribute with that name which you can use in
+        /// evaluations or to record data for your own purposes, but it will be unrelated to
+        /// <see cref="Secondary(string)"/> and <see cref="Private(string[])"/>.
         /// </para>
         /// <para>
         /// This method uses the <see cref="LdValue"/> type to represent a value of any JSON type: null,
@@ -230,9 +236,13 @@ namespace LaunchDarkly.Sdk
         /// <see cref="Key(string)"/>.</description></item>
         /// <item><description>"name": Must be a string or null. See <see cref="Name(string)"/>.
         /// </description></item>
-        /// <item><description>"transient": Must be a boolean. See <see cref="Transient(bool)"/>.
+        /// <item><description>"anonymous": Must be a boolean. See <see cref="Anonymous(bool)"/>.
         /// </description></item>
         /// </list>
+        /// <para>
+        /// The attribute name "_meta" is not allowed, because it has special meaning in the JSON
+        /// schema for contexts; any attempt to set an attribute with this name has no effect.
+        /// </para>
         /// <para>
         /// Values that are JSON arrays or objects have special behavior when referenced in flag/segment
         /// rules.
@@ -300,16 +310,15 @@ namespace LaunchDarkly.Sdk
                     Name(value.AsString);
                     return true;
 
-                case "transient":
+                case "anonymous":
                     if (value.Type != LdValueType.Bool)
                     {
                         return false;
                     }
-                    Transient(value.AsBool);
+                    Anonymous(value.AsBool);
                     return true;
 
-                case "secondary":
-                case "privateAttributes":
+                case "_meta":
                     return false;
 
                 default:
@@ -449,7 +458,7 @@ namespace LaunchDarkly.Sdk
             _kind = c.Kind;
             _key = c.Key;
             _name = c.Name;
-            _transient = c.Transient;
+            _anonymous = c.Anonymous;
             _secondary = c.Secondary;
             if (c._attributes is null)
             {
