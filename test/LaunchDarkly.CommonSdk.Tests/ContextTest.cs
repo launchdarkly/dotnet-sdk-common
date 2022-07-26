@@ -96,7 +96,7 @@ namespace LaunchDarkly.Sdk
 			Assert.Equal("abc", Context.New("abc").FullyQualifiedKey);
 			Assert.Equal("abc:d", Context.New("abc:d").FullyQualifiedKey);
 			Assert.Equal("kind1:key1", Context.New(kind1, "key1").FullyQualifiedKey);
-			Assert.Equal("kind1:key%3A2", Context.New(kind1, "key:2").FullyQualifiedKey);
+            Assert.Equal("kind1:my%3Akey%25x/y", Context.New(kind1, "my:key%x/y").FullyQualifiedKey);
 			Assert.Equal("kind1:key1:kind2:key%3A2", Context.NewMulti(
 				Context.New(kind1, "key1"), Context.New(kind2, "key:2")
 				).FullyQualifiedKey);

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Net;
 using System.Text;
 using LaunchDarkly.JsonStream;
 using LaunchDarkly.Sdk.Json;
@@ -456,7 +455,7 @@ namespace LaunchDarkly.Sdk
                 _attributes = attributes;
                 _privateAttributes = privateAttributes;
                 FullyQualifiedKey = Kind.IsDefault ? key :
-                    (Kind + ":" + WebUtility.UrlEncode(key));
+                    (Kind + ":" + EscapeKeyForFullyQualifiedKey(key));
             }
             else
             {
@@ -539,7 +538,7 @@ namespace LaunchDarkly.Sdk
                     {
                         buildKey.Append(':');
                     }
-                    buildKey.Append(c.Kind).Append(':').Append(WebUtility.UrlEncode(c.Key));
+                    buildKey.Append(c.Kind).Append(':').Append(EscapeKeyForFullyQualifiedKey(c.Key));
                 }
                 FullyQualifiedKey = buildKey.ToString();
             }
@@ -868,5 +867,10 @@ namespace LaunchDarkly.Sdk
                     return _attributes.TryGetValue(name, out var value) ? value : LdValue.Null;
             }
         }
+
+        // When building a FullyQualifiedKey, ':' and '%' are percent-escaped; we do not use a full
+        // URL-encoding function because implementations of this are inconsistent across platforms.
+        private static string EscapeKeyForFullyQualifiedKey(string key) =>
+            key.Replace("%", "%25").Replace(":", "%3A");
     }
 }
