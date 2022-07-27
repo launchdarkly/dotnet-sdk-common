@@ -330,13 +330,28 @@ namespace LaunchDarkly.Sdk
         /// </para>
         /// <para>
         /// For the returned Context to be valid, the contexts list must not be empty, and all of its
-        /// elements must be single-kind Contexts. Otherwise, the returned Context will be invalid as
+        /// elements must be valid Contexts. Otherwise, the returned Context will be invalid as
         /// reported by <see cref="Error"/>.
         /// </para>
         /// <para>
         /// If only one context parameter is given, <see cref="NewMulti(Context[])"/> returns a single-kind
         /// context (that is, just that same context) rather than a multi-kind context.
         /// </para>
+        /// <para>
+        /// If a nested context is multi-kind, this is exactly equivalent to adding each of the
+        /// individual kinds from it separately. For instance, in the following example, "multi1" and
+        /// "multi2" end up being exactly the same:
+        /// </para>
+        /// <code>
+        ///     var c1 = Context.New(ContextKind.Of("kind1"), "key1");
+        ///     var c2 = Context.New(ContextKind.Of("kind2"), "key2");
+        ///     var c3 = Context.New(ContextKind.Of("kind3"), "key3");
+        ///
+        ///     var multi1 = Context.NewMulti(c1, c2, c3);
+        ///
+        ///     var c1plus2 = Context.NewMulti(c1, c2);
+        ///     var multi2 = Context.NewMulti(c1plus2, c3);
+        /// </code>
         /// </remarks>
         /// <param name="contexts">a list of contexts</param>
         /// <returns>a multi-kind Context</returns>
@@ -351,7 +366,19 @@ namespace LaunchDarkly.Sdk
             {
                 return contexts[0];
             }
-            return new Context(ImmutableList.Create(contexts));
+            if (contexts.Any(c => c.Multiple))
+            {
+                var b = MultiBuilder();
+                foreach (var c in contexts)
+                {
+                    b.Add(c);
+                }
+                return b.Build();
+            }
+            else
+            {
+                return new Context(ImmutableList.Create(contexts));
+            }
         }
 
         /// <summary>
@@ -478,7 +505,6 @@ namespace LaunchDarkly.Sdk
             Defined = true;
 
             List<string> errors = null;
-            var nestedMulti = false;
             var duplicates = false;
             for (int i = 0; i < contexts.Count; i++)
             {
@@ -491,10 +517,6 @@ namespace LaunchDarkly.Sdk
                     }
                     errors.Add($"({c.Kind}) {c.Error}");
                 }
-                else if (c.Multiple)
-                {
-                    nestedMulti = true;
-                }
                 else
                 {
                     for (int j = 0; j < i; j++)
@@ -506,14 +528,6 @@ namespace LaunchDarkly.Sdk
                         }
                     }
                 }
-            }
-            if (nestedMulti)
-            {
-                if (errors is null)
-                {
-                    errors = new List<string>();
-                }
-                errors.Add(Errors.ContextKindMultiWithinMulti);
             }
             if (duplicates)
             {

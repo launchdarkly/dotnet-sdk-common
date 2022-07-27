@@ -70,14 +70,38 @@ namespace LaunchDarkly.Sdk
         /// Adds a nested Context for a specific kind to a MultiBuilder.
         /// </summary>
         /// <remarks>
-        /// It is invalid to add more than one Context with the same kind, or to add a nested multi-kind Context.
-        /// This error is detected when you call <see cref="Build"/>/
+        /// <para>
+        /// It is invalid to add more than one Context with the same kind, or to add a Context that is itself
+        /// invalid. This error is detected when you call <see cref="Build"/>.
+        /// </para>
+        /// <para>
+        /// If the nested context is multi-kind, this is exactly equivalent to adding each of the
+        /// individual kinds from it separately. For instance, in the following example, "multi1" and
+        /// "multi2" end up being exactly the same:
+        /// </para>
+        /// <code>
+        ///     var c1 = Context.New(ContextKind.Of("kind1"), "key1");
+        ///     var c2 = Context.New(ContextKind.Of("kind2"), "key2");
+        ///     var c3 = Context.New(ContextKind.Of("kind3"), "key3");
+        ///
+        ///     var multi1 = Context.MultiBuilder().Add(c1).Add(c2).Add(c3).Build();
+        ///
+        ///     var c1plus2 = Context.MultiBuilder().Add(c1).Add(c2).Build();
+        ///     var multi2 = Context.MultiBuilder().Add(c1plus2).Add(c3).Build();
+        /// </code>
         /// </remarks>
         /// <param name="context">the context to add</param>
         /// <returns>the builder</returns>
         public ContextMultiBuilder Add(Context context)
         {
-            _contexts.Add(context);
+            if (context.Multiple)
+            {
+                _contexts.AddRange(context.MultiKindContexts);
+            }
+            else
+            {
+                _contexts.Add(context);
+            }
             return this;
         }
     }
