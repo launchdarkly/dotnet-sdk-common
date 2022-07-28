@@ -59,10 +59,6 @@ namespace LaunchDarkly.Sdk
             ShouldBeInvalid(Context.New(invalidKindWithDisallowedChar, "key"), Errors.ContextKindInvalidChars);
             ShouldBeInvalid(Context.New(ContextKind.Multi, "key"), Errors.ContextKindMultiForSingle);
             ShouldBeInvalid(Context.NewMulti(), Errors.ContextKindMultiWithNoKinds);
-            ShouldBeInvalid(Context.NewMulti(
-                Context.New("key1"),
-                Context.NewMulti(Context.New(kind1, "key2"), Context.New(kind2, "key3"))
-                ), Errors.ContextKindMultiWithinMulti);
             ShouldBeInvalid(Context.NewMulti(Context.New(kind1, "key1"), Context.New(kind1, "key2")),
                 Errors.ContextKindMultiDuplicates);
         }
@@ -333,6 +329,7 @@ namespace LaunchDarkly.Sdk
         {
             var c1 = Context.New(kind1, "key1");
             var c2 = Context.New(kind2, "key2");
+
             var multi = Context.NewMulti(c1, c2);
 
             Assert.Equal(ImmutableList.Create<Context>(), c1.MultiKindContexts);
@@ -357,6 +354,14 @@ namespace LaunchDarkly.Sdk
             Assert.Equal(uc1, uc1a);
             Assert.True(multi2.TryGetContextByKind(new ContextKind(""), out var uc1b));
             Assert.Equal(uc1, uc1b);
+
+            // nested multi-kind contexts are flattened
+            var c3 = Context.New(kind3, "key3");
+            var multi123a = Context.NewMulti(multi, c3);
+            Assert.True(multi123a.Valid);
+            Assert.Equal(ImmutableList.Create(c1, c2, c3), multi123a.MultiKindContexts);
+            var multi123b = Context.MultiBuilder().Add(multi).Add(c3).Build();
+            Assert.Equal(multi123a, multi123b);
         }
 
         [Fact]
