@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TestFramework Condition="'$(TESTFRAMEWORK)' == ''">netcoreapp2.1;net452</TestFramework>
+    <TestFramework Condition="'$(TESTFRAMEWORK)' == ''">netcoreapp3.1;net462</TestFramework>
     <TargetFrameworks>$(TESTFRAMEWORK)</TargetFrameworks>
     <AssemblyName>LaunchDarkly.CommonSdk.JsonNet.Tests</AssemblyName>
     <RootNamespace>LaunchDarkly.Sdk.Json</RootNamespace>
