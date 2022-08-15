@@ -1,4 +1,6 @@
-﻿using LaunchDarkly.JsonStream;
+﻿using System;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace LaunchDarkly.Sdk.Json
 {
@@ -9,29 +11,24 @@ namespace LaunchDarkly.Sdk.Json
         /// <summary>
         /// The JSON converter for <see cref="AttributeRef"/>.
         /// </summary>
-        public sealed class AttributeRefConverter : IJsonStreamConverter
+        public sealed class AttributeRefConverter : JsonConverter<AttributeRef>
         {
-            public object ReadJson(ref JReader reader)
+            public override void Write(Utf8JsonWriter writer, AttributeRef value, JsonSerializerOptions options)
             {
-                var maybeString = reader.StringOrNull();
-                if (maybeString is null)
+                if (value.Defined)
                 {
-                    return new AttributeRef();
-                }
-                return AttributeRef.FromPath(maybeString);
-            }
-
-            public void WriteJson(object value, IValueWriter writer)
-            {
-                var a = (AttributeRef)value;
-                if (a.Defined)
-                {
-                    writer.String(a.ToString());
+                    writer.WriteStringValue(value.ToString());
                 }
                 else
                 {
-                    writer.Null();
+                    writer.WriteNullValue();
                 }
+            }
+
+            public override AttributeRef Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+            {
+                var maybeString = reader.GetString();
+                return maybeString is null ? new AttributeRef() : AttributeRef.FromPath(maybeString);
             }
         }
     }

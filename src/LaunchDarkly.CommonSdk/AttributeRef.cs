@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Text;
-using LaunchDarkly.JsonStream;
+using System.Text.Json.Serialization;
 using LaunchDarkly.Sdk.Json;
 
 namespace LaunchDarkly.Sdk
@@ -73,7 +73,7 @@ namespace LaunchDarkly.Sdk
     /// </description></item>
     /// </list>
     /// </remarks>
-    [JsonStreamConverter(typeof(LdJsonConverters.AttributeRefConverter))]
+    [JsonConverter(typeof(LdJsonConverters.AttributeRefConverter))]
     public readonly struct AttributeRef : IEquatable<AttributeRef>, IJsonSerializable
     {
         

@@ -6,9 +6,7 @@ namespace LaunchDarkly.Sdk
     public class SystemTextJsonInteroperabilityTest
     {
         // These tests verify that all of our LaunchDarkly.Sdk types that have a custom JSON conversion
-        // behave the same with System.Text.Json (on supported platforms, i.e. everything except .NET
-        // Framework 4.5.x) as they do with LdJsonSerialization. We get this for free due to how
-        // LaunchDarkly.JsonStream's [JsonStreamConverter] annotation works.
+        // behave correctly with System.Text.Json.
 
         // Keep these tests in sync with LdJsonNetTest.cs in LaunchDarkly.CommonSdk.JsonNet.Tests.
 

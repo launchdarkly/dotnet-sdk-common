@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Immutable;
-using System.Linq;
-using LaunchDarkly.JsonStream;
-using LaunchDarkly.Sdk.Json;
-
-namespace LaunchDarkly.Sdk
+﻿namespace LaunchDarkly.Sdk
 {
     /// <summary>
     /// Contains legacy methods for constructing simple evaluation contexts, using the older LaunchDarkly

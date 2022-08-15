@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <Version>5.5.0</Version>
-    <TargetFrameworks>netstandard2.0;net462</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;netcoreapp3.1;net462;net6.0</TargetFrameworks>
     <DebugType>portable</DebugType>
     <AssemblyName>LaunchDarkly.CommonSdk</AssemblyName>
     <OutputType>Library</OutputType>
@@ -31,7 +31,12 @@
   
   <ItemGroup>
     <PackageReference Include="System.Collections.Immutable" Version="1.7.1" />
-    <PackageReference Include="LaunchDarkly.JsonStream" Version="[1.0.3,2.0.0)" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'
+                       or '$(TargetFramework)' == 'net462'">
+    <PackageReference Include="System.Text.Json" Version="6.0.0" />
+    <!-- it's a built-in package in netcoreapp3.1 and net6.0 -->
   </ItemGroup>
   
   <ItemGroup>

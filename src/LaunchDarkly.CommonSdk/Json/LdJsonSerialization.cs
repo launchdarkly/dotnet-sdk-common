@@ -1,5 +1,5 @@
 ﻿using System;
-using LaunchDarkly.JsonStream;
+using System.Text.Json;
 
 namespace LaunchDarkly.Sdk.Json
 {
@@ -19,7 +19,7 @@ namespace LaunchDarkly.Sdk.Json
         /// <param name="instance">the instance to serialize</param>
         /// <returns>the object's JSON encoding as a string</returns>
         public static string SerializeObject<T>(T instance) where T : IJsonSerializable =>
-            JsonStreamConvert.SerializeObject(instance);
+            JsonSerializer.Serialize(instance);
 
         /// <summary>
         /// Converts an object to its JSON representation as a UTF-8 byte array.
@@ -28,7 +28,7 @@ namespace LaunchDarkly.Sdk.Json
         /// <param name="instance">the instance to serialize</param>
         /// <returns>the object's JSON encoding as a byte array</returns>
         public static byte[] SerializeObjectToUtf8Bytes<T>(T instance) where T : IJsonSerializable =>
-            JsonStreamConvert.SerializeObjectToUtf8Bytes(instance);
+            JsonSerializer.SerializeToUtf8Bytes(instance);
 
         /// <summary>
         /// Parses an object from its JSON representation.
@@ -41,12 +41,42 @@ namespace LaunchDarkly.Sdk.Json
         {
             try
             {
-                return JsonStreamConvert.DeserializeObject<T>(json);
+                return JsonSerializer.Deserialize<T>(json);
             }
             catch (Exception e)
             {
                 throw new JsonException(e);
             }
+        }
+
+        internal static void RequireTokenType(ref Utf8JsonReader reader, JsonTokenType expectedType)
+        {
+            if (reader.TokenType != expectedType)
+            {
+                throw WrongJsonType(ref reader, expectedType);
+            }
+        }
+
+        internal static JsonException WrongJsonType(ref Utf8JsonReader reader, JsonTokenType expectedType) =>
+            new JsonException("Expected " + expectedType + ", got " + reader.TokenType, reader.TokenStartIndex);
+
+        internal static JsonException MissingRequiredProperty(ref Utf8JsonReader reader, string name) =>
+            new JsonException("Missing required property \"" + name + "\"", reader.TokenStartIndex);
+
+        internal static bool NextProperty(ref Utf8JsonReader reader, out string name)
+        {
+            if (!reader.Read() || reader.TokenType == JsonTokenType.EndObject)
+            {
+                name = null;
+                return false;
+            }
+            if (reader.TokenType != JsonTokenType.PropertyName)
+            {
+                throw WrongJsonType(ref reader, JsonTokenType.PropertyName);
+            }
+            name = reader.GetString();
+            reader.Read();
+            return true;
         }
     }
 }
