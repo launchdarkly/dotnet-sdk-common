@@ -100,6 +100,7 @@ jobs:
       name: win/vs2019
       shell: powershell.exe
     environment:
+      BUILDFRAMEWORKS: net462
       TESTFRAMEWORK: net462
     steps:
       - checkout
