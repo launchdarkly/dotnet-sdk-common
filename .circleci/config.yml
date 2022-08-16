@@ -93,7 +93,12 @@ jobs:
             - /root/.nuget/packages
       - run:
           name: run tests
-          command: dotnet test test/LaunchDarkly.CommonSdk.Tests/LaunchDarkly.CommonSdk.Tests.csproj -f <<parameters.test-target-framework>>
+          command: dotnet test \
+              --logger:"junit;LogFilePath=/tmp/circle-reports/unit-tests-commonsdk.xml" \
+              test/LaunchDarkly.CommonSdk.Tests/LaunchDarkly.CommonSdk.Tests.csproj \
+              -f <<parameters.test-target-framework>>
+      - store_test_results:
+          path: /tmp/circle-reports
 
   test-windows-netframework-4-6-2:
     executor:
@@ -119,4 +124,9 @@ jobs:
           command: dotnet build src/LaunchDarkly.CommonSdk -f net462
       - run:
           name: run tests in .NET Framework 4.6.2
-          command: dotnet test test/LaunchDarkly.CommonSdk.Tests/LaunchDarkly.CommonSdk.Tests.csproj -f net462
+          command: dotnet test \
+              -l "junit;LogFilePath=/tmp/circle-reports/unit-tests.xml" \
+              test/LaunchDarkly.CommonSdk.Tests/LaunchDarkly.CommonSdk.Tests.csproj \
+              -f net462
+      - store_test_results:
+          path: /tmp/circle-reports
