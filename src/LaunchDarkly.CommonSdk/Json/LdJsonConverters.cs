@@ -35,7 +35,7 @@ namespace LaunchDarkly.Sdk.Json
 
             public static EvaluationReason ReadJsonValue(ref Utf8JsonReader reader)
             {
-                EvaluationReasonKind kind = EvaluationReasonKind.Error;
+                EvaluationReasonKind? kind = null;
                 int? ruleIndex = null;
                 string ruleId = null;
                 string prerequisiteKey = null;
@@ -75,8 +75,13 @@ namespace LaunchDarkly.Sdk.Json
                         }
                     }
 
+                    if (!kind.HasValue)
+                    {
+                        throw LdJsonSerialization.MissingRequiredProperty(ref reader, "kind");
+                    }
+
                     EvaluationReason reason;
-                    switch (kind) // it's guaranteed to have a value, otherwise there'd be a required property error above
+                    switch (kind.Value)
                     {
                         case EvaluationReasonKind.Off:
                             reason = EvaluationReason.OffReason;
@@ -96,8 +101,9 @@ namespace LaunchDarkly.Sdk.Json
                         case EvaluationReasonKind.Error:
                             reason = EvaluationReason.ErrorReason(errorKind ?? EvaluationErrorKind.Exception);
                             break;
-                        default:
-                            throw LdJsonSerialization.MissingRequiredProperty(ref reader, "kind");
+                        default: // shouldn't be possible, all of the enum values are accounted for
+                            reason = new EvaluationReason();
+                            break;
                     }
                     if (inExperiment)
                     {

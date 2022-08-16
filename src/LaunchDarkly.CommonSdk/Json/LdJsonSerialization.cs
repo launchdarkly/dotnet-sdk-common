@@ -53,12 +53,9 @@ namespace LaunchDarkly.Sdk.Json
         {
             if (reader.TokenType != expectedType)
             {
-                throw WrongJsonType(ref reader, expectedType);
+                throw new JsonException("Expected " + expectedType + ", got " + reader.TokenType, reader.TokenStartIndex);
             }
-        }
-
-        internal static JsonException WrongJsonType(ref Utf8JsonReader reader, JsonTokenType expectedType) =>
-            new JsonException("Expected " + expectedType + ", got " + reader.TokenType, reader.TokenStartIndex);
+        }            
 
         internal static JsonException MissingRequiredProperty(ref Utf8JsonReader reader, string name) =>
             new JsonException("Missing required property \"" + name + "\"", reader.TokenStartIndex);
@@ -69,10 +66,6 @@ namespace LaunchDarkly.Sdk.Json
             {
                 name = null;
                 return false;
-            }
-            if (reader.TokenType != JsonTokenType.PropertyName)
-            {
-                throw WrongJsonType(ref reader, JsonTokenType.PropertyName);
             }
             name = reader.GetString();
             reader.Read();
