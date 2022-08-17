@@ -1,5 +1,5 @@
 ﻿using System;
-using LaunchDarkly.JsonStream;
+using System.Text.Json.Serialization;
 using LaunchDarkly.Sdk.Json;
 
 namespace LaunchDarkly.Sdk
@@ -18,7 +18,7 @@ namespace LaunchDarkly.Sdk
     /// When converting to or from JSON, it is encoded as an integer.
     /// </para>
     /// </remarks>
-    [JsonStreamConverter(typeof(LdJsonConverters.UnixMillisecondTimeConverter))]
+    [JsonConverter(typeof(LdJsonConverters.UnixMillisecondTimeConverter))]
     public struct UnixMillisecondTime : IEquatable<UnixMillisecondTime>, IComparable<UnixMillisecondTime>,
         IJsonSerializable
     {

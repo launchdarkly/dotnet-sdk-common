@@ -1,5 +1,6 @@
 ﻿using System;
-using LaunchDarkly.JsonStream;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace LaunchDarkly.Sdk.Json
 {
@@ -14,14 +15,6 @@ namespace LaunchDarkly.Sdk.Json
     /// library code.
     /// </para>
     /// <para>
-    /// These conversions use the <c>LaunchDarkly.JsonStream</c> library
-    /// (https://github.com/launchdarkly/dotnet-jsonstream), which internally uses
-    /// <c>System.Text.Json</c> on platforms where that API is available or a custom implementation
-    /// otherwise. If an error occurs, they may throw a lower-level exception type such as
-    /// <c>LaunchDarkly.JsonStream.JsonReadException</c> or <c>System.Text.Json.JsonException</c>
-    /// rather than <c>LaunchDarkly.Sdk.Json.JsonException</c>.
-    /// </para>
-    /// <para>
     /// Some of these converters also have <c>ReadJsonValue</c> and <c>WriteJsonValue</c> methods.
     /// The reason for this is that the <c>object</c> type used by the regular converter methods
     /// causes boxing/unboxing conversions if the target type is a <c>struct</c>, and if the
@@ -32,92 +25,63 @@ namespace LaunchDarkly.Sdk.Json
     public static partial class LdJsonConverters
     {
 #pragma warning disable CS1591 // don't bother with XML comments for these low-level helpers
-        public sealed class EvaluationReasonConverter : IJsonStreamConverter
+        public sealed class EvaluationReasonConverter : JsonConverter<EvaluationReason>
         {
-            private static readonly string[] _requiredProperties = new string[] { "kind" };
+            public override void Write(Utf8JsonWriter writer, EvaluationReason value, JsonSerializerOptions options) =>
+                WriteJsonValue(value, writer);
 
-            public object ReadJson(ref JReader reader) => ReadJsonValue(ref reader);
+            public override EvaluationReason Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+                ReadJsonValue(ref reader);
 
-            public static EvaluationReason ReadJsonValue(ref JReader reader) =>
-                ReadJsonInternal(ref reader, false).Value;
-
-            public static EvaluationReason? ReadJsonNullableValue(ref JReader reader) =>
-                ReadJsonInternal(ref reader, true);
-
-            private static EvaluationReason? ReadJsonInternal(ref JReader reader, bool nullable)
+            public static EvaluationReason ReadJsonValue(ref Utf8JsonReader reader)
             {
-                var obj = (nullable ? reader.ObjectOrNull() : reader.Object())
-                    .WithRequiredProperties(_requiredProperties);
-                if (!obj.IsDefined)
-                {
-                    return null;
-                }
-                try
-                {
-                    EvaluationReasonKind kind = EvaluationReasonKind.Error;
-                    int? ruleIndex = null;
-                    string ruleId = null;
-                    string prerequisiteKey = null;
-                    EvaluationErrorKind? errorKind = null;
-                    bool inExperiment = false;
-                    BigSegmentsStatus? bigSegmentsStatus = null;
+                EvaluationReasonKind? kind = null;
+                int? ruleIndex = null;
+                string ruleId = null;
+                string prerequisiteKey = null;
+                EvaluationErrorKind? errorKind = null;
+                bool inExperiment = false;
+                BigSegmentsStatus? bigSegmentsStatus = null;
 
-                    while (obj.Next(ref reader))
+                LdJsonSerialization.RequireTokenType(ref reader, JsonTokenType.StartObject);
+                while (LdJsonSerialization.NextProperty(ref reader, out var name))
+                {
+                    switch (name)
                     {
-                        var name = obj.Name;
-                        if (name == "kind")
-                        {
-                            try
-                            {
-                                kind = EvaluationReasonKindConverter.FromIdentifier(reader.String());
-                            }
-                            catch (ArgumentException)
-                            {
-                                throw new SyntaxException("unsupported value for \"kind\"", 0);
-                            }
-                        }
-                        else if (name == "ruleIndex")
-                        {
-                            ruleIndex = reader.Int();
-                        }
-                        else if (name == "ruleId")
-                        {
-                            ruleId = reader.String();
-                        }
-                        else if (name == "prerequisiteKey")
-                        {
-                            prerequisiteKey = reader.String();
-                        }
-                        else if (name == "errorKind")
-                        {
-                            try
-                            {
-                                errorKind = EvaluationErrorKindConverter.FromIdentifier(reader.String());
-                            }
-                            catch (ArgumentException)
-                            {
-                                throw new SyntaxException("unsupported value for \"errorKind\"", 0);
-                            }
-                        }
-                        else if (name == "inExperiment")
-                        {
-                            inExperiment = reader.Bool();
-                        }
-                        else if (name == "bigSegmentsStatus")
-                        {
-                            try
-                            {
-                                bigSegmentsStatus = BigSegmentsStatusConverter.FromIdentifier(reader.String());
-                            }
-                            catch (ArgumentException)
-                            {
-                                throw new SyntaxException("unsupported value for \"bigSegmentsStatus\"", 0);
-                            }
+                        case "kind":
+                            kind = EvaluationReasonKindConverter.FromIdentifier(reader.GetString());
+                            break;
+                        case "ruleIndex":
+                            ruleIndex = reader.GetInt32();
+                            break;
+                        case "ruleId":
+                            ruleId = reader.GetString();
+                            break;
+                        case "prerequisiteKey":
+                            prerequisiteKey = reader.GetString();
+                            break;
+                        case "errorKind":
+                            errorKind = EvaluationErrorKindConverter.FromIdentifier(reader.GetString());
+                            break;
+                        case "inExperiment":
+                            inExperiment = reader.GetBoolean();
+                            break;
+                        case "bigSegmentsStatus":
+                            bigSegmentsStatus = BigSegmentsStatusConverter.FromIdentifier(reader.GetString());
+                            break;
+                        default:
+                            reader.Skip();
+                            break;
                         }
                     }
 
+                    if (!kind.HasValue)
+                    {
+                        throw LdJsonSerialization.MissingRequiredProperty(ref reader, "kind");
+                    }
+
                     EvaluationReason reason;
-                    switch (kind) // it's guaranteed to have a value, otherwise there'd be a required property error above
+                    switch (kind.Value)
                     {
                         case EvaluationReasonKind.Off:
                             reason = EvaluationReason.OffReason;
@@ -137,8 +101,9 @@ namespace LaunchDarkly.Sdk.Json
                         case EvaluationReasonKind.Error:
                             reason = EvaluationReason.ErrorReason(errorKind ?? EvaluationErrorKind.Exception);
                             break;
-                        default:
-                            return null;
+                        default: // shouldn't be possible, all of the enum values are accounted for
+                            reason = new EvaluationReason();
+                            break;
                     }
                     if (inExperiment)
                     {
@@ -149,58 +114,52 @@ namespace LaunchDarkly.Sdk.Json
                         reason = reason.WithBigSegmentsStatus(bigSegmentsStatus);
                     }
                     return reason;
-                }
-                catch (Exception e)
-                {
-                    throw reader.TranslateException(e);
-                }
             }
 
-            public void WriteJson(object value, IValueWriter writer) =>
-                WriteJsonValue((EvaluationReason)value, writer);
-
-            public static void WriteJsonValue(EvaluationReason value, IValueWriter writer)
+            public static void WriteJsonValue(EvaluationReason value, Utf8JsonWriter writer)
             {
-                var obj = writer.Object();
-                obj.Name("kind").String(EvaluationReasonKindConverter.ToIdentifier(value.Kind));
+                writer.WriteStartObject();
+                writer.WriteString("kind", EvaluationReasonKindConverter.ToIdentifier(value.Kind));
                 switch (value.Kind)
                 {
                     case EvaluationReasonKind.RuleMatch:
-                        obj.Name("ruleIndex").Int(value.RuleIndex ?? 0);
-                        obj.Name("ruleId").String(value.RuleId);
+                        writer.WriteNumber("ruleIndex", value.RuleIndex ?? 0);
+                        writer.WriteString("ruleId", value.RuleId);
                         break;
                     case EvaluationReasonKind.PrerequisiteFailed:
-                        obj.Name("prerequisiteKey").String(value.PrerequisiteKey);
+                        writer.WriteString("prerequisiteKey", value.PrerequisiteKey);
                         break;
                     case EvaluationReasonKind.Error:
-                        obj.Name("errorKind").String(EvaluationErrorKindConverter.ToIdentifier(value.ErrorKind.Value));
+                        writer.WritePropertyName("errorKind");
+                        EvaluationErrorKindConverter.WriteJsonValue(value.ErrorKind.Value, writer);
                         break;
                 }
                 if (value.InExperiment)
                 {
-                    obj.Name("inExperiment").Bool(true); // omit property if false
+                    writer.WriteBoolean("inExperiment", true); // omit property if false
                 }
                 if (value.BigSegmentsStatus.HasValue)
                 {
-                    obj.Name("bigSegmentsStatus").String(
-                        BigSegmentsStatusConverter.ToIdentifier(value.BigSegmentsStatus.Value));
+                    writer.WritePropertyName("bigSegmentsStatus");
+                    BigSegmentsStatusConverter.WriteJsonValue(value.BigSegmentsStatus.Value, writer);
                 }
-                obj.End();
+                writer.WriteEndObject();
             }
         }
 
-        public sealed class BigSegmentsStatusConverter : IJsonStreamConverter
+        public sealed class BigSegmentsStatusConverter : JsonConverter<BigSegmentsStatus>
         {
-            public object ReadJson(ref JReader reader) => ReadJsonValue(ref reader);
+            public override void Write(Utf8JsonWriter writer, BigSegmentsStatus value, JsonSerializerOptions options) =>
+                WriteJsonValue(value, writer);
 
-            public void WriteJson(object instance, IValueWriter writer) =>
-                WriteJsonValue((EvaluationErrorKind)instance, writer);
+            public override BigSegmentsStatus Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+                ReadJsonValue(ref reader);
 
-            public static BigSegmentsStatus ReadJsonValue(ref JReader reader) =>
-                FromIdentifier(reader.String());
+            public static BigSegmentsStatus ReadJsonValue(ref Utf8JsonReader reader) =>
+                FromIdentifier(reader.GetString());
 
-            public static void WriteJsonValue(EvaluationErrorKind instance, IValueWriter writer) =>
-                writer.String(ToIdentifier((BigSegmentsStatus)instance));
+            public static void WriteJsonValue(BigSegmentsStatus instance, Utf8JsonWriter writer) =>
+                writer.WriteStringValue(ToIdentifier(instance));
 
             internal static BigSegmentsStatus FromIdentifier(string value)
             {
@@ -235,18 +194,19 @@ namespace LaunchDarkly.Sdk.Json
         /// <summary>
         /// The JSON converter for <see cref="EvaluationErrorKind"/>.
         /// </summary>
-        public sealed class EvaluationErrorKindConverter : IJsonStreamConverter
+        public sealed class EvaluationErrorKindConverter : JsonConverter<EvaluationErrorKind>
         {
-            public object ReadJson(ref JReader reader) => ReadJsonValue(ref reader);
+            public override void Write(Utf8JsonWriter writer, EvaluationErrorKind value, JsonSerializerOptions options) =>
+                WriteJsonValue(value, writer);
 
-            public void WriteJson(object instance, IValueWriter writer) =>
-                WriteJsonValue((EvaluationErrorKind)instance, writer);
+            public override EvaluationErrorKind Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+                ReadJsonValue(ref reader);
 
-            public static EvaluationErrorKind ReadJsonValue(ref JReader reader) =>
-                FromIdentifier(reader.String());
+            public static EvaluationErrorKind ReadJsonValue(ref Utf8JsonReader reader) =>
+                FromIdentifier(reader.GetString());
 
-            public static void WriteJsonValue(EvaluationErrorKind instance, IValueWriter writer) =>
-                writer.String(ToIdentifier((EvaluationErrorKind)instance));
+            public static void WriteJsonValue(EvaluationErrorKind instance, Utf8JsonWriter writer) =>
+                writer.WriteStringValue(ToIdentifier(instance));
 
             internal static EvaluationErrorKind FromIdentifier(string value)
             {
@@ -285,18 +245,19 @@ namespace LaunchDarkly.Sdk.Json
         /// <summary>
         /// The JSON converter for <see cref="EvaluationReasonKind"/>.
         /// </summary>
-        public sealed class EvaluationReasonKindConverter : IJsonStreamConverter
+        public sealed class EvaluationReasonKindConverter : JsonConverter<EvaluationReasonKind>
         {
-            public object ReadJson(ref JReader reader) => ReadJsonValue(ref reader);
+            public override void Write(Utf8JsonWriter writer, EvaluationReasonKind value, JsonSerializerOptions options) =>
+                WriteJsonValue(value, writer);
 
-            public void WriteJson(object instance, IValueWriter writer) =>
-                WriteJsonValue((EvaluationReasonKind)instance, writer);
+            public override EvaluationReasonKind Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+                ReadJsonValue(ref reader);
 
-            public EvaluationReasonKind ReadJsonValue(ref JReader reader) =>
-                FromIdentifier(reader.String());
+            public EvaluationReasonKind ReadJsonValue(ref Utf8JsonReader reader) =>
+                FromIdentifier(reader.GetString());
 
-            public void WriteJsonValue(EvaluationReasonKind instance, IValueWriter writer) =>
-                writer.String(ToIdentifier((EvaluationReasonKind)instance));
+            public void WriteJsonValue(EvaluationReasonKind instance, Utf8JsonWriter writer) =>
+                writer.WriteStringValue(ToIdentifier(instance));
 
             internal static EvaluationReasonKind FromIdentifier(string value)
             {
@@ -335,92 +296,89 @@ namespace LaunchDarkly.Sdk.Json
         /// <summary>
         /// The JSON converter for <see cref="LdValue"/>.
         /// </summary>
-        public sealed class LdValueConverter : IJsonStreamConverter
+        public sealed class LdValueConverter : JsonConverter<LdValue>
         {
-            public object ReadJson(ref JReader reader)
-            {
-                try
-                {
-                    return ReadJsonValue(ref reader);
-                }
-                catch (Exception e)
-                {
-                    throw reader.TranslateException(e);
-                }
-            }
+            public override void Write(Utf8JsonWriter writer, LdValue value, JsonSerializerOptions options) =>
+                WriteJsonValue(value, writer);
 
-            public void WriteJson(object value, IValueWriter writer) =>
-                WriteJsonValue((LdValue)value, writer);
+            public override LdValue Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+                ReadJsonValue(ref reader);
 
-            public static void WriteJsonValue(LdValue value, IValueWriter writer)
+            public static void WriteJsonValue(LdValue value, Utf8JsonWriter writer)
             {
                 switch (value.Type)
                 {
                     case LdValueType.Null:
-                        writer.Null();
+                        writer.WriteNullValue();
                         break;
                     case LdValueType.Bool:
-                        writer.Bool(value.AsBool);
+                        writer.WriteBooleanValue(value.AsBool);
                         break;
                     case LdValueType.Number:
                         var asInt = value.AsInt;
                         var asDouble = value.AsDouble;
                         if ((double)asInt == asDouble)
                         {
-                            writer.Int(asInt);
+                            writer.WriteNumberValue(asInt);
                         }
                         else
                         {
-                            writer.Double(asDouble);
+                            writer.WriteNumberValue(asDouble);
                         }
                         break;
                     case LdValueType.String:
-                        writer.String(value.AsString);
+                        writer.WriteStringValue(value.AsString);
                         break;
                     case LdValueType.Array:
-                        var arr = writer.Array();
+                        writer.WriteStartArray();
                         foreach (var v in value.List)
                         {
-                            WriteJsonValue(v, arr);
+                            WriteJsonValue(v, writer);
                         }
-                        arr.End();
+                        writer.WriteEndArray();
                         break;
                     case LdValueType.Object:
-                        var obj = writer.Object();
+                        writer.WriteStartObject();
                         foreach (var kv in value.Dictionary)
                         {
-                            WriteJsonValue(kv.Value, obj.Name(kv.Key));
+                            writer.WritePropertyName(kv.Key);
+                            WriteJsonValue(kv.Value, writer);
                         }
-                        obj.End();
+                        writer.WriteEndObject();
                         break;
                 }
             }
 
-            public static LdValue ReadJsonValue(ref JReader reader)
+            public static LdValue ReadJsonValue(ref Utf8JsonReader reader)
             {
-                var value = reader.Any();
-                switch (value.Type)
+                switch (reader.TokenType)
                 {
-                    case JsonStream.ValueType.Bool:
-                        return LdValue.Of(value.BoolValue);
-                    case JsonStream.ValueType.Number:
-                        return LdValue.Of(value.NumberValue);
-                    case JsonStream.ValueType.String:
-                        return LdValue.Of(value.StringValue.ToString());
-                    case JsonStream.ValueType.Array:
+                    case JsonTokenType.True:
+                        return LdValue.Of(true);
+                    case JsonTokenType.False:
+                        return LdValue.Of(false);
+                    case JsonTokenType.Number:
+                        return LdValue.Of(reader.GetDouble());
+                    case JsonTokenType.String:
+                        return LdValue.Of(reader.GetString());
+                    case JsonTokenType.StartArray:
                         var arrayBuilder = LdValue.BuildArray();
-                        for (var arr = value.ArrayValue; arr.Next(ref reader);)
+                        while (reader.Read())
                         {
+                            if (reader.TokenType == JsonTokenType.EndArray)
+                            {
+                                break;
+                            }
                             arrayBuilder.Add(ReadJsonValue(ref reader));
                         }
                         return arrayBuilder.Build();
-                    case JsonStream.ValueType.Object:
-                        var objBuilder = LdValue.BuildObject();
-                        for (var obj = value.ObjectValue; obj.Next(ref reader);)
+                    case JsonTokenType.StartObject:
+                        var objectBuilder = LdValue.BuildObject();
+                        while (LdJsonSerialization.NextProperty(ref reader, out var name))
                         {
-                            objBuilder.Add(obj.Name.ToString(), ReadJsonValue(ref reader));
+                            objectBuilder.Add(name, ReadJsonValue(ref reader));
                         }
-                        return objBuilder.Build();
+                        return objectBuilder.Build();
                     default:
                         return LdValue.Null;
                 }
@@ -430,25 +388,13 @@ namespace LaunchDarkly.Sdk.Json
         /// <summary>
         /// The JSON converter for <see cref="UnixMillisecondTime"/>.
         /// </summary>
-        public sealed class UnixMillisecondTimeConverter: IJsonStreamConverter
+        public sealed class UnixMillisecondTimeConverter: JsonConverter<UnixMillisecondTime>
         {
-            public object ReadJson(ref JReader reader)
-            {
-                var maybeValue = reader.LongOrNull();
-                return maybeValue is null ? (UnixMillisecondTime?)null : UnixMillisecondTime.OfMillis(maybeValue.Value);
-            }
+            public override void Write(Utf8JsonWriter writer, UnixMillisecondTime value, JsonSerializerOptions options) =>
+                writer.WriteNumberValue(value.Value);
 
-            public void WriteJson(object value, IValueWriter writer)
-            {
-                if (value is null)
-                {
-                    writer.Null();
-                }
-                else
-                {
-                    writer.Long(((UnixMillisecondTime)value).Value);
-                }
-            }
+            public override UnixMillisecondTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+                UnixMillisecondTime.OfMillis(reader.GetInt64());
         }
     }
 #pragma warning restore CS1591

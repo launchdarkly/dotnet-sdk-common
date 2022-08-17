@@ -21,9 +21,23 @@ namespace LaunchDarkly.Sdk.Json
         public JsonException(string message) : base(message) { }
 
         /// <summary>
+        /// Constructs a new instance.
+        /// </summary>
+        /// <param name="message">the exception message</param>
+        /// <param name="position">the offset where a parsing error occurred</param>
+        public JsonException(string message, long position) : base(message + " at position " + position) { }
+
+        /// <summary>
         /// Constructs a new instance based on another exception.
         /// </summary>
         /// <param name="innerException">the original exception</param>
         public JsonException(Exception innerException) : base("Error in JSON parsing", innerException) { }
+
+        /// <summary>
+        /// Constructs a new instance based on another exception.
+        /// </summary>
+        /// <param name="innerException">the original exception</param>
+        /// <param name="position">the offset where a parsing error occurred</param>
+        public JsonException(Exception innerException, long position) : base("Error in JSON parsing at position " + position, innerException) { }
     }
 }

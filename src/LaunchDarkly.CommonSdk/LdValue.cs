@@ -2,7 +2,8 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using LaunchDarkly.JsonStream;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using LaunchDarkly.Sdk.Internal.Helpers;
 using LaunchDarkly.Sdk.Json;
 
@@ -77,7 +78,7 @@ namespace LaunchDarkly.Sdk
     /// use <see cref="AsList{T}(LdValue.Converter{T})"/> or <see cref="AsDictionary{T}(LdValue.Converter{T})"/>.
     /// </para>
     /// </remarks>
-    [JsonStreamConverter(typeof(LdJsonConverters.LdValueConverter))]
+    [JsonConverter(typeof(LdJsonConverters.LdValueConverter))]
     public struct LdValue : IEquatable<LdValue>, IJsonSerializable
     {
         #region Private fields
@@ -549,9 +550,7 @@ namespace LaunchDarkly.Sdk
                 case LdValueType.Bool:
                     return _boolValue ? "true" : "false";
                 default:
-                    var writer = JWriter.New();
-                    LdJsonConverters.LdValueConverter.WriteJsonValue(this, writer);
-                    return writer.GetString();
+                    return JsonSerializer.Serialize(this);
             }
         }
 

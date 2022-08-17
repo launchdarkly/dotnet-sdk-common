@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Reflection;
-using LaunchDarkly.JsonStream;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -21,8 +20,8 @@ namespace LaunchDarkly.Sdk.Json
         // The IJsonSerializable interface, which is what tells us whether this is one of the SDK's
         // serializable types, is defined in the main LaunchDarkly.CommonSdk package. However, we
         // don't actually need any code in that package in order to make this adapter work; all we
-        // really need is LaunchDarkly.JsonStream. So it's preferable to avoid having a dependency
-        // on LaunchDarkly.CommonSdk from LaunchDarkly.CommonSdk.JsonNet (it would make our release
+        // really need is System.Text.Json. So it's preferable to avoid having a dependency on
+        // LaunchDarkly.CommonSdk from LaunchDarkly.CommonSdk.JsonNet (it would make our release
         // process less convenient and potentially cause version conflicts); instead, we can just
         // look up the interface type dynamically like this.
         internal static readonly Type IJsonSerializableType = DetectSerializableInterfaceType();
@@ -85,7 +84,7 @@ namespace LaunchDarkly.Sdk.Json
         public static JsonConverter Converter =>
             IJsonSerializableType is null ?
                 throw new InvalidOperationException("LdJsonNet.Converter cannot be used unless a LaunchDarkly .NET SDK is present") :
-                JsonStreamConverterFactory.Instance;
+                JsonConverterFactory.Instance;
 
         private static Type DetectSerializableInterfaceType()
         {
@@ -100,9 +99,9 @@ namespace LaunchDarkly.Sdk.Json
         }
     }
 
-    internal class JsonStreamConverterFactory : JsonConverter
+    internal class JsonConverterFactory : JsonConverter
     {
-        internal static readonly JsonConverter Instance = new JsonStreamConverterFactory();
+        internal static readonly JsonConverter Instance = new JsonConverterFactory();
 
         // Json.NET has idiosyncratic default behavior, e.g. it will try to convert strings to DateTime
         // instances if it thinks they look like dates. That's not what we want, so we'll configure our
@@ -132,12 +131,12 @@ namespace LaunchDarkly.Sdk.Json
                 }
             }
             var raw = DefaultSerializer.Deserialize<JRaw>(reader);
-            return JsonStreamConvert.DeserializeObject(raw.Value.ToString(), objectType);
+            return System.Text.Json.JsonSerializer.Deserialize(raw.Value.ToString(), objectType);
         }
 
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
-            string json = JsonStreamConvert.SerializeObject(value);
+            string json = System.Text.Json.JsonSerializer.Serialize(value);
             writer.WriteRawValue(json);
         }
     }

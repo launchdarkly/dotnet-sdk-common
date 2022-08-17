@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
-using LaunchDarkly.JsonStream;
+using System.Text.Json.Serialization;
 using LaunchDarkly.Sdk.Json;
 
 namespace LaunchDarkly.Sdk
@@ -30,7 +30,7 @@ namespace LaunchDarkly.Sdk
     /// <see cref="LdJsonConverters.ContextConverter"/>.
     /// </para>
     /// </remarks>
-    [JsonStreamConverter(typeof(LdJsonConverters.ContextConverter))]
+    [JsonConverter(typeof(LdJsonConverters.ContextConverter))]
     public readonly struct Context : IEquatable<Context>, IJsonSerializable
     {
         private readonly string _error;

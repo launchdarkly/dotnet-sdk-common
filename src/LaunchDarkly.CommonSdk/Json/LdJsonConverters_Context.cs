@@ -1,4 +1,6 @@
-﻿using LaunchDarkly.JsonStream;
+﻿using System;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace LaunchDarkly.Sdk.Json
 {
@@ -22,7 +24,7 @@ namespace LaunchDarkly.Sdk.Json
         /// for serialization.
         /// </para>
         /// </remarks>
-        public sealed class ContextConverter : IJsonStreamConverter
+        public sealed class ContextConverter : JsonConverter<Context>
         {
             private const string AttrKind = "kind";
             private const string AttrKey = "key";
@@ -34,7 +36,7 @@ namespace LaunchDarkly.Sdk.Json
             private const string OldJsonPropCustom = "custom";
             private const string OldJsonPropPrivateAttributeNames = "privateAttributeNames";
 
-            public object ReadJson(ref JReader reader)
+            public override Context Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
             {
                 // The implementation here of unmarshaling a context/user is that we first unmarshal the
                 // whole JSON object into an LdValue (as a convenient way to represent arbitrary JSON data
@@ -61,23 +63,22 @@ namespace LaunchDarkly.Sdk.Json
                 return ReadJsonOldUser(objValue);
             }
 
-            public void WriteJson(object value, IValueWriter writer)
+            public override void Write(Utf8JsonWriter writer, Context c, JsonSerializerOptions options)
             {
-                var c = (Context)value;
-
                 if (!(c.Error is null))
                 {
                     throw new JsonException(Errors.JsonSerializeInvalidContext(c.Error));
                 }
                 if (c.Multiple)
                 {
-                    var obj = writer.Object();
-                    obj.Name(AttrKind).String(ContextKind.Multi.Value);
+                    writer.WriteStartObject();
+                    writer.WriteString(AttrKind, ContextKind.Multi.Value);
                     foreach (var mc in c._multiContexts)
                     {
-                        WriteJsonSingle(mc, obj.Name(mc.Kind.Value), false);
+                        writer.WritePropertyName(mc.Kind.Value);
+                        WriteJsonSingle(mc, writer, false);
                     }
-                    obj.End();
+                    writer.WriteEndObject();
                 }
                 else
                 {
@@ -246,36 +247,49 @@ namespace LaunchDarkly.Sdk.Json
             private static JsonException WrongType(LdValue value, string name) =>
                 new JsonException(Errors.JsonContextWrongType(name, value.Type));
 
-            private void WriteJsonSingle(in Context c, IValueWriter writer, bool includeKind)
+            private void WriteJsonSingle(in Context c, Utf8JsonWriter writer, bool includeKind)
             {
-                var obj = writer.Object();
-                obj.MaybeName(AttrKind, includeKind).String(c.Kind.Value);
-                obj.Name(AttrKey).String(c.Key);
-                obj.MaybeName(AttrName, c.Name != null).String(c.Name);
-                obj.MaybeName(AttrAnonymous, c.Anonymous).Bool(c.Anonymous);
+                writer.WriteStartObject();
+                if (includeKind)
+                {
+                    writer.WriteString(AttrKind, c.Kind.Value);
+                }
+                writer.WriteString(AttrKey, c.Key);
+                if (c.Name != null)
+                {
+                    writer.WriteString(AttrName, c.Name);
+                }
+                if (c.Anonymous)
+                {
+                    writer.WriteBoolean(AttrAnonymous, true);
+                }
                 if (!(c._attributes is null))
                 {
                     foreach (var kv in c._attributes)
                     {
-                        LdValueConverter.WriteJsonValue(kv.Value, obj.Name(kv.Key));
+                        writer.WritePropertyName(kv.Key);
+                        LdValueConverter.WriteJsonValue(kv.Value, writer);
                     }
                 }
                 if (!(c.Secondary is null) || !(c._privateAttributes is null))
                 {
-                    var meta = obj.Name(JsonPropMeta).Object();
-                    meta.MaybeName(JsonPropSecondary, c.Secondary != null).String(c.Secondary);
+                    writer.WriteStartObject(JsonPropMeta);
+                    if (c.Secondary != null)
+                    {
+                        writer.WriteString(JsonPropSecondary, c.Secondary);
+                    }
                     if (!(c._privateAttributes is null))
                     {
-                        var privateArr = meta.Name(JsonPropPrivateAttributes).Array();
+                        writer.WriteStartArray(JsonPropPrivateAttributes);
                         foreach (var pa in c._privateAttributes)
                         {
-                            privateArr.String(pa.ToString());
+                            writer.WriteStringValue(pa.ToString());
                         }
-                        privateArr.End();
+                        writer.WriteEndArray();
                     }
-                    meta.End();
+                    writer.WriteEndObject();
                 }
-                obj.End();
+                writer.WriteEndObject();
             }
         }
     }

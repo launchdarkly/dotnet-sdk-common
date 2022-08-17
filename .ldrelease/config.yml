@@ -19,7 +19,7 @@ publications:
 jobs:
   - docker: {}
     template:
-      name: dotnet-linux
+      name: dotnet6-linux
     env:
       LD_RELEASE_TEST_TARGET_FRAMEWORK: net6.0
       LD_RELEASE_DOCS_TARGET_FRAMEWORK: netstandard2.0
