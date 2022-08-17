@@ -55,7 +55,7 @@ namespace LaunchDarkly.Sdk.Json
             {
                 throw new JsonException("Expected " + expectedType + ", got " + reader.TokenType, reader.TokenStartIndex);
             }
-        }            
+        }
 
         internal static JsonException MissingRequiredProperty(ref Utf8JsonReader reader, string name) =>
             new JsonException("Missing required property \"" + name + "\"", reader.TokenStartIndex);
