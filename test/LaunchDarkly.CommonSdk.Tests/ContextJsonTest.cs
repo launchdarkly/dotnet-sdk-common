@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text.Json;
 using LaunchDarkly.Sdk.Json;
 using LaunchDarkly.TestHelpers;
 using Xunit;
