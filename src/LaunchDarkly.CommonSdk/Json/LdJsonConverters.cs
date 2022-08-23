@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Xml.Linq;
 
 namespace LaunchDarkly.Sdk.Json
 {
@@ -43,9 +44,14 @@ namespace LaunchDarkly.Sdk.Json
                 bool inExperiment = false;
                 BigSegmentsStatus? bigSegmentsStatus = null;
 
-                LdJsonSerialization.RequireTokenType(ref reader, JsonTokenType.StartObject);
-                while (LdJsonSerialization.NextProperty(ref reader, out var name))
+                if (reader.TokenType != JsonTokenType.StartObject)
                 {
+                    throw new JsonException("Expected object, got " + reader.TokenType);
+                }
+                while (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
+                {
+                    var name = reader.GetString();
+                    reader.Read();
                     switch (name)
                     {
                         case "kind":
@@ -77,7 +83,7 @@ namespace LaunchDarkly.Sdk.Json
 
                     if (!kind.HasValue)
                     {
-                        throw LdJsonSerialization.MissingRequiredProperty(ref reader, "kind");
+                        throw new JsonException("Missing required property: kind");
                     }
 
                     EvaluationReason reason;
@@ -374,8 +380,10 @@ namespace LaunchDarkly.Sdk.Json
                         return arrayBuilder.Build();
                     case JsonTokenType.StartObject:
                         var objectBuilder = LdValue.BuildObject();
-                        while (LdJsonSerialization.NextProperty(ref reader, out var name))
+                        while (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
                         {
+                            var name = reader.GetString();
+                            reader.Read();
                             objectBuilder.Add(name, ReadJsonValue(ref reader));
                         }
                         return objectBuilder.Build();
