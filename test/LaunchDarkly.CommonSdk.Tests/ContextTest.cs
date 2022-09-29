@@ -250,31 +250,6 @@ namespace LaunchDarkly.Sdk
             ExpectAttributeNotFoundForRef(
                 Context.Builder("key").Set("my-attr", "xyz").Build(),
                 "/my-attr/my-prop");
-
-            // element in array
-            ExpectAttributeFoundForRef(LdValue.Of("good"),
-                Context.Builder("key").Set("my-attr", LdValue.Parse(@"[""bad"", ""good"", ""worse""]")).Build(),
-                "/my-attr/1");
-
-            // element in nested array in object
-            ExpectAttributeFoundForRef(LdValue.Of("good"),
-                Context.Builder("key").Set("my-attr", LdValue.Parse(@"{""my-prop"": [""bad"", ""good"", ""worse""]}")).Build(),
-                "/my-attr/my-prop/1");
-
-            // index too low in array
-            ExpectAttributeNotFoundForRef(
-                Context.Builder("key").Set("my-attr", LdValue.Parse(@"[""bad"", ""good"", ""worse""]")).Build(),
-                "/my-attr/-1");
-
-            // index too high in array
-            ExpectAttributeNotFoundForRef(
-                Context.Builder("key").Set("my-attr", LdValue.Parse(@"[""bad"", ""good"", ""worse""]")).Build(),
-                "/my-attr/3");
-
-            // index in value that is not an array
-            ExpectAttributeNotFoundForRef(
-                Context.Builder("key").Set("my-attr", "xyz").Build(),
-                "/my-attr/0");
         }
 
         private static void ExpectAttributeFoundForRef(LdValue expectedValue, Context c, string attrRef)

@@ -50,9 +50,7 @@ namespace LaunchDarkly.Sdk
             Assert.Null(a.Error);
             Assert.Equal(s, a.ToString());
             Assert.Equal(1, a.Depth);
-            Assert.True(a.TryGetComponent(0, out var c));
-            Assert.Equal(s, c.Name);
-            Assert.Null(c.Index);
+            Assert.Equal(s, a.GetComponent(0));
         }
 
         [Theory]
@@ -67,9 +65,7 @@ namespace LaunchDarkly.Sdk
             Assert.Null(a.Error);
             Assert.Equal(s, a.ToString());
             Assert.Equal(1, a.Depth);
-            Assert.True(a.TryGetComponent(0, out var c));
-            Assert.Equal(unescaped, c.Name);
-            Assert.Null(c.Index);
+            Assert.Equal(unescaped, a.GetComponent(0));
         }
 
         [Fact]
@@ -93,38 +89,28 @@ namespace LaunchDarkly.Sdk
         }
 
         [Theory]
-        [InlineData("", 0, 0, null, null)]
-        [InlineData("key", 1, 0, "key", null)]
-        [InlineData("/key", 1, 0, "key", null)]
-        [InlineData("/a/b", 2, 0, "a", null)]
-        [InlineData("/a/b", 2, 1, "b", null)]
-        [InlineData("/a~1b/c", 2, 0, "a/b", null)]
-        [InlineData("/a~0b/c", 2, 0, "a~b", null)]
-        [InlineData("/a/10/20/30x", 4, 1, "10", 10)]
-        [InlineData("/a/10/20/30x", 4, 2, "20", 20)]
-        [InlineData("/a/10/20/30x", 4, 3, "30x", null)]
-        [InlineData("", 0, -1, null, null)]
-        [InlineData("key", 1, -1, null, null)]
-        [InlineData("key", 1, 1, null, null)]
-        [InlineData("/key", 1, -1, null, null)]
-        [InlineData("/key", 1, 1, null, null)]
-        [InlineData("/a/b", 2, -1, null, null)]
-        [InlineData("/a/b", 2, 2, null, null)]
-        public void TryGetComponent(string input, int depth, int index, string expectedName, int? expectedIndex)
+        [InlineData("", 0, 0, null)]
+        [InlineData("key", 1, 0, "key")]
+        [InlineData("/key", 1, 0, "key")]
+        [InlineData("/a/b", 2, 0, "a")]
+        [InlineData("/a/b", 2, 1, "b")]
+        [InlineData("/a~1b/c", 2, 0, "a/b")]
+        [InlineData("/a~0b/c", 2, 0, "a~b")]
+        [InlineData("/a/10/20/30x", 4, 1, "10")]
+        [InlineData("/a/10/20/30x", 4, 2, "20")]
+        [InlineData("/a/10/20/30x", 4, 3, "30x")]
+        [InlineData("", 0, -1, null)]
+        [InlineData("key", 1, -1, null)]
+        [InlineData("key", 1, 1, null)]
+        [InlineData("/key", 1, -1, null)]
+        [InlineData("/key", 1, 1, null)]
+        [InlineData("/a/b", 2, -1, null)]
+        [InlineData("/a/b", 2, 2, null)]
+        public void TryGetComponent(string input, int depth, int index, string expectedName)
         {
             var a = AttributeRef.FromPath(input);
             Assert.Equal(depth, a.Depth);
-            var ok = a.TryGetComponent(index, out var c);
-            if (expectedName is null)
-            {
-                Assert.False(ok);
-            }
-            else
-            {
-                Assert.True(ok);
-                Assert.Equal(expectedName, c.Name);
-                Assert.Equal(expectedIndex, c.Index);
-            }
+            Assert.Equal(expectedName, a.GetComponent(index));
         }
 
         [Fact]

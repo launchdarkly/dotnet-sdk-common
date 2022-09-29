@@ -662,11 +662,11 @@ namespace LaunchDarkly.Sdk
                 return LdValue.Null;
             }
 
-            if (!attributeRef.TryGetComponent(0, out var firstPathComponent))
+            var name = attributeRef.GetComponent(0);
+            if (name is null)
             {
                 return LdValue.Null;
             }
-            var name = firstPathComponent.Name;
 
             if (Multiple)
             {
@@ -685,23 +685,15 @@ namespace LaunchDarkly.Sdk
             }
             for (int i = 1; i < attributeRef.Depth; i++)
             {
-                if (!attributeRef.TryGetComponent(i, out var component))
+                var component = attributeRef.GetComponent(i);
+                if (component is null)
                 {
                     return LdValue.Null;
                 }
-                if (component.Index.HasValue && value.Type == LdValueType.Array)
+                var dict = value.Dictionary; // returns an empty dictionary if value is not an object
+                if (!dict.TryGetValue(component, out value))
                 {
-                    var index = component.Index.Value;
-                    var list = value.List;
-                    value = index >= 0 && index < list.Count ? list[index] : LdValue.Null;
-                }
-                else
-                {
-                    var dict = value.Dictionary;
-                    if (!dict.TryGetValue(component.Name, out value))
-                    {
-                        value = LdValue.Null;
-                    }
+                    value = LdValue.Null;
                 }
                 if (value.IsNull)
                 {
