@@ -36,11 +36,10 @@ namespace LaunchDarkly.Sdk
     /// </description></item>
     /// <item><description>
     /// If the first character is a slash, the string is interpreted as a slash-delimited path where the
-    /// first path component is an attribute name, and each subsequent path component is either the name of
-    /// a property in a JSON object, or a decimal numeric string that is the index of an element in a JSON
-    /// array. Any instances of the characters "/" or "~" in a path component are escaped as "~1" or "~0"
-    /// respectively. This syntax deliberately resembles JSON Pointer, but no JSON Pointer behaviors other
-    /// than those mentioned here are supported.
+    /// first path component is an attribute name, and each subsequent path component is the name of a
+    /// property in a JSON object. Any instances of the characters "/" or "~" in a path component are
+    /// escaped as "~1" or "~0" respectively. This syntax deliberately resembles JSON Pointer, but no
+    /// JSON Pointer behaviors other than those mentioned here are supported.
     /// </description></item>
     /// </list>
     /// <para>
@@ -51,11 +50,13 @@ namespace LaunchDarkly.Sdk
     ///       "kind": "user",
     ///       "key": "value1",
     ///       "address": {
-    ///         "street": "value2",
-    ///         "city": "value3"
+    ///         "street": {
+    ///           "line1": "value2",
+    ///           "line2": "value3"
+    ///         },
+    ///         "city": "value4"
     ///       },
-    ///       "groups": [ "value4", "value5" ],
-    ///       "good/bad": "value6"
+    ///       "good/bad": "value5"
     ///     }
     /// </code>
     /// <list type="bullet">
@@ -63,13 +64,10 @@ namespace LaunchDarkly.Sdk
     /// The attribute references "key" and "/key" would both point to "value1".
     /// </description></item>
     /// <item><description>
-    /// The attribute reference "/address/street" would point to "value2".
+    /// The attribute reference "/address/street/line1" would point to "value2".
     /// </description></item>
     /// <item><description>
-    /// The attribute reference "/groups/0" would point to "value4".
-    /// </description></item>
-    /// <item><description>
-    /// The attribute references "good/bad" and "/good~1bad" would both point to "value6".
+    /// The attribute references "good/bad" and "/good~1bad" would both point to "value5".
     /// </description></item>
     /// </list>
     /// </remarks>
@@ -80,7 +78,7 @@ namespace LaunchDarkly.Sdk
         private readonly string _error;
         private readonly string _rawPath;
         private readonly string _singlePathComponent;
-        private readonly Component[] _components;
+        private readonly string[] _components;
 
         /// <summary>
         /// True if the AttributeRef has a value, meaning that it is not an uninitialized struct
@@ -155,7 +153,7 @@ namespace LaunchDarkly.Sdk
         /// For an invalid attribute reference, it returns zero.
         /// </para>
         /// </remarks>
-        /// <seealso cref="TryGetComponent(int, out Component)"/>
+        /// <seealso cref="GetComponent(int)"/>
         public int Depth
         {
             get
@@ -169,33 +167,6 @@ namespace LaunchDarkly.Sdk
                     return 1;
                 }
                 return _components.Length;
-            }
-        }
-
-        /// <summary>
-        /// The output type used by <see cref="TryGetComponent(int, out Component)"/>.
-        /// </summary>
-        public readonly struct Component
-        {
-            /// <summary>
-            /// The attribute name or nested property name.
-            /// </summary>
-            public readonly string Name;
-
-            /// <summary>
-            /// The numeric array index, if the path component is a valid integer numeric string.
-            /// </summary>
-            public readonly int? Index;
-
-            /// <summary>
-            /// Creates an instance.
-            /// </summary>
-            /// <param name="name">the value for <see cref="Name"/></param>
-            /// <param name="index">the value for <see cref="Index"/></param>
-            public Component(string name, int? index)
-            {
-                Name = name;
-                Index = index;
             }
         }
 
@@ -234,11 +205,10 @@ namespace LaunchDarkly.Sdk
                 }
                 return new AttributeRef(refPath, unescaped, null);
             }
-            var parsed = refPath.Split('/');
-            var components = new Component[parsed.Length - 1];
-            for (var i = 0; i < components.Length; i++)
+            var parsed = refPath.Substring(1).Split('/');
+            for (var i = 0; i < parsed.Length; i++)
             {
-                var p = parsed[i + 1];
+                var p = parsed[i];
                 if (p == "")
                 {
                     return new AttributeRef(Errors.AttrExtraSlash, refPath);
@@ -248,12 +218,9 @@ namespace LaunchDarkly.Sdk
                 {
                     return new AttributeRef(Errors.AttrInvalidEscape, refPath);
                 }
-                components[i] = new Component(
-                    unescaped,
-                    int.TryParse(p, out var n) ? (int?)n : null
-                    );
+                parsed[i] = unescaped;
             }
-            return new AttributeRef(refPath, null, components);
+            return new AttributeRef(refPath, null, parsed);
         }
 
         /// <summary>
@@ -297,7 +264,7 @@ namespace LaunchDarkly.Sdk
             _components = null;
         }
 
-        private AttributeRef(string rawPath, string singlePathComponent, Component[] components)
+        private AttributeRef(string rawPath, string singlePathComponent, string[] components)
         {
             _error = null;
             _rawPath = rawPath;
@@ -311,40 +278,33 @@ namespace LaunchDarkly.Sdk
         /// <remarks>
         /// <para>
         /// For a simple attribute reference such as "name" with no leading slash, if index is zero,
-        /// TryGetComponent returns <c>true</c> and sets <paramref name="component"/> to have the
-        /// attribute name as its <see cref="Component.Name"/>, and no <see cref="Component.Index"/>.
+        /// TryGetComponent returns the attribute name.
         /// </para>
         /// <para>
         /// For an attribute reference with a leading slash, if index is non-negative and less than
-        /// <see cref="Depth"/>, TryGetComponent returns <c>true</c> and sets
-        /// <paramref name="component"/> to have the path compnent as its <see cref="Component.Name"/>.
-        /// The <see cref="Component.Index"/> is the integer equivalent if the path component is a
-        /// numeric integer string, or null otherwise; this is used to implement a "find a value by
-        /// index within a JSON array" behavior similar to JSON Pointer.
+        /// <see cref="Depth"/>, TryGetComponent returns the path component.
+        /// </para>
+        /// <para>
+        /// It returns null if the index is out of range.
         /// </para>
         /// </remarks>
         /// <param name="index">the zero-based index of the desired path component</param>
-        /// <param name="component">receives the path component</param>
-        /// <returns>true if successful, false if the index was out of range</returns>
-        public bool TryGetComponent(int index, out Component component)
+        /// <returns>the path component or null</returns>
+        public string GetComponent(int index)
         {
             if (!(_error is null))
             {
-                component = new Component();
-                return false;
+                return null;
             }
             if (index == 0 && _components is null)
             {
-                component = new Component(_singlePathComponent, null);
-                return true;
+                return _singlePathComponent;
             }
             if (_components is null || index < 0 || index >= _components.Length)
             {
-                component = new Component();
-                return false;
+                return null;
             }
-            component = _components[index];
-            return true;
+            return _components[index];
         }
 
         /// <inheritdoc/>
