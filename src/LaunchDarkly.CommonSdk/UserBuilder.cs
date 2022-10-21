@@ -4,26 +4,12 @@ using System.Collections.Immutable;
 namespace LaunchDarkly.Sdk
 {
     /// <summary>
-    /// A mutable object that uses the Builder pattern to specify properties for a <see cref="User"/> object.
+    /// A mutable object that uses the Builder pattern to specify properties for a user context.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// Obtain an instance of this class by calling <see cref="User.Builder(string)"/>.
-    /// </para>
-    /// <para>
-    /// All of the builder methods for setting a user attribute return a reference to the same builder, so they can be
-    /// chained together (see example). Some of them have the return type <see cref="IUserBuilderCanMakeAttributePrivate"/>
-    /// rather than <see cref="IUserBuilder"/>; those are the user attributes that can be designated as private.
-    /// </para>
+    /// This is a compatibility helper that has been retained to ease migration of code from the older
+    /// "user" model to the newer "context" model. See <see cref="User"/> for more information.
     /// </remarks>
-    /// <example>
-    /// <code>
-    ///     var user = User.Builder("my-key")
-    ///         .Name("Bob")
-    ///         .Email("test@example.com")
-    ///         .Build();
-    /// </code>
-    /// </example>
     public interface IUserBuilder
     {
         /// <summary>
@@ -39,18 +25,6 @@ namespace LaunchDarkly.Sdk
         /// <param name="key">the key</param>
         /// <returns>the same builder</returns>
         IUserBuilder Key(string key);
-
-        /// <summary>
-        /// Sets the secondary key for a user.
-        /// </summary>
-        /// <remarks>
-        /// This affects <see href="https://docs.launchdarkly.com/home/flags/targeting-users#targeting-rules-based-on-user-attributes">feature flag targeting</see>
-        /// as follows: if you have chosen to bucket users by a specific attribute, the secondary key (if set)
-        /// is used to further distinguish between users who are otherwise identical according to that attribute.
-        /// </remarks>
-        /// <param name="secondaryKey">the secondary key</param>
-        /// <returns>the same builder</returns>
-        IUserBuilderCanMakeAttributePrivate Secondary(string secondaryKey);
 
         /// <summary>
         /// Sets the IP address for a user.
@@ -253,11 +227,10 @@ namespace LaunchDarkly.Sdk
         /// and <c>AllAttributesPrivate</c>.
         /// </para>
         /// <para>
-        /// Not all attributes can be made private: <see cref="IUserBuilder.Key(string)"/>, <see cref="IUserBuilder.Secondary(string)"/>,
+        /// Not all attributes can be made private: <see cref="IUserBuilder.Key(string)"/> and
         /// and <see cref="IUserBuilder.Anonymous(bool)"/> cannot be private. This is enforced by the compiler, since the builder
         /// methods for attributes that can be made private are the only ones that return <see cref="IUserBuilderCanMakeAttributePrivate"/>;
-        /// therefore, you cannot write an expression like <c>User.Builder("user-key").AsPrivateAttribute()</c> or
-        /// <c>User.Builder("user-key").Secondary("secondary").AsPrivateAttribute()</c>.
+        /// therefore, you cannot write an expression like <c>User.Builder("user-key").AsPrivateAttribute()</c>.
         /// </para>
         /// </remarks>
         /// <example>
@@ -296,12 +269,6 @@ namespace LaunchDarkly.Sdk
         {
             _builder.Key(key);
             return this;
-        }
-
-        public IUserBuilderCanMakeAttributePrivate Secondary(string secondary)
-        {
-            _builder.Secondary(secondary);
-            return CanMakeAttributePrivate("secondary");
         }
 
         public IUserBuilderCanMakeAttributePrivate IPAddress(string ipAddress)
@@ -402,9 +369,6 @@ namespace LaunchDarkly.Sdk
 
         public IUserBuilder Key(string key) =>
             _builder.Key(key);
-
-        public IUserBuilderCanMakeAttributePrivate Secondary(string secondary) =>
-            _builder.Secondary(secondary);
 
         public IUserBuilderCanMakeAttributePrivate IPAddress(string ipAddress) =>
             _builder.IPAddress(ipAddress);

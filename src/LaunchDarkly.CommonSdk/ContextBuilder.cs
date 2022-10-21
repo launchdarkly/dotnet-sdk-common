@@ -35,7 +35,6 @@ namespace LaunchDarkly.Sdk
         private string _key;
         private string _name;
         private bool _anonymous;
-        private string _secondary;
         private ImmutableDictionary<string, LdValue>.Builder _attributes;
         private ImmutableList<AttributeRef>.Builder _privateAttributes;
         private bool _allowEmptyKey;
@@ -65,7 +64,6 @@ namespace LaunchDarkly.Sdk
                 _key,
                 _name,
                 _anonymous,
-                _secondary,
                 _attributes?.ToImmutableDictionary(),
                 _privateAttributes?.ToImmutableList(),
                 _allowEmptyKey
@@ -185,45 +183,14 @@ namespace LaunchDarkly.Sdk
         }
 
         /// <summary>
-        /// Sets a secondary key for the Context.
-        /// </summary>
-        /// <remarks>
-        /// <para>
-        /// This affects feature flag targeting
-        /// (https://docs.launchdarkly.com/home/flags/targeting-users#targeting-rules-based-on-user-attributes)
-        /// as follows: if you have chosen to bucket contexts by a specific attribute, the secondary key (if set)
-        /// is used to further distinguish between contexts that are otherwise identical according to that attribute.
-        /// </para>
-        /// <para>
-        /// This is a metadata property, rather than an attribute that can be addressed in evaluations: that is,
-        /// a rule clause that references the attribute name "secondary" will not use this value, but instead will
-        /// use whatever value (if any) you have set for the name "secondary" with a method such as
-        /// <see cref="Set(string, string)"/>.
-        /// </para>
-        /// <para>
-        /// Setting this value to an empty string is not the same as leaving it unset. If you need to clear this,
-        /// set it to null.
-        /// </para>
-        /// </remarks>
-        /// <param name="secondary">the secondary key, or null</param>
-        /// <returns>the builder</returns>
-        /// <seealso cref="Context.Secondary"/>
-        public ContextBuilder Secondary(string secondary)
-        {
-            _secondary = secondary;
-            return this;
-        }
-
-        /// <summary>
         /// Sets the value of any attribute for the Context.
         /// </summary>
         /// <remarks>
         /// <para>
         /// This includes only attributes that are addressable in evaluations-- not metadata such as
-        /// <see cref="Secondary(string)"/>. If <paramref name="attributeName"/> is "secondary" or
-        /// "privateAttributes", you will be setting an attribute with that name which you can use in
-        /// evaluations or to record data for your own purposes, but it will be unrelated to
-        /// <see cref="Secondary(string)"/> and <see cref="Private(string[])"/>.
+        /// <see cref="Private(string[])"/>. If <paramref name="attributeName"/> is "private", you will
+        /// be setting an attribute with that name which you can use in evaluations or to record data
+        /// for your own purposes, but it will be unrelated to <see cref="Private(string[])"/>.
         /// </para>
         /// <para>
         /// This method uses the <see cref="LdValue"/> type to represent a value of any JSON type: null,
@@ -473,7 +440,6 @@ namespace LaunchDarkly.Sdk
             _key = c.Key;
             _name = c.Name;
             _anonymous = c.Anonymous;
-            _secondary = c.Secondary;
             if (c._attributes is null)
             {
                 _attributes = null;

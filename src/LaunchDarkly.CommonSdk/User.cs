@@ -40,6 +40,7 @@
     /// differently if referenced in a flag rule (an undefined/null value would not match "anonymous is
     /// false"). Now, the property is a simple boolean defaulting to false, and the undefined state is
     /// the same as false.</description></item>
+    /// <item><description>The <c>secondary</c> attribute no longer exists.</description></item>
     /// </list>
     /// </remarks>
     public static class User

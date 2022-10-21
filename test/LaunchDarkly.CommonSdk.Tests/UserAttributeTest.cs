@@ -9,7 +9,6 @@ namespace LaunchDarkly.Sdk
         public void TestBuiltIns()
         {
             TestBuiltInString(UserAttribute.Key, "key", (b, v) => b.Key(v));
-            // TestBuiltInString(UserAttribute.Secondary, "secondary", (b, v) => b.Secondary(v)); // Secondary is no longer addressable like a regular attribute
             TestBuiltInString(UserAttribute.IPAddress, "ip", (b, v) => b.IPAddress(v));
             TestBuiltInString(UserAttribute.Email, "email", (b, v) => b.Email(v));
             TestBuiltInString(UserAttribute.Name, "name", (b, v) => b.Name(v));

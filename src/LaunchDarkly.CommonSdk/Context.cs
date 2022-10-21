@@ -176,23 +176,6 @@ namespace LaunchDarkly.Sdk
         public bool Anonymous { get; }
 
         /// <summary>
-        /// The Context's optional secondary key attribute.
-        /// </summary>
-        /// <remarks>
-        /// <para>
-        /// For a single-kind context, this value is set by <see cref="ContextBuilder.Secondary(string)"/>.
-        /// It is null if no value was set.
-        /// </para>
-        /// <para>
-        /// For a multi-kind context, there is no single value and <see cref="Secondary"/> returns
-        /// null. Use <see cref="MultiKindContexts"/> or <see cref="TryGetContextByKind(ContextKind, out Context)"/>
-        /// to inspect a Context for a particular kind, then get the <see cref="Secondary"/> value from it.
-        /// </para>
-        /// </remarks>
-        /// <seealso cref="ContextBuilder.Secondary(string)"/>
-        public string Secondary { get; }
-
-        /// <summary>
         /// A string that describes the entire Context based on Kind and Key values.
         /// </summary>
         /// <remarks>
@@ -222,8 +205,8 @@ namespace LaunchDarkly.Sdk
         /// <remarks>
         /// These do not include attributes that always have a value (<see cref="Kind"/>, <see cref="Key"/>,
         /// <see cref="Anonymous"/>), or metadata that is not an attribute addressable in targeting rules
-        /// (<see cref="Secondary"/>, <see cref="PrivateAttributes"/>). They include any attributes with
-        /// application-defined names that have a value, and also "name" if <see cref="Name"/> has a value.
+        /// (<see cref="PrivateAttributes"/>). They include any attributes with application-defined names
+        /// that have a value, and also "name" if <see cref="Name"/> has a value.
         /// </remarks>
         public IEnumerable<string> OptionalAttributeNames
         {
@@ -292,7 +275,6 @@ namespace LaunchDarkly.Sdk
                 false,
                 null,
                 null,
-                null,
                 false
                 );
 
@@ -314,7 +296,6 @@ namespace LaunchDarkly.Sdk
                 key,
                 null,
                 false,
-                null,
                 null,
                 null,
                 false
@@ -454,7 +435,6 @@ namespace LaunchDarkly.Sdk
             string key,
             string name,
             bool anonymous,
-            string secondary,
             ImmutableDictionary<string, LdValue> attributes,
             ImmutableList<AttributeRef> privateAttributes,
             bool allowEmptyKey
@@ -478,7 +458,6 @@ namespace LaunchDarkly.Sdk
                 Key = key;
                 Name = name;
                 Anonymous = anonymous;
-                Secondary = secondary;
                 _attributes = attributes;
                 _privateAttributes = privateAttributes;
                 FullyQualifiedKey = Kind.IsDefault ? key :
@@ -490,7 +469,6 @@ namespace LaunchDarkly.Sdk
                 Key = "";
                 Name = null;
                 Anonymous = false;
-                Secondary = null;
                 _attributes = null;
                 _privateAttributes = null;
                 FullyQualifiedKey = "";
@@ -566,7 +544,6 @@ namespace LaunchDarkly.Sdk
             Key = "";
             Name = null;
             Anonymous = false;
-            Secondary = null;
             _attributes = null;
             _privateAttributes = null;
         }
@@ -580,7 +557,6 @@ namespace LaunchDarkly.Sdk
             Key = "";
             Name = null;
             Anonymous = false;
-            Secondary = null;
             _attributes = null;
             _privateAttributes = null;
             FullyQualifiedKey = "";
@@ -588,7 +564,7 @@ namespace LaunchDarkly.Sdk
 
         /// <summary>
         /// Looks up the value of any attribute of the Context by name. This includes only attributes
-        /// that are addressable in evaluations-- not metadata such as <see cref="Secondary"/>.
+        /// that are addressable in evaluations-- not metadata such as <see cref="PrivateAttributes"/>.
         /// </summary>
         /// <remarks>
         /// <para>
@@ -626,7 +602,7 @@ namespace LaunchDarkly.Sdk
         /// <summary>
         /// Looks up the value of any attribute of the Context, or a value contained within an
         /// attribute, based on an <see cref="AttributeRef"/>. This includes only attributes that
-        /// are addressable in evaluations-- not metadata such as <see cref="Secondary"/>.
+        /// are addressable in evaluations-- not metadata such as <see cref="PrivateAttributes"/>.
         /// </summary>
         /// <remarks>
         /// <para>
@@ -774,8 +750,7 @@ namespace LaunchDarkly.Sdk
                 return true;
             }
 
-            if (Key != other.Key || Name != other.Name || Anonymous != other.Anonymous ||
-                Secondary != other.Secondary)
+            if (Key != other.Key || Name != other.Name || Anonymous != other.Anonymous)
             {
                 return false;
             }
@@ -809,8 +784,7 @@ namespace LaunchDarkly.Sdk
                 hashBuilder = hashBuilder.With(Kind)
                     .With(Key)
                     .With(Name)
-                    .With(Anonymous)
-                    .With(Secondary);
+                    .With(Anonymous);
                 if (!(_attributes is null))
                 {
                     foreach (var attr in _attributes.Keys.OrderBy(a => a))

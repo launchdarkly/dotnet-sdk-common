@@ -40,12 +40,6 @@ namespace LaunchDarkly.Sdk
             new UserAttribute("key");
 
         /// <summary>
-        /// Represents the secondary key attribute.
-        /// </summary>
-        public static readonly UserAttribute Secondary =
-            new UserAttribute("secondary");
-
-        /// <summary>
         /// Represents the IP address attribute.
         /// </summary>
         public static readonly UserAttribute IPAddress =
@@ -96,7 +90,7 @@ namespace LaunchDarkly.Sdk
         private static Dictionary<string, UserAttribute> _builtins =
             new UserAttribute[]
             {
-                Key, Secondary, IPAddress, Email, Name, Avatar, FirstName, LastName, Country, Anonymous
+                Key, IPAddress, Email, Name, Avatar, FirstName, LastName, Country, Anonymous
             }.ToDictionary(a => a.AttributeName);
 
         /// <summary>

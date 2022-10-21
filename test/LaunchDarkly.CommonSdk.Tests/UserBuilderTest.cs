@@ -10,7 +10,6 @@ namespace LaunchDarkly.Sdk
     public class UserBuilderTestBase
     {
         public static readonly Context UserToCopy = User.Builder("userkey")
-                .Secondary("s")
                 .IPAddress("1")
                 .Country("US")
                 .FirstName("f")
@@ -61,7 +60,6 @@ namespace LaunchDarkly.Sdk
 
         public static IEnumerable<object[]> AllStringProperties => MakeParams(
             new StringPropertyDesc("key", b => b.Key, u => u.Key),
-            new StringPropertyDesc("secondary", b => b.Secondary, u => u.Secondary),
             new StringPropertyDesc("ip", b => b.IPAddress, u => u.GetValue("ip").AsString),
             new StringPropertyDesc("country", b => b.Country, u => u.GetValue("country").AsString),
             new StringPropertyDesc("firstName", b => b.FirstName, u => u.GetValue("firstName").AsString),
@@ -72,7 +70,6 @@ namespace LaunchDarkly.Sdk
         );
 
         public static IEnumerable<object[]> PrivateStringProperties = MakeParams(
-            new StringPropertyCanBePrivateDesc("secondary", b => b.Secondary, u => u.Secondary),
             new StringPropertyCanBePrivateDesc("ip", b => b.IPAddress, u => u.GetValue("ip").AsString),
             new StringPropertyCanBePrivateDesc("country", b => b.Country, u => u.GetValue("country").AsString),
             new StringPropertyCanBePrivateDesc("firstName", b => b.FirstName, u => u.GetValue("firstName").AsString),
@@ -232,8 +229,6 @@ namespace LaunchDarkly.Sdk
         public void TestUserInequalityWithModifiedBuilder()
         {
             Func<IUserBuilder, IUserBuilder>[] mods = {
-                b => b.Secondary("x"),
-                b => b.Secondary(null),
                 b => b.IPAddress("x"),
                 b => b.IPAddress(null),
                 b => b.Country("FR"),

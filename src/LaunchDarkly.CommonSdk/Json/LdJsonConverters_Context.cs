@@ -31,7 +31,6 @@ namespace LaunchDarkly.Sdk.Json
             private const string AttrName = "name";
             private const string AttrAnonymous = "anonymous";
             private const string JsonPropMeta = "_meta";
-            private const string JsonPropSecondary = "secondary";
             private const string JsonPropPrivateAttributes = "privateAttributes";
             private const string OldJsonPropCustom = "custom";
             private const string OldJsonPropPrivateAttributeNames = "privateAttributeNames";
@@ -96,11 +95,6 @@ namespace LaunchDarkly.Sdk.Json
                     {
                         RequireType(kv.Value, LdValueType.Object, true, JsonPropMeta);
                         var meta = kv.Value.Dictionary;
-                        if (meta.TryGetValue(JsonPropSecondary, out var secondary))
-                        {
-                            RequireType(secondary, LdValueType.String, true, "{0}.{1}", JsonPropMeta, JsonPropSecondary);
-                            builder.Secondary(secondary.AsString);
-                        }
                         if (meta.TryGetValue(JsonPropPrivateAttributes, out var privateAttrs))
                         {
                             RequireType(privateAttrs, LdValueType.Array, true, "{0}.{1}", JsonPropMeta, JsonPropPrivateAttributes);
@@ -196,11 +190,6 @@ namespace LaunchDarkly.Sdk.Json
                             }
                             break;
 
-                        case JsonPropSecondary:
-                            RequireType(kv.Value, LdValueType.String, true, JsonPropSecondary);
-                            builder.Secondary(kv.Value.AsString);
-                            break;
-
                         case AttrName:
                         case "firstName":
                         case "lastName":
@@ -271,22 +260,15 @@ namespace LaunchDarkly.Sdk.Json
                         LdValueConverter.WriteJsonValue(kv.Value, writer);
                     }
                 }
-                if (!(c.Secondary is null) || !(c._privateAttributes is null))
+                if (!(c._privateAttributes is null))
                 {
                     writer.WriteStartObject(JsonPropMeta);
-                    if (c.Secondary != null)
+                    writer.WriteStartArray(JsonPropPrivateAttributes);
+                    foreach (var pa in c._privateAttributes)
                     {
-                        writer.WriteString(JsonPropSecondary, c.Secondary);
+                        writer.WriteStringValue(pa.ToString());
                     }
-                    if (!(c._privateAttributes is null))
-                    {
-                        writer.WriteStartArray(JsonPropPrivateAttributes);
-                        foreach (var pa in c._privateAttributes)
-                        {
-                            writer.WriteStringValue(pa.ToString());
-                        }
-                        writer.WriteEndArray();
-                    }
+                    writer.WriteEndArray();
                     writer.WriteEndObject();
                 }
                 writer.WriteEndObject();

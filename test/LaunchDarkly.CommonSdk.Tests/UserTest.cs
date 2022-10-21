@@ -7,7 +7,6 @@ namespace LaunchDarkly.Sdk
         private const string key = "UserKey";
         
         public static readonly Context UserToCopy = User.Builder("userkey")
-                .Secondary("s")
                 .IPAddress("1")
                 .Country("US")
                 .FirstName("f")

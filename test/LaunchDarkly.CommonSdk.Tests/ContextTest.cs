@@ -21,7 +21,6 @@ namespace LaunchDarkly.Sdk
             Assert.Equal("x", c1.Key);
             Assert.Null(c1.Name);
             Assert.False(c1.Anonymous);
-            Assert.Null(c1.Secondary);
             Assert.Empty(c1.PrivateAttributes);
 
             var c2 = Context.New(kind1, "x");
@@ -29,7 +28,6 @@ namespace LaunchDarkly.Sdk
             Assert.Equal("x", c2.Key);
             Assert.Null(c2.Name);
             Assert.False(c2.Anonymous);
-            Assert.Null(c2.Secondary);
             Assert.Empty(c2.PrivateAttributes);
         }
 
@@ -42,7 +40,6 @@ namespace LaunchDarkly.Sdk
             Assert.True(Context.Builder(".").Anonymous(true).Build().Anonymous);
             Assert.False(Context.Builder(".").Anonymous(true).Anonymous(false).Build().Anonymous);
             Assert.Equal(LdValue.Of("x"), Context.Builder(".").Set("a", "x").Build().GetValue("a"));
-            Assert.Equal("x", Context.Builder(".").Secondary("x").Build().Secondary);
         }
 
         [Fact]
@@ -114,7 +111,7 @@ namespace LaunchDarkly.Sdk
 
             // meta-attributes and required attributes are not included
             Assert.Equal(ImmutableHashSet.Create<string>(),
-                Context.Builder("my-key").Secondary("x").Anonymous(true).Build().
+                Context.Builder("my-key").Private("x").Anonymous(true).Build().
                     OptionalAttributeNames.ToImmutableHashSet());
 
             // none for multi-kind context
@@ -213,11 +210,8 @@ namespace LaunchDarkly.Sdk
         [Fact]
         public void GetValueForRefCannotGetMetaProperties()
         {
+            ExpectAttributeNotFoundForRef(Context.Builder("key").Private("attr").Build(), "private");
             ExpectAttributeNotFoundForRef(Context.Builder("key").Private("attr").Build(), "privateAttributes");
-
-            ExpectAttributeNotFoundForRef(
-                Context.Builder("key").Secondary("my-value").Build(),
-                "secondary");
         }
 
         [Fact]
@@ -274,17 +268,13 @@ namespace LaunchDarkly.Sdk
         [Fact]
         public void SetValueByNameCannotSetMetaProperties()
         {
-            var c1 = Context.Builder("key").Set("secondary", "x").Build();
-            Assert.Null(c1.Secondary);
-            Assert.Equal(LdValue.Of("x"), c1.GetValue("secondary"));
+            var c1 = Context.Builder("key").Set("private", "x").Build();
+            Assert.Empty(c1.PrivateAttributes);
+            Assert.Equal(LdValue.Of("x"), c1.GetValue("private"));
 
             var c2 = Context.Builder("key").Set("privateAttributes", "x").Build();
             Assert.Empty(c2.PrivateAttributes);
             Assert.Equal(LdValue.Of("x"), c2.GetValue("privateAttributes"));
-
-            var c3 = Context.Builder("key").Set("_meta", LdValue.BuildObject().Set("secondary", "x").Build()).Build();
-            Assert.Null(c3.Secondary);
-            Assert.Equal(LdValue.Null, c3.GetValue("_meta"));
         }
 
         [Fact]
@@ -370,8 +360,6 @@ namespace LaunchDarkly.Sdk
                 () => Context.New(kind1, "b"),
                 () => Context.Builder("a").Name("b").Build(),
                 () => Context.Builder("a").Name("c").Build(),
-                () => Context.Builder("a").Secondary("b").Build(),
-                () => Context.Builder("a").Secondary("").Build(), // "" is not the same as undefined
                 () => Context.Builder("a").Anonymous(true).Build(),
                 () => Context.Builder("a").Set("b", true).Build(),
                 () => Context.Builder("a").Set("b", false).Build(),
