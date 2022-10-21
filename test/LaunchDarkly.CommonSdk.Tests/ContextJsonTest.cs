@@ -20,8 +20,6 @@ namespace LaunchDarkly.Sdk
                 @"{""kind"": ""org"", ""key"": ""key1c""}");
             TestBoth(Context.Builder("key2").Name("my-name").Build(),
                 @"{""kind"": ""user"", ""key"": ""key2"", ""name"": ""my-name""}");
-            TestBoth(Context.Builder("key3").Secondary("value").Build(),
-                @"{""kind"": ""user"", ""key"": ""key3"", ""_meta"": {""secondary"": ""value""}}");
             TestBoth(Context.Builder("key4").Anonymous(true).Build(),
                 @"{""kind"": ""user"", ""key"": ""key4"", ""anonymous"": true}");
             TestBoth(Context.Builder("key5").Anonymous(false).Build(),
@@ -78,7 +76,6 @@ namespace LaunchDarkly.Sdk
         [InlineData(@"{""kind"": ""ørg"", ""key"": ""x""}")]
             // wrong type within _meta
         [InlineData(@"{""kind"": ""org"", ""key"": ""my-key"", ""_meta"": true}")]
-        [InlineData(@"{""kind"": ""org"", ""key"": ""my-key"", ""_meta"": {""secondary"": true}}")]
         [InlineData(@"{""kind"": ""org"", ""key"": ""my-key"", ""_meta"": {""privateAttributes"": true}}")]
             // multi-kind problems
         [InlineData(@"{""kind"": ""multi""}")]
@@ -87,7 +84,6 @@ namespace LaunchDarkly.Sdk
             // wrong types in old user schema
         [InlineData(@"{""key"": null}")]
         [InlineData(@"{""key"": true}")]
-        [InlineData(@"{""key"": ""my-key"", ""secondary"": true}")]
         [InlineData(@"{""key"": ""my-key"", ""anonymous"": ""x""}")]
         [InlineData(@"{""key"": ""my-key"", ""name"": true}")]
         [InlineData(@"{""key"": ""my-key"", ""firstName"": true}")]
@@ -125,8 +121,6 @@ namespace LaunchDarkly.Sdk
                 @"{""key"": ""key2"", ""ip"": ""a""}");
             TestDeserializeOnly(Context.Builder("key2").Set("avatar", "a").Build(),
                 @"{""key"": ""key2"", ""avatar"": ""a""}");
-            TestDeserializeOnly(Context.Builder("key3").Secondary("value").Build(),
-                @"{""key"": ""key3"", ""secondary"": ""value""}");
             TestDeserializeOnly(Context.Builder("key4").Anonymous(true).Build(),
                 @"{""key"": ""key4"", ""anonymous"": true}");
             TestDeserializeOnly(Context.Builder("key5").Anonymous(false).Build(),
