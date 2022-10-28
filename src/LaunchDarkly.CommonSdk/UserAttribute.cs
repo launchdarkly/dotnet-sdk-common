@@ -5,123 +5,28 @@ using System.Linq;
 namespace LaunchDarkly.Sdk
 {
     /// <summary>
-    /// Represents a built-in or custom attribute name supported by <see cref="User"/>.
+    /// Constants for commonly used attribute names in the older LaunchDarkly user model.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// This abstraction helps to distinguish attribute names from other string values, and also
-    /// improves efficiency in feature flag data structures and evaluations because built-in
-    /// attributes always reuse the same instances.
-    /// </para>
-    /// <para>
-    /// For a fuller description of user attributes and how they can be referenced in feature
-    /// flag rules, read the reference guides on
-    /// <a href="https://docs.launchdarkly.com/home/users/attributes">Setting user attributes</a>
-    /// and <a href="https://docs.launchdarkly.com/home/flags/targeting-users">Targeting users</a>.
-    /// </para>
+    /// As described in <see cref="User"/>, earlier versions of the LaunchDarkly SDK had a model
+    /// that was less flexible than the current context model. It also had a larger number of
+    /// attributes that had predefined names and type constraints. Most of those no longer have
+    /// such constraints and are not treated specially by LaunchDarkly, but these constants are
+    /// retained for backward compatibility with code that referenced them.
     /// </remarks>
     /// <seealso cref="User"/>
-    public struct UserAttribute : IEquatable<UserAttribute>
+    public static class UserAttribute
     {
-        /// <summary>
-        /// The case-sensitive attribute name.
-        /// </summary>
-        public string AttributeName { get; }
-
-        private UserAttribute(string name)
-        {
-            AttributeName = name;
-        }
-
-        /// <summary>
-        /// Represents the user key attribute.
-        /// </summary>
-        public static readonly UserAttribute Key =
-            new UserAttribute("key");
-
-        /// <summary>
-        /// Represents the IP address attribute.
-        /// </summary>
-        public static readonly UserAttribute IPAddress =
-            new UserAttribute("ip");
-
-        /// <summary>
-        /// Represents the user email attribute.
-        /// </summary>
-        public static readonly UserAttribute Email =
-            new UserAttribute("email");
-
-        /// <summary>
-        /// Represents the full name attribute.
-        /// </summary>
-        public static readonly UserAttribute Name =
-            new UserAttribute("name");
-
-        /// <summary>
-        /// Represents the avatar URL attribute.
-        /// </summary>
-        public static readonly UserAttribute Avatar =
-            new UserAttribute("avatar");
-
-        /// <summary>
-        /// Represents the first name attribute.
-        /// </summary>
-        public static readonly UserAttribute FirstName =
-            new UserAttribute("firstName");
-
-        /// <summary>
-        /// Represents the last name attribute.
-        /// </summary>
-        public static readonly UserAttribute LastName =
-            new UserAttribute("lastName");
-
-        /// <summary>
-        /// Represents the country attribute.
-        /// </summary>
-        public static readonly UserAttribute Country =
-            new UserAttribute("country");
-
-        /// <summary>
-        /// Represents the anonymous attribute.
-        /// </summary>
-        public static readonly UserAttribute Anonymous =
-            new UserAttribute("anonymous");
-
-        private static Dictionary<string, UserAttribute> _builtins =
-            new UserAttribute[]
-            {
-                Key, IPAddress, Email, Name, Avatar, FirstName, LastName, Country, Anonymous
-            }.ToDictionary(a => a.AttributeName);
-
-        /// <summary>
-        /// Returns a UserAttribute instance for the specified attribute name.
-        /// </summary>
-        /// <param name="name">the attribute name</param>
-        /// <returns>a <see cref="UserAttribute"/></returns>
-        public static UserAttribute ForName(string name)
-        {
-            if (_builtins.TryGetValue(name, out var a))
-            {
-                return a;
-            }
-            return new UserAttribute(name);
-        }
-
-#pragma warning disable CS1591  // don't need XML comments for these standard methods
-        public override bool Equals(object obj) =>
-            obj is UserAttribute a && Equals(a);
-
-        public bool Equals(UserAttribute a) => AttributeName == a.AttributeName;
-
-        public static bool operator ==(UserAttribute a, UserAttribute b) =>
-            a.AttributeName == b.AttributeName;
-
-        public static bool operator !=(UserAttribute a, UserAttribute b) =>
-            a.AttributeName != b.AttributeName;
-
-        public override int GetHashCode() => AttributeName.GetHashCode();
-
-        public override string ToString() => AttributeName;
+#pragma warning disable CS1591
+        public const string Key = "key";
+        public const string IPAddress = "ip";
+        public const string Email = "email";
+        public const string Name = "name";
+        public const string Avatar = "avatar";
+        public const string FirstName = "firstName";
+        public const string LastName = "lastName";
+        public const string Country = "country";
+        public const string Anonymous = "anonymous";
 #pragma warning restore CS1591
     }
 }
