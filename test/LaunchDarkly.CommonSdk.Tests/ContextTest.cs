@@ -369,6 +369,8 @@ namespace LaunchDarkly.Sdk
             Assert.Equal(u.GetAttribute(UserAttribute.ForName("c1")), c.GetValue("c1"));
             Assert.Equal(u.GetAttribute(UserAttribute.ForName("c2")), c.GetValue("c2"));
             Assert.Equal(u.PrivateAttributeNames, new HashSet<string>(c.PrivateAttributes.Select(a => a.ToString())));
+            Assert.Equal(ImmutableHashSet.Create("ip", "country", "firstName", "lastName", "avatar", "email", "c1", "c2"),
+                c._attributes.Keys.ToImmutableHashSet());
         }
 
         [Fact]

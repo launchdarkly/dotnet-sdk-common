@@ -405,6 +405,10 @@ namespace LaunchDarkly.Sdk
             ImmutableDictionary<string, LdValue>.Builder attrs = null;
             foreach (var a in UserAttribute.OptionalStringAttrs)
             {
+                if (a == UserAttribute.Name)
+                {
+                    continue;
+                }
                 var value = a.BuiltInGetter(user);
                 if (!value.IsNull)
                 {
