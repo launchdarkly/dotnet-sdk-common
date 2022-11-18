@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Text.Json.Serialization;
+using System.Xml.Linq;
 using LaunchDarkly.Sdk.Json;
 
 namespace LaunchDarkly.Sdk
@@ -12,6 +13,11 @@ namespace LaunchDarkly.Sdk
     /// A collection of attributes that can be referenced in flag evaluations and analytics events.
     /// </summary>
     /// <remarks>
+    /// <para>
+    /// Context is the newer replacement for the previous, less flexible <see cref="User"/> type.
+    /// The current SDK still supports User, but Context is now the preferred model and may
+    /// entirely replace User in the future.
+    /// </para>
     /// <para>
     /// To create a Context of a single kind, such as a user, you may use <see cref="New(string)"/>
     /// or <see cref="New(ContextKind, string)"/> when only the key matters; or, to specify other
@@ -56,24 +62,28 @@ namespace LaunchDarkly.Sdk
         /// SDK API. The only ways for a Context to be invalid are:
         /// </para>
         /// <list type="bullet">
-        /// <item>
+        /// <item><description>
         ///     It has a disallowed value for the Kind property. See <see cref="ContextBuilder.Kind(string)"/>.
-        /// </item>
-        /// <item>
+        /// </description></item>
+        /// <item><description>
         ///     It is a single-kind Context whose Key is empty.
-        /// </item>
-        /// <item>
+        /// </description></item>
+        /// <item><description>
         ///     It is a multi-kind Context that does not have any kinds. See <see cref="MultiBuilder"/>.
-        /// </item>
-        /// <item>
+        /// </description></item>
+        /// <item><description>
         ///     It is a multi-kind Context where the same kind appears more than once.
-        /// </item>
-        /// <item>
+        /// </description></item>
+        /// <item><description>
         ///     It is a multi-kind Context where at least one of the nested Contexts had an error.
-        /// </item>
-        /// <item>
+        /// </description></item>
+        /// <item><description>
+        ///     It was created with <see cref="FromUser(User)"/> from a null User reference, or from a
+        ///     User that had a null key.
+        /// </description></item>
+        /// <item><description>
         ///     It is an uninitialized struct (<c>new Context()</c>).
-        /// </item>
+        /// </description></item>
         /// </list>
         /// <para>
         /// Since in normal usage it is easy for applications to be sure they are using context kinds
@@ -360,6 +370,86 @@ namespace LaunchDarkly.Sdk
             {
                 return new Context(ImmutableList.Create(contexts));
             }
+        }
+
+        /// <summary>
+        /// Converts a User to an equivalent <see cref="Context"/> instance.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// This method is used by the SDK whenever an application passes a <see cref="User"/> instance
+        /// to methods such as <c>Identify</c>. The SDK operates internally on the <see cref="Context"/>
+        /// model, which is more flexible than the older User model: a User can always be converted to a
+        /// Context, but not vice versa. The <see cref="Context.Kind"/> of the resulting Context is
+        /// <see cref="ContextKind.Default"/> ("user").
+        /// </para>
+        /// <para>
+        /// Because there is some overhead to this conversion, it is more efficient for applications to
+        /// construct a Context and pass that to the SDK, rather than a User. This is also recommended
+        /// because the User type may be removed in a future version of the SDK.
+        /// </para>
+        /// <para>
+        /// If the <paramref name="user"/> parameter is null, or if the user has a null key, the method
+        /// returns a Context in an invalid state (see <see cref="Valid"/>).
+        /// </para>
+        /// </remarks>
+        /// <param name="user">a User object</param>
+        /// <returns>a Context with the same attributes as the User</returns>
+        public static Context FromUser(User user)
+        {
+            if (user is null)
+            {
+                return new Context(Errors.ContextFromNullUser);
+            }
+
+            ImmutableDictionary<string, LdValue>.Builder attrs = null;
+            foreach (var a in UserAttribute.OptionalStringAttrs)
+            {
+                var value = a.BuiltInGetter(user);
+                if (!value.IsNull)
+                {
+                    if (attrs is null)
+                    {
+                        attrs = ImmutableDictionary.CreateBuilder<string, LdValue>();
+                    }
+                    attrs.Add(a.AttributeName, value);
+                }
+            }
+            foreach (var kv in user.Custom)
+            {
+                if (!kv.Value.IsNull)
+                {
+                    if (attrs is null)
+                    {
+                        attrs = ImmutableDictionary.CreateBuilder<string, LdValue>();
+                    }
+                    attrs.Add(kv.Key, kv.Value);
+                }
+            }
+            ImmutableList<AttributeRef> privateAttrs;
+            if (user.PrivateAttributeNames.Count == 0)
+            {
+                privateAttrs = null;
+            }
+            else
+            {
+                ImmutableList<AttributeRef>.Builder privateAttrsBuilder =
+                    ImmutableList.CreateBuilder<AttributeRef>();
+                foreach (string pa in user.PrivateAttributeNames)
+                {
+                    privateAttrsBuilder.Add(AttributeRef.FromLiteral(pa));
+                }
+                privateAttrs = privateAttrsBuilder.ToImmutableList();
+            }
+            return new Context(
+                ContextKind.Default,
+                user.Key,
+                user.Name,
+                user.Anonymous,
+                attrs?.ToImmutableDictionary(),
+                privateAttrs,
+                true // allow empty key for backward compatibility with user model
+                );
         }
 
         /// <summary>

@@ -14,6 +14,8 @@ namespace LaunchDarkly.Sdk.Json
         private const string ExpectedEvaluationReasonJson = @"{""kind"":""OFF""}";
         private static readonly UnixMillisecondTime ExpectedUnixTime = UnixMillisecondTime.OfMillis(123456789);
         private const string ExpectedUnixTimeJson = "123456789";
+        private static readonly User ExpectedUser = User.WithKey("user-key");
+        private const string ExpectedUserJson = @"{""key"":""user-key""}";
         private static readonly LdValue ExpectedValue = LdValue.Of(true);
         private const string ExpectedValueJson = "true";
 
@@ -56,6 +58,7 @@ namespace LaunchDarkly.Sdk.Json
             Assert.Equal(ExpectedContextJson, JsonConvert.SerializeObject(ExpectedContext, LdJsonNet.Converter));
             Assert.Equal(ExpectedEvaluationReasonJson, JsonConvert.SerializeObject(ExpectedEvaluationReason, LdJsonNet.Converter));
             Assert.Equal(ExpectedUnixTimeJson, JsonConvert.SerializeObject(ExpectedUnixTime, LdJsonNet.Converter));
+            Assert.Equal(ExpectedUserJson, JsonConvert.SerializeObject(ExpectedUser, LdJsonNet.Converter));
             Assert.Equal(ExpectedValueJson, JsonConvert.SerializeObject(ExpectedValue, LdJsonNet.Converter));
         }
 
@@ -70,6 +73,7 @@ namespace LaunchDarkly.Sdk.Json
             Assert.Equal(ExpectedContextJson, JsonConvert.SerializeObject(ExpectedContext, settings));
             Assert.Equal(ExpectedEvaluationReasonJson, JsonConvert.SerializeObject(ExpectedEvaluationReason, settings));
             Assert.Equal(ExpectedUnixTimeJson, JsonConvert.SerializeObject(ExpectedUnixTime, settings));
+            Assert.Equal(ExpectedUserJson, JsonConvert.SerializeObject(ExpectedUser, settings));
             Assert.Equal(ExpectedValueJson, JsonConvert.SerializeObject(ExpectedValue, settings));
         }
 
@@ -81,6 +85,7 @@ namespace LaunchDarkly.Sdk.Json
             Assert.Equal(ExpectedEvaluationReason,
                 JsonConvert.DeserializeObject<EvaluationReason>(ExpectedEvaluationReasonJson, LdJsonNet.Converter));
             Assert.Equal(ExpectedUnixTime, JsonConvert.DeserializeObject<UnixMillisecondTime>(ExpectedUnixTimeJson, LdJsonNet.Converter));
+            Assert.Equal(ExpectedUser, JsonConvert.DeserializeObject<User>(ExpectedUserJson, LdJsonNet.Converter));
             Assert.Equal(ExpectedValue, JsonConvert.DeserializeObject<LdValue>(ExpectedValueJson, LdJsonNet.Converter));
         }
 
@@ -96,6 +101,7 @@ namespace LaunchDarkly.Sdk.Json
             Assert.Equal(ExpectedEvaluationReason,
                 JsonConvert.DeserializeObject<EvaluationReason>(ExpectedEvaluationReasonJson, settings));
             Assert.Equal(ExpectedUnixTime, JsonConvert.DeserializeObject<UnixMillisecondTime>(ExpectedUnixTimeJson, settings));
+            Assert.Equal(ExpectedUser, JsonConvert.DeserializeObject<User>(ExpectedUserJson, settings));
             Assert.Equal(ExpectedValue, JsonConvert.DeserializeObject<LdValue>(ExpectedValueJson, settings));
         }
 

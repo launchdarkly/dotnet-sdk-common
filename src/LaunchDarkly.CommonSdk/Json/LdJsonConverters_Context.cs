@@ -27,13 +27,11 @@ namespace LaunchDarkly.Sdk.Json
         public sealed class ContextConverter : JsonConverter<Context>
         {
             private const string AttrKind = "kind";
-            private const string AttrKey = "key";
+            internal const string AttrKey = "key"; // also used by UserConverter
             private const string AttrName = "name";
-            private const string AttrAnonymous = "anonymous";
+            internal const string AttrAnonymous = "anonymous"; // also used by UserConverter
             private const string JsonPropMeta = "_meta";
             private const string JsonPropPrivateAttributes = "privateAttributes";
-            private const string OldJsonPropCustom = "custom";
-            private const string OldJsonPropPrivateAttributeNames = "privateAttributeNames";
 
             public override Context Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
             {
@@ -120,7 +118,7 @@ namespace LaunchDarkly.Sdk.Json
                 }
                 if (kind is null)
                 {
-                    throw new JsonException(Errors.JsonContextMissingProperty(AttrKind));
+                    throw new JsonException(Errors.JsonMissingProperty(AttrKind));
                 }
                 if (kind == "")
                 {
@@ -160,8 +158,8 @@ namespace LaunchDarkly.Sdk.Json
                             builder.Anonymous(kv.Value.AsBool);
                             break;
 
-                        case OldJsonPropCustom:
-                            RequireType(kv.Value, LdValueType.Object, true, OldJsonPropCustom);
+                        case UserConverter.JsonPropCustom:
+                            RequireType(kv.Value, LdValueType.Object, true, UserConverter.JsonPropCustom);
                             foreach (var kv1 in kv.Value.Dictionary)
                             {
                                 switch (kv1.Key)
@@ -180,12 +178,12 @@ namespace LaunchDarkly.Sdk.Json
                             }
                             break;
 
-                        case OldJsonPropPrivateAttributeNames:
-                            RequireType(kv.Value, LdValueType.Array, true, OldJsonPropPrivateAttributeNames);
+                        case UserConverter.JsonPropPrivateAttributeNames:
+                            RequireType(kv.Value, LdValueType.Array, true, UserConverter.JsonPropPrivateAttributeNames);
                             for (int i = 0; i < kv.Value.List.Count; i++)
                             {
                                 var value = kv.Value.List[i];
-                                RequireType(value, LdValueType.String, false, "{0}[{1}]", OldJsonPropPrivateAttributeNames, i);
+                                RequireType(value, LdValueType.String, false, "{0}[{1}]", UserConverter.JsonPropPrivateAttributeNames, i);
                                 builder.Private(AttributeRef.FromLiteral(value.AsString));
                             }
                             break;
@@ -219,7 +217,7 @@ namespace LaunchDarkly.Sdk.Json
 
                 if (!hasKey)
                 {
-                    throw new JsonException(Errors.JsonContextMissingProperty(AttrKey));
+                    throw new JsonException(Errors.JsonMissingProperty(AttrKey));
                 }
                 return Validate(builder.Build());
             }
@@ -234,7 +232,7 @@ namespace LaunchDarkly.Sdk.Json
             }
 
             private static JsonException WrongType(LdValue value, string name) =>
-                new JsonException(Errors.JsonContextWrongType(name, value.Type));
+                new JsonException(Errors.JsonWrongType(name, value.Type));
 
             private void WriteJsonSingle(in Context c, Utf8JsonWriter writer, bool includeKind)
             {

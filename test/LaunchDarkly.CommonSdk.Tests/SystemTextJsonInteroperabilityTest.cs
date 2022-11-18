@@ -18,6 +18,8 @@ namespace LaunchDarkly.Sdk
         private const string ExpectedEvaluationReasonJson = @"{""kind"":""OFF""}";
         private static readonly UnixMillisecondTime ExpectedUnixTime = UnixMillisecondTime.OfMillis(123456789);
         private const string ExpectedUnixTimeJson = "123456789";
+        private static readonly User ExpectedUser = User.WithKey("user-key");
+        private const string ExpectedUserJson = @"{""key"":""user-key""}";
         private static readonly LdValue ExpectedValue = LdValue.Of(true);
         private const string ExpectedValueJson = "true";
 
@@ -36,6 +38,7 @@ namespace LaunchDarkly.Sdk
         {
             public Context? context { get; set; }
         }
+
         private sealed class ObjectWithNullableReason
         {
             public EvaluationReason? reason { get; set; }
@@ -71,6 +74,10 @@ namespace LaunchDarkly.Sdk
         [Fact]
         public void UnixMillisecondTimeConversion() =>
             VerifySerializationAndDeserialization(ExpectedUnixTime, ExpectedUnixTimeJson);
+
+        [Fact]
+        public void UserConversion() =>
+            VerifySerializationAndDeserialization(ExpectedUser, ExpectedUserJson);
 
         [Fact]
         public void NullableValueTypes()

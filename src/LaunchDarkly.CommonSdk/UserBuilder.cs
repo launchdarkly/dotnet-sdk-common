@@ -4,20 +4,34 @@ using System.Collections.Immutable;
 namespace LaunchDarkly.Sdk
 {
     /// <summary>
-    /// A mutable object that uses the Builder pattern to specify properties for a user context.
+    /// A mutable object that uses the Builder pattern to specify properties for a <see cref="User"/> object.
     /// </summary>
     /// <remarks>
-    /// This is a compatibility helper that has been retained to ease migration of code from the older
-    /// "user" model to the newer "context" model. See <see cref="User"/> for more information.
+    /// <para>
+    /// Obtain an instance of this class by calling <see cref="User.Builder(string)"/>.
+    /// </para>
+    /// <para>
+    /// All of the builder methods for setting a user attribute return a reference to the same builder, so they can be
+    /// chained together (see example). Some of them have the return type <see cref="IUserBuilderCanMakeAttributePrivate"/>
+    /// rather than <see cref="IUserBuilder"/>; those are the user attributes that can be designated as private.
+    /// </para>
     /// </remarks>
+    /// <example>
+    /// <code>
+    ///     var user = User.Builder("my-key")
+    ///         .Name("Bob")
+    ///         .Email("test@example.com")
+    ///         .Build();
+    /// </code>
+    /// </example>
     public interface IUserBuilder
     {
         /// <summary>
-        /// Creates a <see cref="Context"/> based on the properties that have been set on the builder.
-        /// Modifying the builder after this point does not affect the returned <see cref="Context"/>.
+        /// Creates a <see cref="User"/> based on the properties that have been set on the builder.
+        /// Modifying the builder after this point does not affect the returned <see cref="User"/>.
         /// </summary>
-        /// <returns>the configured <see cref="Context"/> object</returns>
-        Context Build();
+        /// <returns>the configured <see cref="User"/> object</returns>
+        User Build();
 
         /// <summary>
         /// Sets the unique key for a user.
@@ -227,10 +241,10 @@ namespace LaunchDarkly.Sdk
         /// and <c>AllAttributesPrivate</c>.
         /// </para>
         /// <para>
-        /// Not all attributes can be made private: <see cref="IUserBuilder.Key(string)"/> and
-        /// and <see cref="IUserBuilder.Anonymous(bool)"/> cannot be private. This is enforced by the compiler, since the builder
-        /// methods for attributes that can be made private are the only ones that return <see cref="IUserBuilderCanMakeAttributePrivate"/>;
-        /// therefore, you cannot write an expression like <c>User.Builder("user-key").AsPrivateAttribute()</c>.
+        /// Not all attributes can be made private: <see cref="IUserBuilder.Key(string)"/> and <see cref="IUserBuilder.Anonymous(bool)"/>
+        /// cannot be private. This is enforced by the compiler, since the builder methods for attributes that can be made private are
+        /// the only ones that return <see cref="IUserBuilderCanMakeAttributePrivate"/>; therefore, you cannot write an expression
+        /// like <c>User.Builder("user-key").AsPrivateAttribute()</c>.
         /// </para>
         /// </remarks>
         /// <example>
@@ -251,104 +265,153 @@ namespace LaunchDarkly.Sdk
 
     internal class UserBuilder : IUserBuilder
     {
-        private readonly ContextBuilder _builder;
+        private string _key;
+        private string _ipAddress;
+        private string _country;
+        private string _firstName;
+        private string _lastName;
+        private string _name;
+        private string _avatar;
+        private string _email;
+        private bool _anonymous;
+        private ImmutableDictionary<string, LdValue>.Builder _custom;
+        private ImmutableHashSet<string>.Builder _privateAttributeNames;
 
         internal UserBuilder(string key)
         {
-            _builder = Context.Builder(key);
+            _key = key;
         }
 
-        internal UserBuilder(Context fromContext)
+        internal UserBuilder(User fromUser)
         {
-            _builder = Context.BuilderFromContext(fromContext);
+            _key = fromUser.Key;
+            _ipAddress = fromUser.IPAddress;
+            _country = fromUser.Country;
+            _firstName = fromUser.FirstName;
+            _lastName = fromUser.LastName;
+            _name = fromUser.Name;
+            _avatar = fromUser.Avatar;
+            _email = fromUser.Email;
+            _anonymous = fromUser.Anonymous;
+            _privateAttributeNames = fromUser._privateAttributeNames.Count == 0 ? null :
+                fromUser._privateAttributeNames.ToBuilder();
+            _custom = fromUser._custom.Count == 0 ? null : fromUser._custom.ToBuilder();
         }
 
-        public Context Build() => _builder.Build();
+        public User Build()
+        {
+            return new User(_key, null, _ipAddress, _country, _firstName, _lastName, _name, _avatar, _email,
+                _anonymous,
+                _custom is null ? ImmutableDictionary.Create<string, LdValue>() : _custom.ToImmutableDictionary(),
+                _privateAttributeNames is null ? ImmutableHashSet.Create<string>() : _privateAttributeNames.ToImmutableHashSet());
+        }
 
         public IUserBuilder Key(string key)
         {
-            _builder.Key(key);
+            _key = key;
             return this;
         }
 
         public IUserBuilderCanMakeAttributePrivate IPAddress(string ipAddress)
         {
-            _builder.Set("ip", ipAddress);
+            _ipAddress = ipAddress;
             return CanMakeAttributePrivate("ip");
         }
 
         public IUserBuilderCanMakeAttributePrivate Country(string country)
         {
-            _builder.Set("country", country);
+            _country = country;
             return CanMakeAttributePrivate("country");
         }
 
         public IUserBuilderCanMakeAttributePrivate FirstName(string firstName)
         {
-            _builder.Set("firstName", firstName);
+            _firstName = firstName;
             return CanMakeAttributePrivate("firstName");
         }
 
         public IUserBuilderCanMakeAttributePrivate LastName(string lastName)
         {
-            _builder.Set("lastName", lastName);
+            _lastName = lastName;
             return CanMakeAttributePrivate("lastName");
         }
 
         public IUserBuilderCanMakeAttributePrivate Name(string name)
         {
-            _builder.Set("name", name);
+            _name = name;
             return CanMakeAttributePrivate("name");
         }
 
         public IUserBuilderCanMakeAttributePrivate Avatar(string avatar)
         {
-            _builder.Set("avatar", avatar);
+            _avatar = avatar;
             return CanMakeAttributePrivate("avatar");
         }
 
         public IUserBuilderCanMakeAttributePrivate Email(string email)
         {
-            _builder.Set("email", email);
+            _email = email;
             return CanMakeAttributePrivate("email");
         }
 
         public IUserBuilder Anonymous(bool anonymous)
         {
-            _builder.Anonymous(anonymous);
+            _anonymous = anonymous;
             return this;
         }
 
         public IUserBuilderCanMakeAttributePrivate Custom(string name, LdValue value)
         {
-            _builder.Set(name, value);
+            if (_custom is null)
+            {
+                _custom = ImmutableDictionary.CreateBuilder<string, LdValue>();
+            }
+            _custom[name] = value;
             return CanMakeAttributePrivate(name);
         }
 
-        public IUserBuilderCanMakeAttributePrivate Custom(string name, bool value) =>
-            Custom(name, LdValue.Of(value));
+        public IUserBuilderCanMakeAttributePrivate Custom(string name, bool value)
+        {
+            return Custom(name, LdValue.Of(value));
+        }
 
-        public IUserBuilderCanMakeAttributePrivate Custom(string name, string value) =>
-            Custom(name, LdValue.Of(value));
+        public IUserBuilderCanMakeAttributePrivate Custom(string name, string value)
+        {
+            return Custom(name, LdValue.Of(value));
+        }
 
-        public IUserBuilderCanMakeAttributePrivate Custom(string name, int value) =>
-            Custom(name, LdValue.Of(value));
+        public IUserBuilderCanMakeAttributePrivate Custom(string name, int value)
+        {
+            return Custom(name, LdValue.Of(value));
+        }
 
-        public IUserBuilderCanMakeAttributePrivate Custom(string name, long value) =>
-            Custom(name, LdValue.Of(value));
+        public IUserBuilderCanMakeAttributePrivate Custom(string name, long value)
+        {
+            return Custom(name, LdValue.Of(value));
+        }
 
-        public IUserBuilderCanMakeAttributePrivate Custom(string name, float value) =>
-            Custom(name, LdValue.Of(value));
+        public IUserBuilderCanMakeAttributePrivate Custom(string name, float value)
+        {
+            return Custom(name, LdValue.Of(value));
+        }
 
-        public IUserBuilderCanMakeAttributePrivate Custom(string name, double value) =>
-            Custom(name, LdValue.Of(value));
+        public IUserBuilderCanMakeAttributePrivate Custom(string name, double value)
+        {
+            return Custom(name, LdValue.Of(value));
+        }
 
-        private IUserBuilderCanMakeAttributePrivate CanMakeAttributePrivate(string attrName) =>
-            new UserBuilderCanMakeAttributePrivate(this, attrName);
+        private IUserBuilderCanMakeAttributePrivate CanMakeAttributePrivate(string attrName)
+        {
+            return new UserBuilderCanMakeAttributePrivate(this, attrName);
+        }
 
         internal IUserBuilder AddPrivateAttribute(string attrName)
         {
-            _builder.Private(AttributeRef.FromLiteral(attrName));
+            if (_privateAttributeNames is null)
+            {
+                _privateAttributeNames = ImmutableHashSet.CreateBuilder<string>();
+            }
+            _privateAttributeNames.Add(attrName);
             return this;
         }
     }
@@ -364,58 +427,94 @@ namespace LaunchDarkly.Sdk
             _attrName = attrName;
         }
 
-        public Context Build() =>
-            _builder.Build();
+        public User Build()
+        {
+            return _builder.Build();
+        }
 
-        public IUserBuilder Key(string key) =>
-            _builder.Key(key);
+        public IUserBuilder Key(string key)
+        {
+            return _builder.Key(key);
+        }
 
-        public IUserBuilderCanMakeAttributePrivate IPAddress(string ipAddress) =>
-            _builder.IPAddress(ipAddress);
+        public IUserBuilderCanMakeAttributePrivate IPAddress(string ipAddress)
+        {
+            return _builder.IPAddress(ipAddress);
+        }
 
-        public IUserBuilderCanMakeAttributePrivate Country(string country) =>
-            _builder.Country(country);
+        public IUserBuilderCanMakeAttributePrivate Country(string country)
+        {
+            return _builder.Country(country);
+        }
 
-        public IUserBuilderCanMakeAttributePrivate FirstName(string firstName) =>
-            _builder.FirstName(firstName);
+        public IUserBuilderCanMakeAttributePrivate FirstName(string firstName)
+        {
+            return _builder.FirstName(firstName);
+        }
 
-        public IUserBuilderCanMakeAttributePrivate LastName(string lastName) =>
-            _builder.LastName(lastName);
+        public IUserBuilderCanMakeAttributePrivate LastName(string lastName)
+        {
+            return _builder.LastName(lastName);
+        }
 
-        public IUserBuilderCanMakeAttributePrivate Name(string name) =>
-            _builder.Name(name);
+        public IUserBuilderCanMakeAttributePrivate Name(string name)
+        {
+            return _builder.Name(name);
+        }
 
-        public IUserBuilderCanMakeAttributePrivate Avatar(string avatar) =>
-            _builder.Avatar(avatar);
+        public IUserBuilderCanMakeAttributePrivate Avatar(string avatar)
+        {
+            return _builder.Avatar(avatar);
+        }
 
-        public IUserBuilderCanMakeAttributePrivate Email(string email) =>
-            _builder.Email(email);
+        public IUserBuilderCanMakeAttributePrivate Email(string email)
+        {
+            return _builder.Email(email);
+        }
 
-        public IUserBuilder Anonymous(bool anonymous) =>
-            _builder.Anonymous(anonymous);
+        public IUserBuilder Anonymous(bool anonymous)
+        {
+            return _builder.Anonymous(anonymous);
+        }
 
-        public IUserBuilderCanMakeAttributePrivate Custom(string name, LdValue value) =>
-            _builder.Custom(name, value);
+        public IUserBuilderCanMakeAttributePrivate Custom(string name, LdValue value)
+        {
+            return _builder.Custom(name, value);
+        }
 
-        public IUserBuilderCanMakeAttributePrivate Custom(string name, bool value) =>
-            _builder.Custom(name, value);
+        public IUserBuilderCanMakeAttributePrivate Custom(string name, bool value)
+        {
+            return _builder.Custom(name, value);
+        }
 
-        public IUserBuilderCanMakeAttributePrivate Custom(string name, string value) =>
-            _builder.Custom(name, value);
-        
-        public IUserBuilderCanMakeAttributePrivate Custom(string name, int value) =>
-            _builder.Custom(name, value);
+        public IUserBuilderCanMakeAttributePrivate Custom(string name, string value)
+        {
+            return _builder.Custom(name, value);
+        }
 
-        public IUserBuilderCanMakeAttributePrivate Custom(string name, long value) =>
-            _builder.Custom(name, value);
+        public IUserBuilderCanMakeAttributePrivate Custom(string name, int value)
+        {
+            return _builder.Custom(name, value);
+        }
 
-        public IUserBuilderCanMakeAttributePrivate Custom(string name, float value) =>
-            _builder.Custom(name, value);
+        public IUserBuilderCanMakeAttributePrivate Custom(string name, long value)
+        {
+            return _builder.Custom(name, value);
+        }
 
-        public IUserBuilderCanMakeAttributePrivate Custom(string name, double value) =>
-            _builder.Custom(name, value);
+        public IUserBuilderCanMakeAttributePrivate Custom(string name, float value)
+        {
+            return _builder.Custom(name, value);
+        }
 
-        public IUserBuilder AsPrivateAttribute() =>
-            _builder.AddPrivateAttribute(_attrName);
+        public IUserBuilderCanMakeAttributePrivate Custom(string name, double value)
+        {
+            return _builder.Custom(name, value);
+        }
+
+        public IUserBuilder AsPrivateAttribute()
+        {
+            return _builder.AddPrivateAttribute(_attrName);
+        }
     }
 }

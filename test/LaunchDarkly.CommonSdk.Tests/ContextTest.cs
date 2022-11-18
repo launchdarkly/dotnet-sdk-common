@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using LaunchDarkly.Sdk.Json;
 using LaunchDarkly.TestHelpers;
 using Xunit;
@@ -83,17 +85,17 @@ namespace LaunchDarkly.Sdk
             Assert.True(mc.Valid);
         }
 
-		[Fact]
-		public void FullyQualifiedKey()
+        [Fact]
+        public void FullyQualifiedKey()
         {
-			Assert.Equal("abc", Context.New("abc").FullyQualifiedKey);
-			Assert.Equal("abc:d", Context.New("abc:d").FullyQualifiedKey);
-			Assert.Equal("kind1:key1", Context.New(kind1, "key1").FullyQualifiedKey);
+            Assert.Equal("abc", Context.New("abc").FullyQualifiedKey);
+            Assert.Equal("abc:d", Context.New("abc:d").FullyQualifiedKey);
+            Assert.Equal("kind1:key1", Context.New(kind1, "key1").FullyQualifiedKey);
             Assert.Equal("kind1:my%3Akey%25x/y", Context.New(kind1, "my:key%x/y").FullyQualifiedKey);
-			Assert.Equal("kind1:key1:kind2:key%3A2", Context.NewMulti(
-				Context.New(kind1, "key1"), Context.New(kind2, "key:2")
-				).FullyQualifiedKey);
-		}
+            Assert.Equal("kind1:key1:kind2:key%3A2", Context.NewMulti(
+                Context.New(kind1, "key1"), Context.New(kind2, "key:2")
+                ).FullyQualifiedKey);
+        }
 
         [Fact]
         public void OptionalAttributeNames()
@@ -348,6 +350,37 @@ namespace LaunchDarkly.Sdk
                 var c1 = Context.BuilderFromContext(c).Build();
                 Assert.Equal(c, c1);
             }
+        }
+
+        [Fact]
+        public void ContextFromUser()
+        {
+            var u = UserTest.UserToCopy;
+            var c = Context.FromUser(u);
+            Assert.Equal(ContextKind.Default, c.Kind);
+            Assert.Equal(u.Key, c.Key);
+            Assert.Equal(LdValue.Of(u.IPAddress), c.GetValue(UserAttribute.IPAddress.AttributeName));
+            Assert.Equal(LdValue.Of(u.Country), c.GetValue(UserAttribute.Country.AttributeName));
+            Assert.Equal(LdValue.Of(u.FirstName), c.GetValue(UserAttribute.FirstName.AttributeName));
+            Assert.Equal(LdValue.Of(u.LastName), c.GetValue(UserAttribute.LastName.AttributeName));
+            Assert.Equal(LdValue.Of(u.Name), c.GetValue(UserAttribute.Name.AttributeName));
+            Assert.Equal(LdValue.Of(u.Avatar), c.GetValue(UserAttribute.Avatar.AttributeName));
+            Assert.Equal(LdValue.Of(u.Email), c.GetValue(UserAttribute.Email.AttributeName));
+            Assert.Equal(u.GetAttribute(UserAttribute.ForName("c1")), c.GetValue("c1"));
+            Assert.Equal(u.GetAttribute(UserAttribute.ForName("c2")), c.GetValue("c2"));
+            Assert.Equal(u.PrivateAttributeNames, new HashSet<string>(c.PrivateAttributes.Select(a => a.ToString())));
+        }
+
+        [Fact]
+        public void ContextFromUserErrors()
+        {
+            var c1 = Context.FromUser(null);
+            Assert.False(c1.Valid);
+            Assert.Equal(Errors.ContextFromNullUser, c1.Error);
+
+            var c2 = Context.FromUser(User.WithKey(null));
+            Assert.False(c2.Valid);
+            Assert.Equal(Errors.ContextNoKey, c2.Error);
         }
 
         private static Func<Context>[] MakeContextFactories() =>

@@ -25,6 +25,38 @@ namespace LaunchDarkly.Sdk.Json
     /// <seealso cref="LdJsonSerialization"/>
     public static partial class LdJsonConverters
     {
+        private static void RequireToken(ref Utf8JsonReader reader, JsonTokenType expectedType,
+            string propName = null)
+        {
+            if (reader.TokenType != expectedType)
+            {
+                throw new JsonException("Expected " + expectedType + ", got " + reader.TokenType +
+                    (propName is null ? "" : (" for property \"" + propName + "\"")));
+            }
+        }
+
+        private static bool ConsumeNull(ref Utf8JsonReader reader)
+        {
+            if (reader.TokenType == JsonTokenType.Null)
+            {
+                reader.Read();
+                return true;
+            }
+            return false;
+        }
+
+        private static bool NextProperty(ref Utf8JsonReader reader, out string name)
+        {
+            if (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
+            {
+                name = reader.GetString();
+                reader.Read();
+                return true;
+            }
+            name = null;
+            return false;
+        }
+
 #pragma warning disable CS1591 // don't bother with XML comments for these low-level helpers
         public sealed class EvaluationReasonConverter : JsonConverter<EvaluationReason>
         {
@@ -44,14 +76,9 @@ namespace LaunchDarkly.Sdk.Json
                 bool inExperiment = false;
                 BigSegmentsStatus? bigSegmentsStatus = null;
 
-                if (reader.TokenType != JsonTokenType.StartObject)
+                RequireToken(ref reader, JsonTokenType.StartObject);
+                while (NextProperty(ref reader, out var name))
                 {
-                    throw new JsonException("Expected object, got " + reader.TokenType);
-                }
-                while (reader.Read() && reader.TokenType != JsonTokenType.EndObject)
-                {
-                    var name = reader.GetString();
-                    reader.Read();
                     switch (name)
                     {
                         case "kind":

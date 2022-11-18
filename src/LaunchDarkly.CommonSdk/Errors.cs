@@ -9,6 +9,7 @@ namespace LaunchDarkly.Sdk
             "attribute reference contained an escape character (~) that was not followed by 0 or 1";
 
         internal const string ContextUninitialized = "tried to use uninitialized Context";
+        internal const string ContextFromNullUser = "tried to use a null User reference";
         internal const string ContextNoKey = "context key must not be null or empty";
         internal const string ContextKindCannotBeKind = "\"kind\" is not a valid context kind";
         internal const string ContextKindInvalidChars = "context kind contains disallowed characters";
@@ -17,10 +18,10 @@ namespace LaunchDarkly.Sdk
         internal const string ContextKindMultiDuplicates = "multi-kind context cannot have same kind more than once";
 
         internal const string JsonContextEmptyKind = "context kind cannot be empty";
-        internal static string JsonContextMissingProperty(string name) =>
-             string.Format(@"context missing required property ""{0}""", name);
-        internal static string JsonContextWrongType(string name, LdValueType badType) =>
-             string.Format(@"unsupported type ""{0}"" for context property ""{1}""", badType, name);
+        internal static string JsonMissingProperty(string name) =>
+             string.Format(@"missing required property ""{0}""", name);
+        internal static string JsonWrongType(string name, LdValueType badType) =>
+             string.Format(@"unsupported type ""{0}"" for property ""{1}""", badType, name);
         internal static string JsonSerializeInvalidContext(string error) =>
             "cannot serialize invalid Context: " + error;
     }

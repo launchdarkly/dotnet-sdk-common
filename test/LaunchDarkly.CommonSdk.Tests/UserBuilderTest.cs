@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using LaunchDarkly.Sdk.Json;
 using Xunit;
@@ -9,25 +8,13 @@ namespace LaunchDarkly.Sdk
 {
     public class UserBuilderTestBase
     {
-        public static readonly Context UserToCopy = User.Builder("userkey")
-                .IPAddress("1")
-                .Country("US")
-                .FirstName("f")
-                .LastName("l")
-                .Name("n")
-                .Avatar("a")
-                .Email("e")
-                .Custom("c1", "v1")
-                .Custom("c2", "v2").AsPrivateAttribute()
-                .Build();
-
         public struct StringPropertyDesc
         {
             public string Name;
             public Func<IUserBuilder, Func<string, IUserBuilder>> Setter;
-            public Func<Context, string> Getter;
+            public Func<User, string> Getter;
 
-            public StringPropertyDesc(string name, Func<IUserBuilder, Func<string, IUserBuilder>> setter, Func<Context, string> getter)
+            public StringPropertyDesc(string name, Func<IUserBuilder, Func<string, IUserBuilder>> setter, Func<User, string> getter)
             {
                 Name = name;
                 Setter = setter;
@@ -41,9 +28,9 @@ namespace LaunchDarkly.Sdk
         {
             public string Name;
             public Func<IUserBuilder, Func<string, IUserBuilderCanMakeAttributePrivate>> Setter;
-            public Func<Context, string> Getter;
+            public Func<User, string> Getter;
 
-            public StringPropertyCanBePrivateDesc(string name, Func<IUserBuilder, Func<string, IUserBuilderCanMakeAttributePrivate>> setter, Func<Context, string> getter)
+            public StringPropertyCanBePrivateDesc(string name, Func<IUserBuilder, Func<string, IUserBuilderCanMakeAttributePrivate>> setter, Func<User, string> getter)
             {
                 Name = name;
                 Setter = setter;
@@ -60,37 +47,37 @@ namespace LaunchDarkly.Sdk
 
         public static IEnumerable<object[]> AllStringProperties => MakeParams(
             new StringPropertyDesc("key", b => b.Key, u => u.Key),
-            new StringPropertyDesc("ip", b => b.IPAddress, u => u.GetValue("ip").AsString),
-            new StringPropertyDesc("country", b => b.Country, u => u.GetValue("country").AsString),
-            new StringPropertyDesc("firstName", b => b.FirstName, u => u.GetValue("firstName").AsString),
-            new StringPropertyDesc("lastName", b => b.LastName, u => u.GetValue("lastName").AsString),
+            new StringPropertyDesc("ip", b => b.IPAddress, u => u.IPAddress),
+            new StringPropertyDesc("country", b => b.Country, u => u.Country),
+            new StringPropertyDesc("firstName", b => b.FirstName, u => u.FirstName),
+            new StringPropertyDesc("lastName", b => b.LastName, u => u.LastName),
             new StringPropertyDesc("name", b => b.Name, u => u.Name),
-            new StringPropertyDesc("avatar", b => b.Avatar, u => u.GetValue("avatar").AsString),
-            new StringPropertyDesc("email", b => b.Email, u => u.GetValue("email").AsString)
+            new StringPropertyDesc("avatar", b => b.Avatar, u => u.Avatar),
+            new StringPropertyDesc("email", b => b.Email, u => u.Email)
         );
 
         public static IEnumerable<object[]> PrivateStringProperties = MakeParams(
-            new StringPropertyCanBePrivateDesc("ip", b => b.IPAddress, u => u.GetValue("ip").AsString),
-            new StringPropertyCanBePrivateDesc("country", b => b.Country, u => u.GetValue("country").AsString),
-            new StringPropertyCanBePrivateDesc("firstName", b => b.FirstName, u => u.GetValue("firstName").AsString),
-            new StringPropertyCanBePrivateDesc("lastName", b => b.LastName, u => u.GetValue("lastName").AsString),
+            new StringPropertyCanBePrivateDesc("ip", b => b.IPAddress, u => u.IPAddress),
+            new StringPropertyCanBePrivateDesc("country", b => b.Country, u => u.Country),
+            new StringPropertyCanBePrivateDesc("firstName", b => b.FirstName, u => u.FirstName),
+            new StringPropertyCanBePrivateDesc("lastName", b => b.LastName, u => u.LastName),
             new StringPropertyCanBePrivateDesc("name", b => b.Name, u => u.Name),
-            new StringPropertyCanBePrivateDesc("avatar", b => b.Avatar, u => u.GetValue("avatar").AsString),
-            new StringPropertyCanBePrivateDesc("email", b => b.Email, u => u.GetValue("email").AsString)
+            new StringPropertyCanBePrivateDesc("avatar", b => b.Avatar, u => u.Avatar),
+            new StringPropertyCanBePrivateDesc("email", b => b.Email, u => u.Email)
         );
     }
 
     public class UserBuilderTest : UserBuilderTestBase
     {
         private const string key = "UserKey";
-   
+
         [Fact]
         public void UserWithKeySetsKey()
         {
             var user = User.WithKey(key);
             Assert.Equal(key, user.Key);
         }
-        
+
         [Fact]
         public void BuilderCanSetKey()
         {
@@ -106,7 +93,7 @@ namespace LaunchDarkly.Sdk
             var value = p.Getter(user);
             if (p.Name == "key")
             {
-                Assert.Equal(key, value); 
+                Assert.Equal(key, value);
             }
             else
             {
@@ -121,7 +108,7 @@ namespace LaunchDarkly.Sdk
             var expectedValue = "x";
             var user = p.Setter(User.Builder(key))(expectedValue).Build();
             Assert.Equal(expectedValue, p.Getter(user));
-            Assert.Empty(user.PrivateAttributes);
+            Assert.Empty(user.PrivateAttributeNames);
         }
 
         [Theory]
@@ -131,7 +118,7 @@ namespace LaunchDarkly.Sdk
             var expectedValue = p.Name + " value";
             var user = p.Setter(User.Builder(key))(expectedValue).AsPrivateAttribute().Build();
             Assert.Equal(expectedValue, p.Getter(user));
-            Assert.Equal(ImmutableList.Create(AttributeRef.FromLiteral(p.Name)), user.PrivateAttributes);
+            Assert.Equal(new HashSet<string> { p.Name }, user.PrivateAttributeNames);
         }
 
         [Fact]
@@ -155,16 +142,24 @@ namespace LaunchDarkly.Sdk
             Assert.False(user.Anonymous);
         }
 
+        [Fact]
+        public void CustomDefaultsToEmptyDictionary()
+        {
+            var user = User.Builder(key).Build();
+            Assert.NotNull(user.Custom);
+            Assert.Equal(0, user.Custom.Count);
+        }
+
         private void TestCustomAttribute<T>(T value,
             Func<IUserBuilder, string, T, IUserBuilderCanMakeAttributePrivate> setter, LdValue.Converter<T> converter)
         {
             var user0 = setter(User.Builder(key), "foo", value).Build();
-            Assert.Equal(value, converter.ToType(user0.GetValue("foo")));
-            Assert.Empty(user0.PrivateAttributes);
+            Assert.Equal(value, converter.ToType(user0.Custom["foo"]));
+            Assert.Empty(user0.PrivateAttributeNames);
 
             var user1 = setter(User.Builder(key), "bar", value).AsPrivateAttribute().Build();
-            Assert.Equal(value, converter.ToType(user1.GetValue("bar")));
-            Assert.Equal(ImmutableList.Create(AttributeRef.FromLiteral("bar")), user1.PrivateAttributes);
+            Assert.Equal(value, converter.ToType(user1.Custom["bar"]));
+            Assert.Equal(new HashSet<string> { "bar" }, user1.PrivateAttributeNames);
         }
 
         [Fact]
@@ -172,12 +167,12 @@ namespace LaunchDarkly.Sdk
         {
             var value = LdValue.Convert.Int.ArrayOf(1, 2);
             var user0 = User.Builder(key).Custom("foo", value).Build();
-            Assert.Equal(value, user0.GetValue("foo"));
-            Assert.Empty(user0.PrivateAttributes);
+            Assert.Equal(value, user0.Custom["foo"]);
+            Assert.Equal(0, user0.PrivateAttributeNames.Count);
 
             var user1 = User.Builder(key).Custom("bar", value).AsPrivateAttribute().Build();
-            Assert.Equal(value, user1.GetValue("bar"));
-            Assert.Equal(ImmutableList.Create(AttributeRef.FromLiteral("bar")), user1.PrivateAttributes);
+            Assert.Equal(value, user1.Custom["bar"]);
+            Assert.Equal(new HashSet<string> { "bar" }, user1.PrivateAttributeNames);
         }
 
         [Fact]
@@ -215,11 +210,12 @@ namespace LaunchDarkly.Sdk
         {
             TestCustomAttribute<double>(double.MaxValue, (b, n, v) => b.Custom(n, v), LdValue.Convert.Double);
         }
-        
+
         [Fact]
         public void TestUserEqualityWithBuilderFromUser()
         {
-            Context copy = User.Builder(UserToCopy).Build();
+            User copy = User.Builder(UserTest.UserToCopy).Build();
+            Assert.NotSame(UserTest.UserToCopy, copy);
             Assert.True(copy.Equals(UserTest.UserToCopy));
             Assert.True(UserTest.UserToCopy.Equals(copy));
             Assert.Equal(UserTest.UserToCopy.GetHashCode(), copy.GetHashCode());
@@ -250,14 +246,23 @@ namespace LaunchDarkly.Sdk
             };
             foreach (var mod in mods)
             {
-                Context modUser = mod(User.Builder(UserToCopy)).Build();
+                User modUser = mod(User.Builder(UserTest.UserToCopy)).Build();
                 Assert.False(UserTest.UserToCopy.Equals(modUser),
                     LdJsonSerialization.SerializeObject(modUser) + " should not equal " +
-                    LdJsonSerialization.SerializeObject(UserToCopy));
+                    LdJsonSerialization.SerializeObject(UserTest.UserToCopy));
                 Assert.False(UserTest.UserToCopy.GetHashCode() == modUser.GetHashCode(),
                     LdJsonSerialization.SerializeObject(modUser) + " should not have same hashCode as " +
-                    LdJsonSerialization.SerializeObject(UserToCopy));
+                    LdJsonSerialization.SerializeObject(UserTest.UserToCopy));
             }
+        }
+
+        [Fact]
+        public void TestEmptyImmutableCollectionsAreReused()
+        {
+            var user0 = User.Builder("a").Build();
+            var user1 = User.Builder("b").Build();
+            Assert.Same(user0.Custom, user1.Custom);
+            Assert.Same(user0.PrivateAttributeNames, user1.PrivateAttributeNames);
         }
     }
 }
