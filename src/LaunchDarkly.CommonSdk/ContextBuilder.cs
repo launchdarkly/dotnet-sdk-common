@@ -213,7 +213,8 @@ namespace LaunchDarkly.Sdk
         /// </list>
         /// <para>
         /// The attribute name "_meta" is not allowed, because it has special meaning in the JSON
-        /// schema for contexts; any attempt to set an attribute with this name has no effect.
+        /// schema for contexts; any attempt to set an attribute with this name has no effect. Also, any
+        /// attempt to set an attribute with an empty or null name has no effect.
         /// </para>
         /// <para>
         /// Values that are JSON arrays or objects have special behavior when referenced in flag/segment

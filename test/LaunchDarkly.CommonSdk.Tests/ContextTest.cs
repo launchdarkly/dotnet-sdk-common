@@ -45,6 +45,14 @@ namespace LaunchDarkly.Sdk
         }
 
         [Fact]
+        public void NoEmptyOrNullAttrName()
+        {
+            var c = Context.Builder("a").Set("", "b").Set("", "c").Build();
+            Assert.Equal(Context.New("a"), c);
+            Assert.Empty(c.OptionalAttributeNames);
+        }
+
+        [Fact]
         public void InvalidContexts()
         {
             var c = new Context();
