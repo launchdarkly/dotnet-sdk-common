@@ -5,7 +5,7 @@ repo:
   private: dotnet-sdk-common-private
 
 branches:
-  - name: master
+  - name: main
     description: 6.x - for dotnet-client-sdk 3.0 & dotnet-server-sdk 7.0
   - name: 5.x
     description: for dotnet-client-sdk 2.0 & dotnet-server-sdk 6.0
