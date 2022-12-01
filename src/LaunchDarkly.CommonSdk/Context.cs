@@ -421,7 +421,7 @@ namespace LaunchDarkly.Sdk
             }
             foreach (var kv in user.Custom)
             {
-                if (!kv.Value.IsNull)
+                if (kv.Key != "" && !kv.Value.IsNull)
                 {
                     if (attrs is null)
                     {
