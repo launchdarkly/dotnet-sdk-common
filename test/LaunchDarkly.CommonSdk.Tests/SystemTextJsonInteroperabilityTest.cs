@@ -1,6 +1,4 @@
-﻿#if !NET452
-
-using System.Text.Json;
+﻿using System.Text.Json;
 using Xunit;
 
 namespace LaunchDarkly.Sdk
@@ -8,26 +6,41 @@ namespace LaunchDarkly.Sdk
     public class SystemTextJsonInteroperabilityTest
     {
         // These tests verify that all of our LaunchDarkly.Sdk types that have a custom JSON conversion
-        // behave the same with System.Text.Json (on supported platforms, i.e. everything except .NET
-        // Framework 4.5.x) as they do with LdJsonSerialization. We get this for free due to how
-        // LaunchDarkly.JsonStream's [JsonStreamConverter] annotation works.
+        // behave correctly with System.Text.Json.
 
-        private static readonly User ExpectedUser = User.WithKey("user-key");
-        private const string ExpectedUserJson = @"{""key"":""user-key""}";
+        // Keep these tests in sync with LdJsonNetTest.cs in LaunchDarkly.CommonSdk.JsonNet.Tests.
+
+        private static readonly AttributeRef ExpectedAttributeRef = AttributeRef.FromLiteral("a");
+        private const string ExpectedAttributeRefJson = @"""a""";
+        private static readonly Context ExpectedContext = Context.New("user-key");
+        private const string ExpectedContextJson = @"{""kind"":""user"",""key"":""user-key""}";
         private static readonly EvaluationReason ExpectedEvaluationReason = EvaluationReason.OffReason;
         private const string ExpectedEvaluationReasonJson = @"{""kind"":""OFF""}";
         private static readonly UnixMillisecondTime ExpectedUnixTime = UnixMillisecondTime.OfMillis(123456789);
         private const string ExpectedUnixTimeJson = "123456789";
+        private static readonly User ExpectedUser = User.WithKey("user-key");
+        private const string ExpectedUserJson = @"{""key"":""user-key""}";
         private static readonly LdValue ExpectedValue = LdValue.Of(true);
         private const string ExpectedValueJson = "true";
 
+        // The reason for the "ObjectWithNullable..." classes is to test the serialization of nullable variants
+        // of value types. For any value type T, if we pass a "T?" value to SerializeObject, the type of the
+        // parameter in that method is actually "object" and so what is really passed is either a T or a plain
+        // old null-- it doesn't really see a "T?". But if it's in a property like this, it really will detect
+        // the type.
+
+        private sealed class ObjectWithNullableAttributeRef
+        {
+            public AttributeRef? attr { get; set; }
+        }
+
+        private sealed class ObjectWithNullableContext
+        {
+            public Context? context { get; set; }
+        }
+
         private sealed class ObjectWithNullableReason
         {
-            // The reason we use an enclosing class here to test the serialization of a nullable EvaluationReason?
-            // is that if we pass an "EvaluationReason?" value to SerializeObject, the type of the parameter in
-            // that method is actually "object" and so what is really passed is either an EvaluationReason or a
-            // plain old null-- it doesn't really see an "EvaluationReason?". But if it's in a property like this,
-            // it really will detect the type.
             public EvaluationReason? reason { get; set; }
         }
 
@@ -41,6 +54,14 @@ namespace LaunchDarkly.Sdk
             public LdValue? value { get; set; } // see above
             // "LdValue?" is a bit pointless, since an LdValue can already encode null, but it is a struct so this should work
         }
+
+        [Fact]
+        public void AttributeRefConversion() =>
+            VerifySerializationAndDeserialization(ExpectedAttributeRef, ExpectedAttributeRefJson);
+
+        [Fact]
+        public void ContextConversion() =>
+            VerifySerializationAndDeserialization(ExpectedContext, ExpectedContextJson);
 
         [Fact]
         public void EvaluationReasonConversion() =>
@@ -61,7 +82,14 @@ namespace LaunchDarkly.Sdk
         [Fact]
         public void NullableValueTypes()
         {
-            // We don't need to check this for User because that's a class, so nullability doesn't affect the type.
+            Assert.Equal(@"{""attr"":" + ExpectedAttributeRefJson + "}",
+                JsonSerializer.Serialize(new ObjectWithNullableAttributeRef { attr = ExpectedAttributeRef }));
+            Assert.Equal(@"{""attr"":null}",
+                JsonSerializer.Serialize(new ObjectWithNullableAttributeRef { attr = null }));
+            Assert.Equal(@"{""context"":" + ExpectedContextJson + "}",
+                JsonSerializer.Serialize(new ObjectWithNullableContext { context = ExpectedContext }));
+            Assert.Equal(@"{""context"":null}",
+                JsonSerializer.Serialize(new ObjectWithNullableContext { context = null }));
             Assert.Equal(@"{""reason"":" + ExpectedEvaluationReasonJson + "}",
                 JsonSerializer.Serialize(new ObjectWithNullableReason { reason = ExpectedEvaluationReason }));
             Assert.Equal(@"{""reason"":null}",
@@ -83,5 +111,3 @@ namespace LaunchDarkly.Sdk
         }
     }
 }
-
-#endif

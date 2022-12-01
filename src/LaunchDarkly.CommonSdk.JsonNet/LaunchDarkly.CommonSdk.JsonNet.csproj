@@ -1,7 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <Version>5.5.0</Version>
-    <TargetFrameworks>netstandard2.0;net452</TargetFrameworks>
+    <!-- The BUILDFRAMEWORKS variable allows us to override the target frameworks with a
+     single framework that we are testing; this allows us to test with older SDK
+     versions that would error out if they saw any newer target frameworks listed
+     here, even if we weren't running those. -->
+    <BuildFrameworks Condition="'$(BUILDFRAMEWORKS)' == ''">netstandard2.0;netcoreapp3.1;net462;net6.0</BuildFrameworks>
+    <TargetFrameworks>$(BUILDFRAMEWORKS)</TargetFrameworks>
     <DebugType>portable</DebugType>
     <AssemblyName>LaunchDarkly.CommonSdk.JsonNet</AssemblyName>
     <OutputType>Library</OutputType>
@@ -15,7 +20,7 @@
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/launchdarkly/dotnet-sdk-common</PackageProjectUrl>
     <RepositoryUrl>https://github.com/launchdarkly/dotnet-sdk-common</RepositoryUrl>
-    <RepositoryBranch>master</RepositoryBranch>
+    <RepositoryBranch>main</RepositoryBranch>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\LaunchDarkly.CommonSdk.JsonNet.xml</DocumentationFile>
@@ -26,8 +31,17 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="LaunchDarkly.JsonStream" Version="[1.0.3,2.0.0)" />
     <PackageReference Include="Newtonsoft.Json" Version="[12.0.1,]" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Collections.Immutable" Version="1.7.1" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'
+                       or '$(TargetFramework)' == 'net462'">
+    <PackageReference Include="System.Text.Json" Version="6.0.0" />
+    <!-- it's a built-in package in netcoreapp3.1 and net6.0 -->
   </ItemGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
