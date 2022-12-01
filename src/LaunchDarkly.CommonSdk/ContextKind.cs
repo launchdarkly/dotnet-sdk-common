@@ -33,6 +33,10 @@ namespace LaunchDarkly.Sdk
     /// of the top-level Context is always "multi" (the constant <see cref="Multi"/>);
     /// there is a specific Kind for each of the Contexts contained within it.
     /// </para>
+    /// <para>
+    /// To learn more, read <see href="https://docs.launchdarkly.com/home/contexts">the
+    /// documentation</see>.
+    /// </para>
     /// </remarks>
     public readonly struct ContextKind : IEquatable<ContextKind>
     {
