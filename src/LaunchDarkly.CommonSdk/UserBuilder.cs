@@ -41,29 +41,6 @@ namespace LaunchDarkly.Sdk
         IUserBuilder Key(string key);
 
         /// <summary>
-        /// Sets the secondary key for a user.
-        /// </summary>
-        /// <remarks>
-        /// This affects <see href="https://docs.launchdarkly.com/home/flags/targeting-users#targeting-rules-based-on-user-attributes">feature flag targeting</see>
-        /// as follows: if you have chosen to bucket users by a specific attribute, the secondary key (if set)
-        /// is used to further distinguish between users who are otherwise identical according to that attribute.
-        /// </remarks>
-        /// <param name="secondaryKey">the secondary key</param>
-        /// <returns>the same builder</returns>
-        IUserBuilderCanMakeAttributePrivate Secondary(string secondaryKey);
-
-        /// <summary>
-        /// Sets the secondary key for a user. Obsolete equivalent of <see cref="Secondary(string)"/>.
-        /// </summary>
-        /// <remarks>
-        /// Besides the different method name, <see cref="Secondary(string)"/> allows you to make the attribute private; this method incorrectly does not.
-        /// </remarks>
-        /// <param name="secondaryKey">the secondary key</param>
-        /// <returns>the same builder</returns>
-        [Obsolete("Use Secondary instead")]
-        IUserBuilder SecondaryKey(string secondaryKey);
-
-        /// <summary>
         /// Sets the IP address for a user.
         /// </summary>
         /// <param name="ipAddress">the IP address for the user</param>
@@ -122,18 +99,6 @@ namespace LaunchDarkly.Sdk
         /// <param name="anonymous">true if the user is anonymous</param>
         /// <returns>the same builder</returns>
         IUserBuilder Anonymous(bool anonymous);
-
-        /// <summary>
-        /// Sets whether this user is anonymous, meaning that the user key will not appear on your LaunchDarkly dashboard.
-        /// </summary>
-        /// <remarks>
-        /// For historical reasons, the <c>anonymous</c> attribute is nullable, and flag rules may treat
-        /// <see langword="null"/> differently from <see langword="false"/>. This setter allows you to make
-        /// that distinction.
-        /// </remarks>
-        /// <param name="anonymous">true if the user is anonymous</param>
-        /// <returns>the same builder</returns>
-        IUserBuilder AnonymousOptional(bool? anonymous);
 
         /// <summary>
         /// Adds a custom attribute whose value is a JSON value of any kind.
@@ -276,11 +241,10 @@ namespace LaunchDarkly.Sdk
         /// and <c>AllAttributesPrivate</c>.
         /// </para>
         /// <para>
-        /// Not all attributes can be made private: <see cref="IUserBuilder.Key(string)"/>, <see cref="IUserBuilder.SecondaryKey(string)"/>,
-        /// and <see cref="IUserBuilder.Anonymous(bool)"/> cannot be private. This is enforced by the compiler, since the builder
-        /// methods for attributes that can be made private are the only ones that return <see cref="IUserBuilderCanMakeAttributePrivate"/>;
-        /// therefore, you cannot write an expression like <c>User.Builder("user-key").AsPrivateAttribute()</c> or
-        /// <c>User.Builder("user-key").SecondaryKey("secondary").AsPrivateAttribute()</c>.
+        /// Not all attributes can be made private: <see cref="IUserBuilder.Key(string)"/> and <see cref="IUserBuilder.Anonymous(bool)"/>
+        /// cannot be private. This is enforced by the compiler, since the builder methods for attributes that can be made private are
+        /// the only ones that return <see cref="IUserBuilderCanMakeAttributePrivate"/>; therefore, you cannot write an expression
+        /// like <c>User.Builder("user-key").AsPrivateAttribute()</c>.
         /// </para>
         /// </remarks>
         /// <example>
@@ -302,7 +266,6 @@ namespace LaunchDarkly.Sdk
     internal class UserBuilder : IUserBuilder
     {
         private string _key;
-        private string _secondary;
         private string _ipAddress;
         private string _country;
         private string _firstName;
@@ -310,7 +273,7 @@ namespace LaunchDarkly.Sdk
         private string _name;
         private string _avatar;
         private string _email;
-        private bool? _anonymous;
+        private bool _anonymous;
         private ImmutableDictionary<string, LdValue>.Builder _custom;
         private ImmutableHashSet<string>.Builder _privateAttributeNames;
 
@@ -322,7 +285,6 @@ namespace LaunchDarkly.Sdk
         internal UserBuilder(User fromUser)
         {
             _key = fromUser.Key;
-            _secondary = fromUser.Secondary;
             _ipAddress = fromUser.IPAddress;
             _country = fromUser.Country;
             _firstName = fromUser.FirstName;
@@ -330,7 +292,7 @@ namespace LaunchDarkly.Sdk
             _name = fromUser.Name;
             _avatar = fromUser.Avatar;
             _email = fromUser.Email;
-            _anonymous = fromUser.AnonymousOptional;
+            _anonymous = fromUser.Anonymous;
             _privateAttributeNames = fromUser._privateAttributeNames.Count == 0 ? null :
                 fromUser._privateAttributeNames.ToBuilder();
             _custom = fromUser._custom.Count == 0 ? null : fromUser._custom.ToBuilder();
@@ -338,7 +300,7 @@ namespace LaunchDarkly.Sdk
 
         public User Build()
         {
-            return new User(_key, _secondary, _ipAddress, _country, _firstName, _lastName, _name, _avatar, _email,
+            return new User(_key, null, _ipAddress, _country, _firstName, _lastName, _name, _avatar, _email,
                 _anonymous,
                 _custom is null ? ImmutableDictionary.Create<string, LdValue>() : _custom.ToImmutableDictionary(),
                 _privateAttributeNames is null ? ImmutableHashSet.Create<string>() : _privateAttributeNames.ToImmutableHashSet());
@@ -347,18 +309,6 @@ namespace LaunchDarkly.Sdk
         public IUserBuilder Key(string key)
         {
             _key = key;
-            return this;
-        }
-
-        public IUserBuilderCanMakeAttributePrivate Secondary(string secondary)
-        {
-            _secondary = secondary;
-            return CanMakeAttributePrivate("secondary");
-        }
-
-        public IUserBuilder SecondaryKey(string secondaryKey)
-        {
-            _secondary = secondaryKey;
             return this;
         }
 
@@ -405,12 +355,6 @@ namespace LaunchDarkly.Sdk
         }
 
         public IUserBuilder Anonymous(bool anonymous)
-        {
-            _anonymous = anonymous;
-            return this;
-        }
-
-        public IUserBuilder AnonymousOptional(bool? anonymous)
         {
             _anonymous = anonymous;
             return this;
@@ -493,16 +437,6 @@ namespace LaunchDarkly.Sdk
             return _builder.Key(key);
         }
 
-        public IUserBuilderCanMakeAttributePrivate Secondary(string secondary)
-        {
-            return _builder.Secondary(secondary);
-        }
-
-        public IUserBuilder SecondaryKey(string secondaryKey)
-        {
-            return _builder.SecondaryKey(secondaryKey);
-        }
-
         public IUserBuilderCanMakeAttributePrivate IPAddress(string ipAddress)
         {
             return _builder.IPAddress(ipAddress);
@@ -541,11 +475,6 @@ namespace LaunchDarkly.Sdk
         public IUserBuilder Anonymous(bool anonymous)
         {
             return _builder.Anonymous(anonymous);
-        }
-
-        public IUserBuilder AnonymousOptional(bool? anonymous)
-        {
-            return _builder.AnonymousOptional(anonymous);
         }
 
         public IUserBuilderCanMakeAttributePrivate Custom(string name, LdValue value)

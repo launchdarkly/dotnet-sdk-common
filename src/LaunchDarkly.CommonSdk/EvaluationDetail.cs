@@ -1,4 +1,4 @@
-using LaunchDarkly.JsonStream;
+using System.Text.Json.Serialization;
 using LaunchDarkly.Sdk.Json;
 
 namespace LaunchDarkly.Sdk
@@ -66,7 +66,7 @@ namespace LaunchDarkly.Sdk
     /// <remarks>
     /// For converting this type to or from JSON, see <see cref="LaunchDarkly.Sdk.Json"/>.
     /// </remarks>
-    [JsonStreamConverter(typeof(LdJsonConverters.EvaluationReasonConverter))]
+    [JsonConverter(typeof(LdJsonConverters.EvaluationReasonConverter))]
     public struct EvaluationReason : IJsonSerializable
     {
         private static readonly EvaluationReason _offInstance =
@@ -256,7 +256,7 @@ namespace LaunchDarkly.Sdk
     /// The JSON representation of this type, as used in LaunchDarkly analytics event data, uses
     /// uppercase strings with underscores (<c>"RULE_MATCH"</c> rather than <c>"RuleMatch"</c>).
     /// </remarks>
-    [JsonStreamConverter(typeof(LdJsonConverters.EvaluationReasonKindConverter))]
+    [JsonConverter(typeof(LdJsonConverters.EvaluationReasonKindConverter))]
     public enum EvaluationReasonKind
     {
         /// <summary>
@@ -299,7 +299,7 @@ namespace LaunchDarkly.Sdk
     /// The JSON representation of this type, as used in LaunchDarkly analytics event data, uses
     /// uppercase strings with underscores (<c>"FLAG_NOT_FOUND"</c> rather than <c>"FlagNotFound"</c>).
     /// </remarks>
-    [JsonStreamConverter(typeof(LdJsonConverters.EvaluationErrorKindConverter))]
+    [JsonConverter(typeof(LdJsonConverters.EvaluationErrorKindConverter))]
     public enum EvaluationErrorKind
     {
         /// <summary>
@@ -338,7 +338,7 @@ namespace LaunchDarkly.Sdk
     /// <summary>
     /// Defines the possible values of <see cref="EvaluationReason.BigSegmentsStatus"/>.
     /// </summary>
-    [JsonStreamConverter(typeof(LdJsonConverters.BigSegmentsStatusConverter))]
+    [JsonConverter(typeof(LdJsonConverters.BigSegmentsStatusConverter))]
     public enum BigSegmentsStatus
     {
         /// <summary>

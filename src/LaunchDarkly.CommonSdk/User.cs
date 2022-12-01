@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Immutable;
 using System.Linq;
-using LaunchDarkly.JsonStream;
 using LaunchDarkly.Sdk.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Xml.Linq;
 
 namespace LaunchDarkly.Sdk
 {
@@ -16,21 +18,32 @@ namespace LaunchDarkly.Sdk
     /// these properties however you wish.
     /// </para>
     /// <para>
-    /// The only mandatory property is the <see cref="Key"/>, which must uniquely identify each user.
-    /// For authenticated users, this may be a username or e-mail address. For anonymous users,
-    /// this could be an IP address or session ID.
+    /// User supports only a subset of the behaviors that are available with the newer
+    /// <see cref="Context"/> type. A User is equivalent to an individual Context that has a
+    /// <see cref="Context.Kind"/> of <see cref="ContextKind.Default"/> ("user"); it also has
+    /// more constraints on attribute values than a Context does (for instance, built-in attributes
+    /// such as <see cref="User.Email"/> can only have string values). Older LaunchDarkly SDKs only
+    /// had the User model, and the User type has been retained for backward compatibility, but it
+    /// may be removed in a future SDK version; also, the SDK will always convert a User to a
+    /// Context internally, which has some overhead. Therefore, developers are recommended to
+    /// migrate toward using Context.
+    /// </para>
+    /// <para>
+    /// The only mandatory property of User is the <see cref="Key"/>, which must uniquely identify
+    /// each user. For authenticated users, this may be a username or e-mail address. For anonymous
+    /// users, this could be an IP address or session ID.
     /// </para>
     /// <para>
     /// Besides the mandatory key, <see cref="User"/> supports two kinds of optional attributes:
-    /// interpreted attributes (e.g. <see cref="IPAddress"/> and <see cref="Country"/>) and custom
-    /// attributes. LaunchDarkly can parse interpreted attributes and attach meaning to them. For
-    /// example, from an <see cref="IPAddress"/>, LaunchDarkly can do a geo IP lookup and determine
-    /// the user's country.
+    /// built-in attributes (e.g. <see cref="Name"/> and <see cref="Country"/>) and custom
+    /// attributes. The built-in attributes have specific allowed value types; also, two of them
+    /// (<see cref="Name"/> and <see cref="Anonymous"/>) have special meanings in LaunchDarkly.
+    /// Custom attributes have flexible value types, and can have any names that do not conflict
+    /// with built-in attributes.
     /// </para>
     /// <para>
-    /// Custom attributes are not parsed by LaunchDarkly. They can be used in custom rules-- for example, a
-    /// custom attribute such as "customer_ranking" can be used to launch a feature to the top 10% of users
-    /// on a site. Custom attributes can have values of any type supported by JSON.
+    /// Both built-in attributes and custom attributes can be referenced in targeting rules, and
+    /// are included in analytics data.
     /// </para>
     /// <para>
     /// Instances of <c>User</c> are immutable once created. They can be created with the factory method
@@ -41,11 +54,10 @@ namespace LaunchDarkly.Sdk
     /// For converting this type to or from JSON, see <see cref="LaunchDarkly.Sdk.Json"/>.
     /// </para>
     /// </remarks>
-    [JsonStreamConverter(typeof(LdJsonConverters.UserConverter))]
+    [JsonConverter(typeof(LdJsonConverters.UserConverter))]
     public class User : IEquatable<User>, IJsonSerializable
     {
         private readonly string _key;
-        private readonly string _secondary;
         private readonly string _ip;
         private readonly string _country;
         private readonly string _firstName;
@@ -53,7 +65,7 @@ namespace LaunchDarkly.Sdk
         private readonly string _name;
         private readonly string _avatar;
         private readonly string _email;
-        private readonly bool? _anonymous;
+        private readonly bool _anonymous;
         internal readonly ImmutableDictionary<string, LdValue> _custom;
         internal readonly ImmutableHashSet<string> _privateAttributeNames;
 
@@ -61,17 +73,6 @@ namespace LaunchDarkly.Sdk
         /// The unique key for the user.
         /// </summary>
         public string Key => _key;
-
-        /// <summary>
-        /// The secondary key for a user, which can be used in
-        /// <see href="https://docs.launchdarkly.com/home/flags/targeting-users#targeting-rules-based-on-user-attributes">feature flag targeting</see>.
-        /// </summary>
-        /// <remarks>
-        /// The use of the secondary key in targeting is as follows: if you have chosen to bucket users by a
-        /// specific attribute, the secondary key (if set) is used to further distinguish between users who are
-        /// otherwise identical according to that attribute.
-        /// </remarks>
-        public string Secondary => _secondary;
 
         /// <summary>
         /// The IP address of the user.
@@ -111,20 +112,7 @@ namespace LaunchDarkly.Sdk
         /// <summary>
         /// Whether or not the user is anonymous.
         /// </summary>
-        public bool Anonymous => _anonymous.HasValue && _anonymous.Value;
-
-        /// <summary>
-        /// Whether or not the user is anonymous, if that has been specified.
-        /// </summary>
-        /// <remarks>
-        /// Although the <see cref="Anonymous"/> property defaults to <see langword="false"/> in terms
-        /// of LaunchDarkly's user indexing behavior, for historical reasons <see langword="null"/>
-        /// (the property has not been explicitly set) may behave differently from being explicitly set
-        /// to <see langword="false"/>, if this property is referenced in a feature flag rule. This
-        /// property getter, and the corresponding setter in <see cref="IUserBuilder"/>, allow you to
-        /// treat the property as nullable.
-        /// </remarks>
-        public bool? AnonymousOptional => _anonymous;
+        public bool Anonymous => _anonymous;
 
         /// <summary>
         /// Custom attributes for the user.
@@ -195,7 +183,9 @@ namespace LaunchDarkly.Sdk
                     ImmutableDictionary<string, LdValue> custom, ImmutableHashSet<string> privateAttributeNames)
         {
             _key = key;
-            _secondary = secondary;
+            // _secondary = secondary;
+            // secondary no longer exists; retained in constructor to minimize breakage if applications
+            // were calling the User constructor directly
             _ip = ip;
             _country = country;
             _firstName = firstName;
@@ -203,7 +193,8 @@ namespace LaunchDarkly.Sdk
             _name = name;
             _avatar = avatar;
             _email = email;
-            _anonymous = anonymous;
+            _anonymous = anonymous ?? false;
+            // anonymous is now just a simple bool; kept bool? type in constructor for same reason as above
             _custom = custom ?? ImmutableDictionary.Create<string, LdValue>();
             _privateAttributeNames = privateAttributeNames ?? ImmutableHashSet.Create<string>();
         }
@@ -263,7 +254,6 @@ namespace LaunchDarkly.Sdk
                 return true;
             }
             return Object.Equals(Key, u.Key) &&
-                Object.Equals(Secondary, u.Secondary) &&
                 Object.Equals(IPAddress, u.IPAddress) &&
                 Object.Equals(Country, u.Country) &&
                 Object.Equals(FirstName, u.FirstName) &&
@@ -271,7 +261,7 @@ namespace LaunchDarkly.Sdk
                 Object.Equals(Name, u.Name) &&
                 Object.Equals(Avatar, u.Avatar) &&
                 Object.Equals(Email, u.Email) &&
-                AnonymousOptional == u.AnonymousOptional &&
+                Anonymous == u.Anonymous &&
                 Custom.Count == u.Custom.Count &&
                 Custom.Keys.All(k => u.Custom.ContainsKey(k) && Object.Equals(Custom[k], u.Custom[k])) &&
                 PrivateAttributeNames.SetEquals(u.PrivateAttributeNames);
@@ -282,7 +272,6 @@ namespace LaunchDarkly.Sdk
         {
             var hashBuilder = new HashCodeBuilder()
                 .With(Key)
-                .With(Secondary)
                 .With(IPAddress)
                 .With(Country)
                 .With(FirstName)

@@ -9,9 +9,11 @@ namespace LaunchDarkly.Sdk
     /// </summary>
     /// <remarks>
     /// <para>
-    /// This abstraction helps to distinguish attribute names from other string values, and also
-    /// improves efficiency in feature flag data structures and evaluations because built-in
-    /// attributes always reuse the same instances.
+    /// Application code rarely needs to use this type; it is used internally by the SDK for
+    /// efficiency in flag evaluations. It can also be used as a reference for the constant
+    /// names of built-in attributes such as <see cref="Email"/>. However, in the newer
+    /// <see cref="Context"/> model, there are very few reserved attribute names, so the
+    /// equivalent of <see cref="Email"/> would simply be a custom attribute called "email".
     /// </para>
     /// <para>
     /// For a fuller description of user attributes and how they can be referenced in feature
@@ -46,12 +48,6 @@ namespace LaunchDarkly.Sdk
         /// </summary>
         public static readonly UserAttribute Key =
             new UserAttribute("key", u => LdValue.Of(u.Key));
-
-        /// <summary>
-        /// Represents the secondary key attribute.
-        /// </summary>
-        public static readonly UserAttribute Secondary =
-            new UserAttribute("secondary", u => LdValue.Of(u.Secondary));
 
         /// <summary>
         /// Represents the IP address attribute.
@@ -99,14 +95,19 @@ namespace LaunchDarkly.Sdk
         /// Represents the anonymous attribute.
         /// </summary>
         public static readonly UserAttribute Anonymous =
-            new UserAttribute("anonymous", u => u.AnonymousOptional.HasValue ?
-                LdValue.Of(u.AnonymousOptional.Value) : LdValue.Null);
+            new UserAttribute("anonymous", u => LdValue.Of(u.Anonymous));
 
-        private static Dictionary<string, UserAttribute> _builtins =
+        private static readonly Dictionary<string, UserAttribute> _builtins =
             new UserAttribute[]
             {
-                Key, Secondary, IPAddress, Email, Name, Avatar, FirstName, LastName, Country, Anonymous
+                Key, IPAddress, Email, Name, Avatar, FirstName, LastName, Country, Anonymous
             }.ToDictionary(a => a.AttributeName);
+
+        internal static readonly UserAttribute[] OptionalStringAttrs =
+            new UserAttribute[]
+            {
+                IPAddress, Email, Name, Avatar, FirstName, LastName, Country
+            };
 
         /// <summary>
         /// Returns a UserAttribute instance for the specified attribute name.
