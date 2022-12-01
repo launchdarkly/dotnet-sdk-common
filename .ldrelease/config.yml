@@ -6,11 +6,13 @@ repo:
 
 branches:
   - name: main
-    description: 5.x - for Xamarin 2.0+ and .NET 6.0+
+    description: 6.x - for dotnet-client-sdk 3.0 & dotnet-server-sdk 7.0
+  - name: 5.x
+    description: for dotnet-client-sdk 2.0 & dotnet-server-sdk 6.0
   - name: 4.x
-    description: for Xamarin 1.x
+    description: for dotnet-client-sdk 1.0
   - name: 2.x
-    description: for current .NET SDK
+    description: for dotnet-server-sdk 5.0
 
 publications:
   - url: https://nuget.org/packages/LaunchDarkly.CommonSdk
