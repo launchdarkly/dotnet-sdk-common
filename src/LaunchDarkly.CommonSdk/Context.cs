@@ -35,6 +35,10 @@ namespace LaunchDarkly.Sdk
     /// A Context can be converted to or from JSON using a standard schema; see
     /// <see cref="LdJsonConverters.ContextConverter"/>.
     /// </para>
+    /// <para>
+    /// To learn more about contexts, read <see href="https://docs.launchdarkly.com/home/contexts">the
+    /// documentation</see>.
+    /// </para>
     /// </remarks>
     [JsonConverter(typeof(LdJsonConverters.ContextConverter))]
     public readonly struct Context : IEquatable<Context>, IJsonSerializable
