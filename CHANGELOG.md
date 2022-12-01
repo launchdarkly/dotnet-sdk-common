@@ -2,6 +2,24 @@
 
 All notable changes to `LaunchDarkly.CommonSdk` will be documented in this file. For full release notes for the projects that depend on this project, see their respective changelogs. This file describes changes only to the common code. This project adheres to [Semantic Versioning](http://semver.org).
 
+## [6.0.0] - 2022-12-01
+This major version release of `LaunchDarkly.CommonSdk` corresponds to the upcoming v7.0.0 release of the LaunchDarkly server-side .NET SDK (`LaunchDarkly.ServerSdk`) and the v3.0.0 release of the LaunchDarkly client-side .NET SDK (`LaunchDarkly.ClientSdk`), and cannot be used with earlier SDK versions.
+
+### Added:
+- In `LaunchDarkly.Sdk`, the types `Context` and `ContextKind` define the new "context" model. "Contexts" are a replacement for the earlier concept of "users"; they can be populated with attributes in more or less the same way as before, but they also support new behaviors. More information about these features will be included in the release notes for the `LaunchDarkly.ServerSdk` 7.0.0 and `LaunchDarkly.ClientSdk` 3.0.0 releases.
+
+### Changed:
+- .NET Core 2.1, .NET Framework 4.5.2, .NET Framework 4.6.1, and .NET 5.0 are now unsupported. The minimum platform versions are now .NET Core 3.1, .NET Framework 4.6.2, .NET 6.0, and .NET Standard 2.0.
+- It was previously allowable to set a user key to an empty string. In the new context model, the key is not allowed to be empty. Trying to use an empty key will cause evaluations to fail and return the default value.
+- There is no longer such a thing as a `Secondary` meta-attribute that affects percentage rollouts. If you set an attribute with that name in a `Context`, it will simply be a custom attribute like any other.
+- The `Anonymous` attribute in `LDUser` is now a simple boolean, with no distinction between a false state and a null state.
+- There is no longer a dependency on `LaunchDarkly.JsonStream`. This package existed because some platforms did not support the `System.Text.Json` API, but that is no longer the case and the SDK now uses `System.Text.Json` directly for all of its JSON operations.
+- If you are using the package `LaunchDarkly.CommonSdk.JsonNet` for interoperability with the Json.NET library, you must update this to the latest major version.
+
+### Removed:
+- Removed all types, fields, and methods that were deprecated as of the most recent release.
+- Removed the `Secondary` meta-attribute in `User` and `UserBuilder`.
+
 ## [5.5.0] - 2022-02-02
 ### Added:
 - `UnixMillisecondTime` now has a JSON converter like other `LaunchDarkly.Sdk` types.
