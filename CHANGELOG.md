@@ -2,6 +2,10 @@
 
 All notable changes to `LaunchDarkly.CommonSdk` will be documented in this file. For full release notes for the projects that depend on this project, see their respective changelogs. This file describes changes only to the common code. This project adheres to [Semantic Versioning](http://semver.org).
 
+## [6.0.1] - 2023-04-04
+### Fixed:
+- Fixed an issue with generating the `FullyQualifiedKey`. The key generation was not sorted by the kind, so the key was not stable depending on the order of the context construction. This also affected the generation of the secure mode hash for mulit-contexts.
+
 ## [6.0.0] - 2022-12-01
 This major version release of `LaunchDarkly.CommonSdk` corresponds to the upcoming v7.0.0 release of the LaunchDarkly server-side .NET SDK (`LaunchDarkly.ServerSdk`) and the v3.0.0 release of the LaunchDarkly client-side .NET SDK (`LaunchDarkly.ClientSdk`), and cannot be used with earlier SDK versions.
 
