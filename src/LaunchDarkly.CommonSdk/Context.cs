@@ -622,7 +622,7 @@ namespace LaunchDarkly.Sdk
                 Kind = ContextKind.Multi;
                 _multiContexts = contexts.OrderBy(c => c.Kind.Value).ToImmutableList();
                 var buildKey = new StringBuilder();
-                foreach (var c in contexts)
+                foreach (var c in _multiContexts)
                 {
                     if (buildKey.Length != 0)
                     {
