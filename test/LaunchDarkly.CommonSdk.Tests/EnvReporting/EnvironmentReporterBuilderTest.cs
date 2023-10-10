@@ -23,7 +23,7 @@ namespace LaunchDarkly.Sdk.EnvReporting
                 .Build();
 
             var platformLayer = new Layer(new ApplicationInfo("platformId", "platformName",
-                "platformVersion", "platformVersionName"), null, null);
+                "platformVersion", "platformVersionName"), null, null, null);
 
             var builder = new EnvironmentReporterBuilder();
             builder.SetConfigLayer(configLayer);
@@ -43,7 +43,7 @@ namespace LaunchDarkly.Sdk.EnvReporting
                 .Build();
 
             var platformLayer = new Layer(new ApplicationInfo("platformId", "platformName",
-                "platformVersion", "platformVersionName"), null, null);
+                "platformVersion", "platformVersionName"), null, null, null);
 
             var builder = new EnvironmentReporterBuilder();
             builder.SetConfigLayer(configLayer);

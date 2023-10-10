@@ -24,7 +24,7 @@ namespace LaunchDarkly.Sdk.EnvReporting
         /// <returns>the layer</returns>
         public Layer Build()
         {
-            return Validate(_info) ? new Layer(_info, null, null) : new Layer();
+            return Validate(_info) ? new Layer(_info, null, null, null) : new Layer();
         }
         
         private static bool Validate(ApplicationInfo info)
