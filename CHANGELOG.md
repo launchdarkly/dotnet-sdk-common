@@ -2,6 +2,10 @@
 
 All notable changes to `LaunchDarkly.CommonSdk` will be documented in this file. For full release notes for the projects that depend on this project, see their respective changelogs. This file describes changes only to the common code. This project adheres to [Semantic Versioning](http://semver.org).
 
+## [6.1.0] - 2023-10-10
+### Added:
+- Adds ApplicationInfo and EnvironmentReporter and respective builders.
+
 ## [6.0.1] - 2023-04-04
 ### Fixed:
 - Fixed an issue with generating the `FullyQualifiedKey`. The key generation was not sorted by the kind, so the key was not stable depending on the order of the context construction. This also affected the generation of the secure mode hash for mulit-contexts.
