@@ -84,6 +84,7 @@ ipch/
 
 # ReSharper is a .NET coding add-in
 _ReSharper*
+.idea
 
 # Installshield output folder
 [Ee]xpress

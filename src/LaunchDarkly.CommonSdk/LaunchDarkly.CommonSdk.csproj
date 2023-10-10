@@ -33,8 +33,9 @@
     <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\LaunchDarkly.CommonSdk.xml</DocumentationFile>
     <RootNamespace>LaunchDarkly.Sdk</RootNamespace>
   </PropertyGroup>
-  
+
   <ItemGroup>
+    <PackageReference Include="LaunchDarkly.Logging" Version="2.0.0" />
     <PackageReference Include="System.Collections.Immutable" Version="1.7.1" />
   </ItemGroup>
 
@@ -42,7 +43,7 @@
     <PackageReference Include="System.Text.Json" Version="6.0.0" />
     <!-- it's a built-in package in netcoreapp3.1 and net6.0 -->
   </ItemGroup>
-  
+
   <ItemGroup>
     <Folder Include="Helpers\" />
     <Folder Include="Json\" />
@@ -52,7 +53,7 @@
     <AssemblyOriginatorKeyFile>../../LaunchDarkly.CommonSdk.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>
   </PropertyGroup>
-  
+
   <ItemGroup> <!-- see https://github.com/dotnet/sourcelink -->
     <PackageReference Include="Microsoft.SourceLink.GitLab" Version="1.0.0" PrivateAssets="All" />
   </ItemGroup>
