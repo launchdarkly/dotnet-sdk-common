@@ -9,7 +9,8 @@ namespace LaunchDarkly.Sdk.EnvReporting
 
     /// <summary>
     /// Represents one layer of sourcing environment properties.  A layer may know how to source any
-    /// number of properties (even possibly 0 properties in edge cases).
+    /// number of properties (even possibly 0 properties in edge cases), in which case it may return null for individual
+    /// properties.
     /// </summary>
     public readonly struct Layer
     {
@@ -22,11 +23,16 @@ namespace LaunchDarkly.Sdk.EnvReporting
         /// The operating system info.
         /// </summary>
         public OsInfo? OsInfo { get;  }
-        
+
         /// <summary>
         /// The device info.
         /// </summary>
         public DeviceInfo? DeviceInfo { get; }
+
+        /// <summary>
+        /// The application locale in the format languagecode2-country/regioncode2.
+        /// </summary>
+        public string Locale { get; }
 
         /// <summary>
         /// Constructs a new layer with optional property values.
@@ -34,11 +40,13 @@ namespace LaunchDarkly.Sdk.EnvReporting
         /// <param name="appInfo">the optional ApplicationInfo.</param>
         /// <param name="osInfo">the optional OsInfo.</param>
         /// <param name="deviceInfo">the optional DeviceInfo.</param>
-        public Layer(ApplicationInfo? appInfo, OsInfo? osInfo, DeviceInfo? deviceInfo)
+        /// <param name="locale">the optional application locale.</param>
+        public Layer(ApplicationInfo? appInfo, OsInfo? osInfo, DeviceInfo? deviceInfo, string locale)
         {
             ApplicationInfo = appInfo;
             OsInfo = osInfo;
             DeviceInfo = deviceInfo;
+            Locale = locale;
         }
     }
 
@@ -47,6 +55,7 @@ namespace LaunchDarkly.Sdk.EnvReporting
         public OsInfo OsInfo { get; internal set; }
         public DeviceInfo DeviceInfo { get; internal set; }
         public ApplicationInfo ApplicationInfo { get; internal set; }
+        public string Locale { get; internal set; }
     }
 
 
@@ -121,6 +130,9 @@ namespace LaunchDarkly.Sdk.EnvReporting
                     layers.Select(layer => layer.DeviceInfo)
                         .FirstOrDefault(prop => prop != null)
                         .GetValueOrDefault(new DeviceInfo(Unknown, Unknown)),
+                Locale =
+                    layers.Select(layer => layer.Locale)
+                        .FirstOrDefault(prop => prop != null) ?? Unknown
             };
         }
     }

@@ -16,5 +16,8 @@ namespace LaunchDarkly.Sdk.EnvReporting
         
         /// <returns>the <see cref="DeviceInfo"/> for the application environment</returns>
         DeviceInfo DeviceInfo { get; }
+
+        /// <returns>the locale for the application environment in the format languagecode2-country/regioncode2</returns>
+        string Locale { get; }
     }
 }
