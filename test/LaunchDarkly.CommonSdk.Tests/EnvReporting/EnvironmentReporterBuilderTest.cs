@@ -6,13 +6,12 @@ namespace LaunchDarkly.Sdk.EnvReporting
     {
 
         [Fact]
-        public void BuildWithNoParamsGivesDefault()
+        public void BuildWithNoParamsGivesNullProperty()
         {
             var builder = new EnvironmentReporterBuilder();
             var reporter = builder.Build();
-            var expectedAppInfo = new ApplicationInfo("unknown", "unknown", "unknown", "unknown");
             var actualAppInfo = reporter.ApplicationInfo;
-            Assert.Equal(expectedAppInfo, actualAppInfo);
+            Assert.Null(actualAppInfo);
         }
 
         [Fact]
