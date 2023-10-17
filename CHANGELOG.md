@@ -2,6 +2,10 @@
 
 All notable changes to `LaunchDarkly.CommonSdk` will be documented in this file. For full release notes for the projects that depend on this project, see their respective changelogs. This file describes changes only to the common code. This project adheres to [Semantic Versioning](http://semver.org).
 
+## [7.0.0] - 2023-10-17
+### Changed:
+- IEnvironmentReporter now reports nullable values.
+
 ## [6.2.0] - 2023-10-10
 ### Added:
 - Adds locale to auto environment attribute layer.
