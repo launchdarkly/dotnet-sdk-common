@@ -52,9 +52,9 @@ namespace LaunchDarkly.Sdk.EnvReporting
 
     internal class PrioritizedReporter : IEnvironmentReporter
     {
-        public OsInfo OsInfo { get; internal set; }
-        public DeviceInfo DeviceInfo { get; internal set; }
-        public ApplicationInfo ApplicationInfo { get; internal set; }
+        public OsInfo? OsInfo { get; internal set; }
+        public DeviceInfo? DeviceInfo { get; internal set; }
+        public ApplicationInfo? ApplicationInfo { get; internal set; }
         public string Locale { get; internal set; }
     }
 
@@ -120,19 +120,16 @@ namespace LaunchDarkly.Sdk.EnvReporting
             {
                 ApplicationInfo =
                     layers.Select(layer => layer.ApplicationInfo)
-                        .FirstOrDefault(prop => prop != null)
-                        .GetValueOrDefault(new ApplicationInfo(Unknown, Unknown, Unknown, Unknown)),
+                        .FirstOrDefault(prop => prop != null),
                 OsInfo =
                     layers.Select(layer => layer.OsInfo)
-                        .FirstOrDefault(prop => prop != null)
-                        .GetValueOrDefault( new OsInfo(Unknown, Unknown, Unknown)),
+                        .FirstOrDefault(prop => prop != null),
                 DeviceInfo = 
                     layers.Select(layer => layer.DeviceInfo)
-                        .FirstOrDefault(prop => prop != null)
-                        .GetValueOrDefault(new DeviceInfo(Unknown, Unknown)),
+                        .FirstOrDefault(prop => prop != null),
                 Locale =
                     layers.Select(layer => layer.Locale)
-                        .FirstOrDefault(prop => prop != null) ?? Unknown
+                        .FirstOrDefault(prop => prop != null)
             };
         }
     }
