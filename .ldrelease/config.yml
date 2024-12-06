@@ -1,9 +1,5 @@
 version: 2
 
-repo:
-  public: dotnet-sdk-common
-  private: dotnet-sdk-common-private
-
 branches:
   - name: main
     description: 6.x - for dotnet-client-sdk 3.0 & dotnet-server-sdk 7.0
