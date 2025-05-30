@@ -1,3 +1,7 @@
+# [DEPRECATED]
+
+Development has moved to [dotnet-core repository](https://github.com/launchdarkly/dotnet-core). This repository remains here to support legacy references to dotnet-sdk-common.
+
 # LaunchDarkly SDK .NET Common Code
 
 [![NuGet](https://img.shields.io/nuget/v/LaunchDarkly.CommonSdk.svg?style=flat-square)](https://www.nuget.org/packages/LaunchDarkly.CommonSdk/)
